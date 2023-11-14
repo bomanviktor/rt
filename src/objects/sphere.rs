@@ -1,16 +1,16 @@
+use crate::config::Point;
 use crate::objects::Texture;
-use crate::Coords;
 #[derive(Debug)]
 pub struct Sphere {
-    pub coords: Coords,
+    pub center_point: Point,
     pub radius: f64,
     pub texture: Texture,
 }
 
 impl Sphere {
-    pub fn new(coords: Coords, radius: f64, texture: Texture) -> Self {
+    pub fn new(center_point: Point, radius: f64, texture: Texture) -> Self {
         Self {
-            coords,
+            center_point,
             radius,
             texture,
         }

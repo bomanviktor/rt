@@ -1,9 +1,11 @@
 pub mod state;
 
 pub mod config {
-    pub const PLANE_WIDTH: f64 = 1000.0;
-    pub const PLANE_LENGTH: f64 = PLANE_WIDTH;
-    pub const BRIGHTNESS: f64 = 100.0;
+    use nalgebra::Vector2;
+    pub use nalgebra::Vector3;
+    pub type Point = Vector3<f64>;
+
+    pub type Pixel = Vector2<i64>;
 }
 
 pub mod hittable {
@@ -76,17 +78,5 @@ pub mod objects {
         Wood,
         Glass,
         Reflective,
-    }
-}
-#[derive(Debug)]
-pub struct Coords {
-    pub x: f64,
-    pub y: f64,
-    pub z: f64,
-}
-
-impl Coords {
-    pub fn new(x: f64, y: f64, z: f64) -> Self {
-        Self { x, y, z }
     }
 }
