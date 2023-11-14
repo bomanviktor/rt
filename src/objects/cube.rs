@@ -1,16 +1,16 @@
+use crate::config::Point;
 use crate::objects::Texture;
-use crate::Coords;
 #[derive(Debug)]
 pub struct Cube {
-    pub coords: Coords,
+    pub center_point: Point,
     pub size: f64,
     pub texture: Texture,
 }
 
 impl Cube {
-    pub fn new(coords: Coords, size: f64, texture: Texture) -> Self {
+    pub fn new(center_point: Point, size: f64, texture: Texture) -> Self {
         Self {
-            coords,
+            center_point,
             size,
             texture,
         }
