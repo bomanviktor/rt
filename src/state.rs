@@ -1,12 +1,11 @@
 use crate::light_sources::LightSource;
 use crate::objects::Object;
-use crate::raytracer::{Camera, Ray, ViewPort};
+use crate::raytracer::{Camera, Ray};
 
 #[derive(Debug)]
 pub struct State {
     pub scene: Scene,
     pub camera: Camera,
-    pub view_port: ViewPort,
     pub rays: Vec<Ray>,
 }
 

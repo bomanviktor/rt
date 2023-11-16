@@ -15,7 +15,7 @@ pub mod hittable {
 }
 
 pub mod color {
-    #[derive(Debug)]
+    #[derive(Debug, Clone)]
     pub struct Color {
         pub r: u8,
         pub g: u8,
@@ -25,6 +25,16 @@ pub mod color {
     impl Color {
         pub fn new(r: u8, g: u8, b: u8) -> Self {
             Self { r, g, b }
+        }
+    }
+
+    impl Default for Color {
+        fn default() -> Self {
+            Self {
+                r: 169,
+                g: 169,
+                b: 169,
+            }
         }
     }
 }
@@ -44,9 +54,6 @@ pub mod raytracer {
     pub use camera::*;
     pub mod ray;
     pub use ray::*;
-
-    pub mod viewport;
-    pub use viewport::*;
 }
 
 pub mod objects {
