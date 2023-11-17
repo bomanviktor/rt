@@ -6,27 +6,45 @@ use rt::raytracer::{CameraBuilder, Ray};
 use std::io::Write;
 
 fn main() {
+    // New camera setup
     let camera = CameraBuilder::new()
-        .sample_size(100)
-        .position_by_coordinates(Vector3::new(0.0, 0.0, 5.0))
+        .sample_size(1)
+        .position_by_coordinates(Vector3::new(-6.0, -6.0, 5.0))
         .look_at(Vector3::new(0.0, 0.0, -1.0))
-        .up_direction_by_coordinates(Vector3::new(0.0, 1.0, 0.0))
-        .sensor_width(1.0)
-        .resolution((1600, 900))
+        .up_direction_by_coordinates(Vector3::new(0.0, 3.0, 0.0))
+        //.aspect_ratio(16.0 / 9.0)
         .focal_length(0.5)
+        .resolution((1600, 900))
+        .sensor_width(1.0)
         .build();
 
+    // Objects setup
     let sphere1 = Sphere::new(Vector3::new(0.0, 0.0, -5.0), 1.0, Color::new(255, 0, 0));
+    let sphere2 = Sphere::new(Vector3::new(2.0, 0.0, -5.0), 1.2, Color::new(255, 0, 0));
+    let sphere3 = Sphere::new(Vector3::new(-2.0, 0.0, -5.0), 1.2, Color::new(255, 0, 0));
+    let sphere4 = Sphere::new(Vector3::new(0.0, -2.0, -5.0), 1.0, Color::new(255, 0, 0));
+    let sphere5 = Sphere::new(Vector3::new(0.0, -4.0, -5.0), 1.0, Color::new(255, 0, 0));
+    let sphere6 = Sphere::new(Vector3::new(0.0, 6.0, -5.0), 1.5, Color::new(255, 0, 0));
 
-    let cylinder1 = Cylinder::new(
-        Vector3::new(1.0, 0.0, -6.0),
-        1.0,
-        2.0,
+    let cylinder = Cylinder::new(
+        Vector3::new(0.0, -2.0, -2.0),
+        1.5,
+        4.0,
         Color::new(0, 255, 0),
     );
 
-    let objects: Vec<Box<dyn Object>> = vec![Box::new(sphere1), Box::new(cylinder1)];
+    // Collect objects
+    let objects: Vec<Box<dyn Object>> = vec![
+        Box::new(sphere1),
+        Box::new(sphere2),
+        Box::new(sphere3),
+        Box::new(sphere4),
+        Box::new(sphere5),
+        Box::new(sphere6),
+        Box::new(cylinder),
+    ];
 
+    // Perform ray tracing
     let pixel_data = check_intersections_with_multiple_objects(&camera.rays, &objects);
     write_to_ppm(&pixel_data, "output.ppm");
 }
