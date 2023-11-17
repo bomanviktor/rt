@@ -1,5 +1,6 @@
 use crate::color::Color;
 use crate::config::Point;
+use crate::objects::Object;
 use crate::raytracer::Ray;
 use nalgebra::Vector3;
 
@@ -18,8 +19,10 @@ impl Sphere {
             color,
         }
     }
+}
 
-    pub fn intersection(&self, ray: &Ray) -> Option<(Vector3<f64>, f64)> {
+impl Object for Sphere {
+    fn intersection(&self, ray: &Ray) -> Option<(Vector3<f64>, f64)> {
         let ray_to_sphere_center = ray.origin - self.center;
         let direction_dot_product = ray.direction.dot(&ray.direction);
         let oc_dot_direction = 2.0 * ray_to_sphere_center.dot(&ray.direction);
@@ -42,7 +45,11 @@ impl Sphere {
         None
     }
 
-    pub fn normal_at(&self, point: Vector3<f64>) -> Vector3<f64> {
+    fn normal_at(&self, point: Vector3<f64>) -> Vector3<f64> {
         (point - self.center).normalize()
+    }
+
+    fn color(&self) -> Color {
+        self.color.clone()
     }
 }

@@ -58,7 +58,9 @@ pub mod raytracer {
 
 pub mod objects {
     pub mod cube;
+
     pub use cube::*;
+    use nalgebra::Vector3;
 
     pub mod cylinder;
     pub use cylinder::*;
@@ -68,14 +70,21 @@ pub mod objects {
 
     pub mod sphere;
     use crate::color::Color;
+    use crate::raytracer::Ray;
     pub use sphere::*;
 
-    #[derive(Debug)]
-    pub enum Object {
-        Cube(Cube),
-        Cylinder(Cylinder),
-        FlatPlane(FlatPlane),
-        Sphere(Sphere),
+    // #[derive(Debug)]
+    // pub enum Object {
+    //     Cube(Cube),
+    //     Cylinder(Cylinder),
+    //     FlatPlane(FlatPlane),
+    //     Sphere(Sphere),
+    // }
+
+    pub trait Object {
+        fn intersection(&self, ray: &Ray) -> Option<(Vector3<f64>, f64)>;
+        fn normal_at(&self, point: Vector3<f64>) -> Vector3<f64>;
+        fn color(&self) -> Color;
     }
 
     #[derive(Debug)]
