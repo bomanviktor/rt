@@ -1,32 +1,86 @@
-use crate::config::Point;
-use crate::raytracer::Ray;
+use crate::color::Color;
+use crate::config::{Pixels, Point};
+use crate::objects::{Object, Objects};
+use crate::raytracer::{Ray, Resolution};
 use nalgebra::Vector3;
+use std::io::Write;
+
+const DEFAULT_CAMERA_POSITION: Point = Point::new(1.0, 0.5, 0.0);
+const DEFAULT_SAMPLE_SIZE: u16 = 1;
+const DEFAULT_FOCAL_LENGTH: f64 = 0.5;
+const DEFAULT_SENSOR_WIDTH: f64 = 1.0;
+
+const DEFAULT_UP_DIRECTION: Point = Point::new(0.0, 1.0, 0.0);
+
+const DEFAULT_RESOLUTION: Resolution = (1600, 900);
 
 #[derive(Debug)]
 pub struct Camera {
-    pub sample_size: u64,
+    pub sample_size: u16,
     pub position: Vector3<f64>,
     pub look_at: Vector3<f64>,
     pub up_direction: Vector3<f64>,
     pub fov: f64,
-    pub resolution: (u32, u32),
+    pub resolution: Resolution,
     pub aspect_ratio: f64,
     pub focal_length: f64,
     pub sensor_width: f64,
     pub rays: Vec<Vec<Ray>>,
+    pub pixels: Pixels,
 }
 
-// TODO: Remove dead code macro
-#[allow(dead_code)]
-impl Camera {}
+impl Camera {
+    pub fn send_rays(&mut self, objects: &Objects) {
+        for row in &self.rays {
+            let mut pixel_row = Vec::new();
+            for ray in row {
+                let mut closest_intersection: Option<(Vector3<f64>, f64)> = None;
+                let mut closest_object: Option<&Box<dyn Object>> = None;
+
+                for object in objects {
+                    if let Some((hit_point, distance)) = object.intersection(ray) {
+                        if closest_intersection.is_none()
+                            || distance < closest_intersection.unwrap().1
+                        {
+                            closest_intersection = Some((hit_point, distance));
+                            closest_object = Some(object);
+                        }
+                    }
+                }
+
+                if let Some(object) = closest_object {
+                    let hit_point = closest_intersection.unwrap().0;
+                    let normal = object.normal_at(hit_point);
+                    let modified_color = modify_color_based_on_normal(normal, object.color(), ray);
+                    pixel_row.push(modified_color);
+                } else {
+                    pixel_row.push(Color::default());
+                }
+            }
+            self.pixels.push(pixel_row);
+        }
+    }
+
+    pub fn write_to_ppm(&self, path: &str) {
+        let mut file = std::fs::File::create(path).unwrap();
+        writeln!(file, "P3").unwrap();
+        writeln!(file, "{} {}", self.pixels[0].len(), self.pixels.len()).unwrap();
+        writeln!(file, "255").unwrap();
+        for row in &self.pixels {
+            for pixel in row {
+                writeln!(file, "{} {} {}", pixel.r, pixel.g, pixel.b).unwrap();
+            }
+        }
+    }
+}
 
 #[derive(Default)]
 pub struct CameraBuilder {
-    pub sample_size: Option<u64>,
+    pub sample_size: Option<u16>,
     pub position: Option<Vector3<f64>>,
     pub look_at: Option<Vector3<f64>>,
     pub up_direction: Option<Vector3<f64>>,
-    pub resolution: Option<(u32, u32)>,
+    pub resolution: Option<Resolution>,
     pub focal_length: Option<f64>,
     pub sensor_width: Option<f64>,
 }
@@ -44,7 +98,7 @@ impl CameraBuilder {
         }
     }
 
-    pub fn sample_size(&mut self, sample_size: u64) -> &mut Self {
+    pub fn sample_size(&mut self, sample_size: u16) -> &mut Self {
         self.sample_size = Some(sample_size);
         self
     }
@@ -59,6 +113,7 @@ impl CameraBuilder {
         _horizontal_degrees: f64,
         _vertical_degrees: f64,
     ) -> &mut Self {
+        self.look_at = None; // This is to trigger the default option in the builder
         self
     }
 
@@ -75,7 +130,7 @@ impl CameraBuilder {
         self
     }
 
-    pub fn resolution(&mut self, resolution: (u32, u32)) -> &mut Self {
+    pub fn resolution(&mut self, resolution: Resolution) -> &mut Self {
         self.resolution = Some(resolution);
         self
     }
@@ -135,16 +190,26 @@ impl CameraBuilder {
         let fov = 2.0 * ((self.sensor_width.unwrap() / (2.0 * self.focal_length.unwrap())).atan());
         let (width, height) = self.resolution.unwrap();
         Camera {
-            sample_size: self.sample_size.unwrap(),
-            position: self.position.unwrap(),
-            look_at: self.look_at.unwrap(),
-            up_direction: self.up_direction.unwrap(),
+            sample_size: self.sample_size.unwrap_or(DEFAULT_SAMPLE_SIZE),
+            position: self.position.unwrap_or(DEFAULT_CAMERA_POSITION),
+            look_at: self.look_at.unwrap_or_default(), // 0,0,0 is the default
+            up_direction: self.up_direction.unwrap_or(DEFAULT_UP_DIRECTION),
             fov,
-            resolution: self.resolution.unwrap(),
+            resolution: self.resolution.unwrap_or(DEFAULT_RESOLUTION),
             aspect_ratio: width as f64 / height as f64,
-            focal_length: self.focal_length.unwrap(),
-            sensor_width: self.sensor_width.unwrap(),
+            focal_length: self.focal_length.unwrap_or(DEFAULT_FOCAL_LENGTH),
+            sensor_width: self.sensor_width.unwrap_or(DEFAULT_SENSOR_WIDTH),
             rays: self.map_ray_directions(),
+            pixels: Vec::new(),
         }
     }
+}
+
+fn modify_color_based_on_normal(normal: Vector3<f64>, original_color: Color, ray: &Ray) -> Color {
+    let dot = normal.dot(&ray.direction.normalize()).abs();
+    Color::new(
+        (original_color.r as f64 * dot) as u8,
+        (original_color.g as f64 * dot) as u8,
+        (original_color.b as f64 * dot) as u8,
+    )
 }

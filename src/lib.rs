@@ -1,17 +1,9 @@
-pub mod state;
-
 pub mod config {
-    use nalgebra::Vector2;
+    use crate::color::Color;
     pub use nalgebra::Vector3;
+
     pub type Point = Vector3<f64>;
-
-    pub type Pixel = Vector2<i64>;
-}
-
-pub mod hittable {
-    pub trait Hittable {
-        fn hit(&self);
-    }
+    pub type Pixels = Vec<Vec<Color>>;
 }
 
 pub mod color {
@@ -39,21 +31,16 @@ pub mod color {
     }
 }
 
-pub mod light_sources {
-    pub use crate::color;
-    pub mod ceiling;
-    pub use ceiling::*;
-    #[derive(Debug)]
-    pub enum LightSource {
-        Ceiling(Ceiling),
-    }
-}
-
 pub mod raytracer {
     pub mod camera;
     pub use camera::*;
     pub mod ray;
     pub use ray::*;
+
+    pub mod scene;
+    pub use scene::*;
+
+    pub type Resolution = (u32, u32);
 }
 
 pub mod objects {
@@ -81,11 +68,25 @@ pub mod objects {
     //     Sphere(Sphere),
     // }
 
+    /// [Discriminant equation](https://en.wikipedia.org/wiki/Discriminant)
+    ///
+    /// Returns `None` if `b² - 4ac < 0.0`
+    pub fn discriminant(a: f64, b: f64, c: f64) -> Option<f64> {
+        let discriminant = a.powi(2) - 4.0 * b * c;
+        if discriminant >= 0.0 {
+            Some(discriminant)
+        } else {
+            None
+        }
+    }
+
     pub trait Object {
         fn intersection(&self, ray: &Ray) -> Option<(Vector3<f64>, f64)>;
         fn normal_at(&self, point: Vector3<f64>) -> Vector3<f64>;
         fn color(&self) -> Color;
     }
+
+    pub type Objects = Vec<Box<dyn Object>>;
 
     #[derive(Debug)]
     pub enum Texture {
