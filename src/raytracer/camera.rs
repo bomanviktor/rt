@@ -1,72 +1,218 @@
-use crate::config::{Pixel, Point};
-use crate::raytracer::{Ray, ViewPort};
+use crate::color::Color;
+use crate::config::{Pixels, Point};
+use crate::objects::{Object, Objects};
+use crate::raytracer::{Ray, Resolution};
+use nalgebra::Vector3;
+use std::io::Write;
+
+const DEFAULT_CAMERA_POSITION: Point = Point::new(1.0, 0.5, 0.0);
+const DEFAULT_SAMPLE_SIZE: u16 = 1;
+const DEFAULT_FOCAL_LENGTH: f64 = 0.5;
+const DEFAULT_SENSOR_WIDTH: f64 = 1.0;
+
+const DEFAULT_UP_DIRECTION: Point = Point::new(0.0, 1.0, 0.0);
+
+const DEFAULT_RESOLUTION: Resolution = (1600, 900);
 
 #[derive(Debug)]
 pub struct Camera {
-    pub sample_size: u64,
-    pub max_length: f64,
-    pub position: Point,
-    pub view_port: ViewPort,
-    pub rays: Vec<Ray>,
+    pub sample_size: u16,
+    pub position: Vector3<f64>,
+    pub look_at: Vector3<f64>,
+    pub up_direction: Vector3<f64>,
+    pub fov: f64,
+    pub resolution: Resolution,
+    pub aspect_ratio: f64,
+    pub focal_length: f64,
+    pub sensor_width: f64,
+    pub rays: Vec<Vec<Ray>>,
+    pub pixels: Pixels,
 }
 
-// TODO: Remove dead code macro
-#[allow(dead_code)]
 impl Camera {
-    pub fn new(sample_size: u64, max_length: f64, position: Point, view_port: ViewPort) -> Self {
-        Self {
-            sample_size,
-            max_length,
-            position,
-            view_port,
-            rays: Vec::new(),
-        }
-    }
+    pub fn send_rays(&mut self, objects: &Objects) {
+        for row in &self.rays {
+            let mut pixel_row = Vec::new();
+            for ray in row {
+                let mut closest_intersection: Option<(Vector3<f64>, f64)> = None;
+                let mut closest_object: Option<&Box<dyn Object>> = None;
 
-    fn send_rays(&mut self) {
-        let vp = &self.view_port;
-        let top_y = vp.top_left().y as i64;
-        let bottom_y = vp.bottom_left().y as i64;
-        let left_x = vp.top_left().x as i64;
-        let right_x = vp.top_right().x as i64;
+                for object in objects {
+                    if let Some((hit_point, distance)) = object.intersection(ray) {
+                        if closest_intersection.is_none()
+                            || distance < closest_intersection.unwrap().1
+                        {
+                            closest_intersection = Some((hit_point, distance));
+                            closest_object = Some(object);
+                        }
+                    }
+                }
 
-        for _ in 0..self.sample_size {
-            for y in top_y..=bottom_y {
-                for x in left_x..=right_x {
-                    self.rays.push(Ray::new(
-                        self.position,
-                        self.calc_direction(x, y),
-                        Pixel::new(x, y),
-                    ))
+                if let Some(object) = closest_object {
+                    let hit_point = closest_intersection.unwrap().0;
+                    let normal = object.normal_at(hit_point);
+                    let modified_color = modify_color_based_on_normal(normal, object.color(), ray);
+                    pixel_row.push(modified_color);
+                } else {
+                    pixel_row.push(Color::default());
                 }
             }
-
-            self.calculate_rays()
+            self.pixels.push(pixel_row);
         }
     }
 
-    fn calculate_rays(&mut self) {
-        for ray in &self.rays {
-            println!("{:?}", ray);
-            // Do calculation here
+    pub fn write_to_ppm(&self, path: &str) {
+        let mut file = std::fs::File::create(path).unwrap();
+        writeln!(file, "P3").unwrap();
+        writeln!(file, "{} {}", self.pixels[0].len(), self.pixels.len()).unwrap();
+        writeln!(file, "255").unwrap();
+        for row in &self.pixels {
+            for pixel in row {
+                writeln!(file, "{} {} {}", pixel.r, pixel.g, pixel.b).unwrap();
+            }
         }
-        self.rays.clear()
+    }
+}
+
+#[derive(Default)]
+pub struct CameraBuilder {
+    pub sample_size: Option<u16>,
+    pub position: Option<Vector3<f64>>,
+    pub look_at: Option<Vector3<f64>>,
+    pub up_direction: Option<Vector3<f64>>,
+    pub resolution: Option<Resolution>,
+    pub focal_length: Option<f64>,
+    pub sensor_width: Option<f64>,
+}
+
+impl CameraBuilder {
+    pub fn new() -> Self {
+        Self {
+            sample_size: None,
+            position: None,
+            look_at: None,
+            up_direction: None,
+            resolution: None,
+            focal_length: None,
+            sensor_width: None,
+        }
     }
 
-    fn calc_direction(&self, x: i64, y: i64) -> Point {
-        let distance = self.view_port.distance;
-        let x0 = self.position.x;
-        let y0 = self.position.y;
-        let x1 = x as f64;
-        let y1 = y as f64;
-
-        let x_diff = (x1 - x0) / distance;
-        let y_diff = (y1 - y0) / distance;
-
-        Point::new(
-            x_diff * self.max_length,
-            y_diff * self.max_length,
-            self.max_length,
-        )
+    pub fn sample_size(&mut self, sample_size: u16) -> &mut Self {
+        self.sample_size = Some(sample_size);
+        self
     }
+
+    pub fn position_by_coordinates(&mut self, position: Point) -> &mut Self {
+        self.position = Some(position);
+        self
+    }
+
+    pub fn position_by_degrees(
+        &mut self,
+        _horizontal_degrees: f64,
+        _vertical_degrees: f64,
+    ) -> &mut Self {
+        self.look_at = None; // This is to trigger the default option in the builder
+        self
+    }
+
+    pub fn look_at(&mut self, coordinate: Point) -> &mut Self {
+        self.look_at = Some(coordinate);
+        self
+    }
+    pub fn up_direction_by_coordinates(&mut self, up_direction: Point) -> &mut Self {
+        self.up_direction = Some(up_direction);
+        self
+    }
+
+    pub fn up_direction_by_rotation(&mut self, _rotation: f64) -> &mut Self {
+        self
+    }
+
+    pub fn resolution(&mut self, resolution: Resolution) -> &mut Self {
+        self.resolution = Some(resolution);
+        self
+    }
+
+    pub fn focal_length(&mut self, focal_length: f64) -> &mut Self {
+        self.focal_length = Some(focal_length);
+        self
+    }
+
+    pub fn sensor_width(&mut self, sensor_width: f64) -> &mut Self {
+        self.sensor_width = Some(sensor_width);
+        self
+    }
+
+    fn ray_direction(&self, pixel_x: u32, pixel_y: u32) -> Vector3<f64> {
+        // Calculate the camera basis vectors
+        let view_direction = (self.position.unwrap() - self.look_at.unwrap()).normalize();
+        let right_vector = self
+            .up_direction
+            .unwrap()
+            .cross(&view_direction)
+            .normalize();
+        let up_vector = view_direction.cross(&right_vector);
+        let (width, height) = self.resolution.unwrap();
+
+        // Convert pixel coordinates to normalized world coordinates
+        let normalized_x = (pixel_x as f64) / (width as f64) - 0.5;
+        let normalized_y = (pixel_y as f64) / (height as f64) - 0.5;
+
+        let aspect_ratio = width as f64 / height as f64;
+        // Compute the ray direction
+        right_vector * (normalized_x * aspect_ratio) + up_vector * normalized_y
+            - view_direction * self.focal_length.unwrap()
+    }
+
+    pub fn map_ray_directions(&self) -> Vec<Vec<Ray>> {
+        let mut rays = Vec::new();
+        let (width, height) = self.resolution.unwrap();
+
+        for y in 0..height {
+            let mut row = Vec::new();
+            for x in 0..width {
+                let direction = self.ray_direction(x, y);
+                row.push(Ray {
+                    origin: self.position.unwrap(),
+                    direction,
+                    collisions: vec![],
+                });
+            }
+            rays.push(row);
+        }
+
+        rays
+    }
+
+    pub fn build(&self) -> Camera {
+        let fov = 2.0
+            * ((self.sensor_width.unwrap_or(DEFAULT_SENSOR_WIDTH)
+                / (2.0 * self.focal_length.unwrap_or(DEFAULT_FOCAL_LENGTH)))
+            .atan());
+        let (width, height) = self.resolution.unwrap_or(DEFAULT_RESOLUTION);
+        Camera {
+            sample_size: self.sample_size.unwrap_or(DEFAULT_SAMPLE_SIZE),
+            position: self.position.unwrap_or(DEFAULT_CAMERA_POSITION),
+            look_at: self.look_at.unwrap_or_default(), // 0,0,0 is the default
+            up_direction: self.up_direction.unwrap_or(DEFAULT_UP_DIRECTION),
+            fov,
+            resolution: self.resolution.unwrap_or(DEFAULT_RESOLUTION),
+            aspect_ratio: width as f64 / height as f64,
+            focal_length: self.focal_length.unwrap_or(DEFAULT_FOCAL_LENGTH),
+            sensor_width: self.sensor_width.unwrap_or(DEFAULT_SENSOR_WIDTH),
+            rays: self.map_ray_directions(),
+            pixels: Vec::new(),
+        }
+    }
+}
+
+fn modify_color_based_on_normal(normal: Vector3<f64>, original_color: Color, ray: &Ray) -> Color {
+    let dot = normal.dot(&ray.direction.normalize()).abs();
+    Color::new(
+        (original_color.r as f64 * dot) as u8,
+        (original_color.g as f64 * dot) as u8,
+        (original_color.b as f64 * dot) as u8,
+    )
 }

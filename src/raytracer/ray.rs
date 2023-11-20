@@ -1,20 +1,19 @@
 use crate::color::Color;
-use crate::config::{Pixel, Point};
+use crate::config::Point;
+use nalgebra::Vector3;
 
 #[derive(Debug)]
 pub struct Ray {
     pub origin: Point,
-    pub direction: Point,
-    pub pixel_to_render: Pixel,
+    pub direction: Vector3<f64>,
     pub collisions: Vec<Color>,
 }
 
 impl Ray {
-    pub fn new(origin: Point, direction: Point, pixel_to_render: Pixel) -> Self {
+    pub fn new(origin: Point, direction: Point) -> Self {
         Self {
             origin,
             direction,
-            pixel_to_render,
             collisions: Vec::new(),
         }
     }

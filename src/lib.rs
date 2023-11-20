@@ -1,21 +1,13 @@
-pub mod state;
-
 pub mod config {
-    use nalgebra::Vector2;
+    use crate::color::Color;
     pub use nalgebra::Vector3;
+
     pub type Point = Vector3<f64>;
-
-    pub type Pixel = Vector2<i64>;
-}
-
-pub mod hittable {
-    pub trait Hittable {
-        fn hit(&self);
-    }
+    pub type Pixels = Vec<Vec<Color>>;
 }
 
 pub mod color {
-    #[derive(Debug)]
+    #[derive(Debug, Clone)]
     pub struct Color {
         pub r: u8,
         pub g: u8,
@@ -27,15 +19,15 @@ pub mod color {
             Self { r, g, b }
         }
     }
-}
 
-pub mod light_sources {
-    pub use crate::color;
-    pub mod ceiling;
-    pub use ceiling::*;
-    #[derive(Debug)]
-    pub enum LightSource {
-        Ceiling(Ceiling),
+    impl Default for Color {
+        fn default() -> Self {
+            Self {
+                r: 169,
+                g: 169,
+                b: 169,
+            }
+        }
     }
 }
 
@@ -45,13 +37,17 @@ pub mod raytracer {
     pub mod ray;
     pub use ray::*;
 
-    pub mod viewport;
-    pub use viewport::*;
+    pub mod scene;
+    pub use scene::*;
+
+    pub type Resolution = (u32, u32);
 }
 
 pub mod objects {
     pub mod cube;
+
     pub use cube::*;
+    use nalgebra::Vector3;
 
     pub mod cylinder;
     pub use cylinder::*;
@@ -61,15 +57,36 @@ pub mod objects {
 
     pub mod sphere;
     use crate::color::Color;
+    use crate::raytracer::Ray;
     pub use sphere::*;
 
-    #[derive(Debug)]
-    pub enum Object {
-        Cube(Cube),
-        Cylinder(Cylinder),
-        FlatPlane(FlatPlane),
-        Sphere(Sphere),
+    // #[derive(Debug)]
+    // pub enum Object {
+    //     Cube(Cube),
+    //     Cylinder(Cylinder),
+    //     FlatPlane(FlatPlane),
+    //     Sphere(Sphere),
+    // }
+
+    /// [Discriminant equation](https://en.wikipedia.org/wiki/Discriminant)
+    ///
+    /// Returns `None` if `b² - 4ac < 0.0`
+    pub fn discriminant(a: f64, b: f64, c: f64) -> Option<f64> {
+        let discriminant = b.powi(2) - 4.0 * a * c;
+        if discriminant >= 0.0 {
+            Some(discriminant)
+        } else {
+            None
+        }
     }
+
+    pub trait Object {
+        fn intersection(&self, ray: &Ray) -> Option<(Vector3<f64>, f64)>;
+        fn normal_at(&self, point: Vector3<f64>) -> Vector3<f64>;
+        fn color(&self) -> Color;
+    }
+
+    pub type Objects = Vec<Box<dyn Object>>;
 
     #[derive(Debug)]
     pub enum Texture {

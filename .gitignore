@@ -14,3 +14,6 @@ Cargo.lock
 *.pdb
 
 .idea
+
+# All PPM files
+*.ppm
