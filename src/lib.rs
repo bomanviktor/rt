@@ -60,14 +60,6 @@ pub mod objects {
     use crate::raytracer::Ray;
     pub use sphere::*;
 
-    // #[derive(Debug)]
-    // pub enum Object {
-    //     Cube(Cube),
-    //     Cylinder(Cylinder),
-    //     FlatPlane(FlatPlane),
-    //     Sphere(Sphere),
-    // }
-
     /// [Discriminant equation](https://en.wikipedia.org/wiki/Discriminant)
     ///
     /// Returns `None` if `b² - 4ac < 0.0`
