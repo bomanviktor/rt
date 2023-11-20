@@ -23,7 +23,11 @@ impl FlatPlane {
 
 impl Object for FlatPlane {
     fn intersection(&self, ray: &Ray) -> Option<(Vector3<f64>, f64)> {
-        let axis = (self.center).normalize();
+        let axis = if self.center.y > ray.origin.y {
+            Vector3::new(0.0, -1.0, 0.0)
+        } else {
+            Vector3::new(0.0, 1.0, 0.0)
+        };
         let t = (self.center - ray.origin).dot(&axis) / ray.direction.dot(&axis);
         if t > 0.0 {
             let hit_point = ray.origin + ray.direction * t;

@@ -1,6 +1,6 @@
 use crate::color::Color;
 use crate::config::Point;
-use crate::objects::{Cylinder, Objects, Sphere};
+use crate::objects::{Cylinder, FlatPlane, Objects, Sphere};
 use nalgebra::Vector3;
 
 pub struct Scene {
@@ -23,6 +23,8 @@ impl Scene {
             Color::new(0, 255, 0),
         );
 
+        let flat_plane = FlatPlane::new(Vector3::new(0.0, 0.0, 0.0), 5.0, Color::new(0, 0, 255));
+
         let objects: Objects = vec![
             Box::new(sphere1),
             Box::new(sphere2),
@@ -31,6 +33,7 @@ impl Scene {
             Box::new(sphere5),
             Box::new(sphere6),
             Box::new(cylinder),
+            Box::new(flat_plane),
         ];
 
         Self {

@@ -8,7 +8,7 @@ fn main() {
     let mut camera = CameraBuilder::new()
         .sample_size(1)
         .position_by_coordinates(Vector3::new(-6.0, -6.0, 5.0))
-        .look_at(Vector3::new(0.0, 0.0, -1.0))
+        .look_at(Vector3::new(0.0, 0.0, 0.0))
         .up_direction_by_coordinates(Vector3::new(0.0, 3.0, 0.0))
         .focal_length(0.5)
         .resolution((1600, 900))
