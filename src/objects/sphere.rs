@@ -29,11 +29,11 @@ impl Object for Sphere {
         let distance_from_sphere_surface =
             ray_to_sphere_center.dot(&ray_to_sphere_center) - self.radius.powi(2);
 
-        if let Some(discriminant) = discriminant(
-            oc_dot_direction,
-            direction_dot_product,
-            distance_from_sphere_surface,
-        ) {
+        let a = direction_dot_product;
+        let b = oc_dot_direction;
+        let c = distance_from_sphere_surface;
+
+        if let Some(discriminant) = discriminant(a, b, c) {
             let intersection_distance =
                 (-oc_dot_direction - discriminant.sqrt()) / (2.0 * direction_dot_product);
             if intersection_distance > 0.0 {

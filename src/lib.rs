@@ -72,7 +72,7 @@ pub mod objects {
     ///
     /// Returns `None` if `b² - 4ac < 0.0`
     pub fn discriminant(a: f64, b: f64, c: f64) -> Option<f64> {
-        let discriminant = a.powi(2) - 4.0 * b * c;
+        let discriminant = b.powi(2) - 4.0 * a * c;
         if discriminant >= 0.0 {
             Some(discriminant)
         } else {

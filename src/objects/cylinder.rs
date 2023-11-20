@@ -45,15 +45,14 @@ impl Object for Cylinder {
         let effective_origin = vec_to_ray - projection;
         let effective_direction = ray.direction - axis * ray.direction.dot(&axis);
 
-        // Name these variables.
         let a = effective_direction.dot(&effective_direction);
         let b = 2.0 * effective_origin.dot(&effective_direction);
-        let c = effective_origin.dot(&effective_origin) - self.radius.powi(2);
+        let c = effective_origin.dot(&effective_origin) - self.radius * self.radius;
 
         let mut valid_intersections = Vec::new();
+
         if let Some(discriminant) = discriminant(a, b, c) {
             let sqrt_discriminant = discriminant.sqrt();
-            // And name t1 and t2
             let t1 = (-b - sqrt_discriminant) / (2.0 * a);
             let t2 = (-b + sqrt_discriminant) / (2.0 * a);
 
@@ -67,13 +66,19 @@ impl Object for Cylinder {
         }
 
         // Check intersection with end caps
-        if let Some(bottom) = self.bottom.intersection(ray) {
-            valid_intersections.push(bottom);
-        }
+        let mut check_cap_intersection = |plane_center: Vector3<f64>| {
+            let t = (plane_center - ray.origin).dot(&axis) / ray.direction.dot(&axis);
+            if t > 0.0 {
+                let hit_point = ray.origin + ray.direction * t;
+                if (hit_point - plane_center).norm() <= self.radius {
+                    valid_intersections.push((hit_point, t));
+                }
+            }
+        };
 
-        if let Some(top) = self.top.intersection(ray) {
-            valid_intersections.push(top);
-        }
+        // Check intersections with both caps
+        check_cap_intersection(bottom);
+        check_cap_intersection(top);
 
         // Find the closest valid intersection
         valid_intersections

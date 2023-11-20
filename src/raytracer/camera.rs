@@ -187,8 +187,11 @@ impl CameraBuilder {
     }
 
     pub fn build(&self) -> Camera {
-        let fov = 2.0 * ((self.sensor_width.unwrap() / (2.0 * self.focal_length.unwrap())).atan());
-        let (width, height) = self.resolution.unwrap();
+        let fov = 2.0
+            * ((self.sensor_width.unwrap_or(DEFAULT_SENSOR_WIDTH)
+                / (2.0 * self.focal_length.unwrap_or(DEFAULT_FOCAL_LENGTH)))
+            .atan());
+        let (width, height) = self.resolution.unwrap_or(DEFAULT_RESOLUTION);
         Camera {
             sample_size: self.sample_size.unwrap_or(DEFAULT_SAMPLE_SIZE),
             position: self.position.unwrap_or(DEFAULT_CAMERA_POSITION),
