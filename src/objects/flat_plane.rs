@@ -1,6 +1,6 @@
 use crate::color::Color;
 use crate::config::Point;
-use crate::objects::Object;
+use crate::objects::{Intersection, Object};
 use crate::raytracer::Ray;
 use nalgebra::Vector3;
 
@@ -22,7 +22,7 @@ impl FlatPlane {
 }
 
 impl Object for FlatPlane {
-    fn intersection(&self, ray: &Ray) -> Option<(Vector3<f64>, f64)> {
+    fn intersection(&self, ray: &Ray) -> Intersection {
         let axis = if self.center.y > ray.origin.y {
             Vector3::new(0.0, -1.0, 0.0)
         } else {
@@ -38,7 +38,7 @@ impl Object for FlatPlane {
         None
     }
 
-    fn normal_at(&self, point: Vector3<f64>) -> Vector3<f64> {
+    fn normal_at(&self, point: Point) -> Vector3<f64> {
         (point - self.center).normalize()
     }
     fn color(&self) -> Color {
