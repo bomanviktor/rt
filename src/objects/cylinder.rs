@@ -1,6 +1,6 @@
 use crate::color::Color;
 use crate::config::Point;
-use crate::objects::{discriminant, FlatPlane, Object};
+use crate::objects::{discriminant, FlatPlane, Intersection, Object};
 use crate::raytracer::Ray;
 use nalgebra::Vector3;
 
@@ -34,7 +34,7 @@ impl Cylinder {
 }
 
 impl Object for Cylinder {
-    fn intersection(&self, ray: &Ray) -> Option<(Vector3<f64>, f64)> {
+    fn intersection(&self, ray: &Ray) -> Intersection {
         let bottom = self.bottom.center;
         let top = self.top.center;
         let axis = (top - bottom).normalize();
@@ -65,20 +65,13 @@ impl Object for Cylinder {
             }
         }
 
-        // Check intersection with end caps
-        let mut check_cap_intersection = |plane_center: Vector3<f64>| {
-            let t = (plane_center - ray.origin).dot(&axis) / ray.direction.dot(&axis);
-            if t > 0.0 {
-                let hit_point = ray.origin + ray.direction * t;
-                if (hit_point - plane_center).norm() <= self.radius {
-                    valid_intersections.push((hit_point, t));
-                }
-            }
-        };
-
         // Check intersections with both caps
-        check_cap_intersection(bottom);
-        check_cap_intersection(top);
+        if let Some(bottom) = self.bottom.intersection(ray) {
+            valid_intersections.push(bottom);
+        }
+        if let Some(top) = self.top.intersection(ray) {
+            valid_intersections.push(top);
+        }
 
         // Find the closest valid intersection
         valid_intersections
@@ -86,15 +79,11 @@ impl Object for Cylinder {
             .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
     }
 
-    fn normal_at(&self, point: Vector3<f64>) -> Vector3<f64> {
-        let top_plane_center =
-            Vector3::new(self.center.x, self.center.y + self.height, self.center.z);
-        let bottom_plane_center = self.center;
-
+    fn normal_at(&self, point: Point) -> Vector3<f64> {
         // Determine if the point is on the top or bottom cap
-        if (point - top_plane_center).norm() <= self.radius {
+        if (point - self.top.center).norm() <= self.radius {
             Vector3::new(0.0, 1.0, 0.0) // Normal for the top cap
-        } else if (point - bottom_plane_center).norm() <= self.radius {
+        } else if (point - self.bottom.center).norm() <= self.radius {
             Vector3::new(0.0, -1.0, 0.0) // Normal for the bottom cap
         } else {
             // Normal for the cylindrical surface

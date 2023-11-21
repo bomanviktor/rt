@@ -57,16 +57,14 @@ pub mod objects {
 
     pub mod sphere;
     use crate::color::Color;
+    use crate::config::Point;
     use crate::raytracer::Ray;
     pub use sphere::*;
 
-    // #[derive(Debug)]
-    // pub enum Object {
-    //     Cube(Cube),
-    //     Cylinder(Cylinder),
-    //     FlatPlane(FlatPlane),
-    //     Sphere(Sphere),
-    // }
+    type Distance = f64;
+
+    /// Type alias for `Option<(Vector3<f64>, f64)>`
+    pub type Intersection = Option<(Point, Distance)>;
 
     /// [Discriminant equation](https://en.wikipedia.org/wiki/Discriminant)
     ///
