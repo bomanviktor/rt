@@ -1,16 +1,19 @@
 use crate::color::Color;
 use crate::config::{Pixels, Point};
-use crate::objects::{Object, Objects};
+use crate::objects::{Object, Objects, Texture};
 use crate::raytracer::{Ray, Resolution};
+use cgmath::{Deg, InnerSpace, Rad};
 use nalgebra::Vector3;
+use rand::prelude::*;
 use std::io::Write;
 
 const DEFAULT_CAMERA_POSITION: Point = Point::new(1.0, 0.5, 0.0);
 const DEFAULT_SAMPLE_SIZE: u16 = 1;
 const DEFAULT_FOCAL_LENGTH: f64 = 0.5;
 const DEFAULT_SENSOR_WIDTH: f64 = 1.0;
-
+const NUM_SECONDARY_RAYS: usize = 3;
 const DEFAULT_UP_DIRECTION: Point = Point::new(0.0, 1.0, 0.0);
+const SMALL_OFFSET: f64 = 0.001;
 
 const DEFAULT_RESOLUTION: Resolution = (1600, 900);
 
@@ -31,31 +34,28 @@ pub struct Camera {
 
 impl Camera {
     pub fn send_rays(&mut self, objects: &Objects) {
-        for row in &self.rays {
+        for row in &mut self.rays {
             let mut pixel_row = Vec::new();
-            for ray in row {
-                let mut closest_intersection: Option<(Vector3<f64>, f64)> = None;
-                let mut closest_object: Option<&Box<dyn Object>> = None;
+            for ray in row.iter_mut() {
+                // Trace the ray through the scene
+                trace_ray(ray, objects, 0);
 
-                for object in objects {
-                    if let Some((hit_point, distance)) = object.intersection(ray) {
-                        if closest_intersection.is_none()
-                            || distance < closest_intersection.unwrap().1
-                        {
-                            closest_intersection = Some((hit_point, distance));
-                            closest_object = Some(object);
-                        }
-                    }
-                }
+                // Check if there are any collisions
+                if !ray.collisions.is_empty() {
+                    // If the ray hit a light source, calculate the average color
+                    let primary_color = ray.collisions.first().cloned().unwrap_or(Color::default());
+                    let secondary_colors = &ray.collisions[1..];
+                    let average_color =
+                        average_colors(primary_color, secondary_colors, ray.hit_light_source);
 
-                if let Some(object) = closest_object {
-                    let hit_point = closest_intersection.unwrap().0;
-                    let normal = object.normal_at(hit_point);
-                    let modified_color = modify_color_based_on_normal(normal, object.color(), ray);
-                    pixel_row.push(modified_color);
+                    pixel_row.push(average_color);
                 } else {
+                    // If there are no collisions, set the pixel to a default color
                     pixel_row.push(Color::default());
                 }
+
+                // Clear the collisions for the next frame
+                ray.collisions.clear();
             }
             self.pixels.push(pixel_row);
         }
@@ -178,6 +178,7 @@ impl CameraBuilder {
                     origin: self.position.unwrap(),
                     direction,
                     collisions: vec![],
+                    hit_light_source: false,
                 });
             }
             rays.push(row);
@@ -215,4 +216,127 @@ fn modify_color_based_on_normal(normal: Vector3<f64>, original_color: Color, ray
         (original_color.g as f64 * dot) as u8,
         (original_color.b as f64 * dot) as u8,
     )
+}
+
+fn generate_new_direction(normal: Vector3<f64>, incoming_direction: Vector3<f64>) -> Vector3<f64> {
+    let mut rng = rand::thread_rng();
+
+    // Create a coordinate system around the normal
+    let w = normal.normalize();
+    let a = if w.x.abs() > 0.9 {
+        Vector3::new(0.0, 1.0, 0.0)
+    } else {
+        Vector3::new(1.0, 0.0, 0.0)
+    };
+    let v = w.cross(&a).normalize();
+    let u = w.cross(&v);
+
+    // Generate random points on a hemisphere
+    let r1: f64 = rng.gen();
+    let r2: f64 = rng.gen();
+    let sin_theta = (1.0 - r2 * r2).sqrt();
+    let phi = 2.0 * std::f64::consts::PI * r1;
+    let x = phi.cos() * sin_theta;
+    let y = phi.sin() * sin_theta;
+    let z = r2.sqrt();
+
+    // Convert to world coordinates
+    u * x + v * y + w * z
+}
+
+fn trace_ray(ray: &mut Ray, objects: &Objects, depth: u32) {
+    // if depth >= 10 {
+    //     return; // Stop if maximum depth is reached
+    // }
+    ////////////////////////////////////////////////////////////////////////////////////
+    // println!(
+    //     "Tracing ray: Origin = {:?}, Direction = {:?}",
+    //     ray.origin, ray.direction
+    // );
+
+    let mut closest_intersection: Option<(Vector3<f64>, f64)> = None;
+    let mut closest_object: Option<&Box<dyn Object>> = None;
+
+    // Check for intersection with objects
+    for object in objects {
+        if let Some((hit_point, distance)) = object.intersection(ray) {
+            if closest_intersection.is_none() || distance < closest_intersection.unwrap().1 {
+                closest_intersection = Some((hit_point, distance));
+                closest_object = Some(object);
+                //collect the color of the object
+                let color = object.color();
+                //collect color based on normal
+                let color = modify_color_based_on_normal(object.normal_at(hit_point), color, ray);
+                //add color to rays collisions
+                ray.collisions.push(color);
+                // Check if the object's texture is Light
+                if matches!(object.texture(), Texture::Light) {
+                    ray.hit_light_source = true;
+                }
+            }
+        }
+    }
+
+    if let Some(object) = closest_object {
+        let first_hit_point = closest_intersection.unwrap().0;
+        let original_direction = ray.direction;
+
+        // Iterate over secondary rays
+        for _ in 0..NUM_SECONDARY_RAYS {
+            if depth + 1 >= 5 {
+                continue; // Limit the depth of secondary rays to 5 bounces
+            }
+
+            let new_direction =
+                generate_new_direction(object.normal_at(first_hit_point), original_direction);
+
+            let mut secondary_ray = Ray {
+                origin: first_hit_point + new_direction * SMALL_OFFSET,
+                direction: new_direction,
+                collisions: Vec::new(),
+                hit_light_source: false,
+            };
+
+            // Recursively trace the secondary ray
+            trace_ray(&mut secondary_ray, objects, depth + 1);
+
+            // Accumulate colors from secondary rays into the original ray's collisions
+            ray.collisions.extend(secondary_ray.collisions);
+            //also set the hit_light_source to true if the secondary ray hit a light source
+            if secondary_ray.hit_light_source {
+                ray.hit_light_source = true;
+            }
+        }
+    }
+}
+
+fn average_colors(
+    primary_color: Color,
+    secondary_colors: &[Color],
+    hit_light_source: bool,
+) -> Color {
+    let primary_weight = 0.8;
+    let secondary_weight = 0.2;
+    let light_source_boost = if hit_light_source { 2.0 } else { 1.0 };
+
+    let mut total_r = (primary_color.r as f64 * primary_weight) as u32;
+    let mut total_g = (primary_color.g as f64 * primary_weight) as u32;
+    let mut total_b = (primary_color.b as f64 * primary_weight) as u32;
+
+    let count = secondary_colors.len() as f64;
+    if count > 0.0 {
+        let secondary_weight_per_color = secondary_weight / count;
+
+        for color in secondary_colors {
+            total_r += (color.r as f64 * secondary_weight_per_color * light_source_boost) as u32;
+            total_g += (color.g as f64 * secondary_weight_per_color * light_source_boost) as u32;
+            total_b += (color.b as f64 * secondary_weight_per_color * light_source_boost) as u32;
+        }
+    }
+
+    Color {
+        r: (total_r as f64 / (primary_weight + secondary_weight)) as u8,
+        g: (total_g as f64 / (primary_weight + secondary_weight)) as u8,
+        b: (total_b as f64 / (primary_weight + secondary_weight)) as u8,
+    }
 }

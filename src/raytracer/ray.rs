@@ -2,11 +2,12 @@ use crate::color::Color;
 use crate::config::Point;
 use nalgebra::Vector3;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Ray {
     pub origin: Point,
     pub direction: Vector3<f64>,
     pub collisions: Vec<Color>,
+    pub hit_light_source: bool,
 }
 
 impl Ray {
@@ -15,6 +16,7 @@ impl Ray {
             origin,
             direction,
             collisions: Vec::new(),
+            hit_light_source: false,
         }
     }
 }

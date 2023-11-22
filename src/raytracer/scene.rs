@@ -1,6 +1,6 @@
 use crate::color::Color;
 use crate::config::Point;
-use crate::objects::{Cube, Cylinder, FlatPlane, Objects, Sphere};
+use crate::objects::{Cube, Cylinder, FlatPlane, Objects, Sphere, Texture::*};
 use nalgebra::Vector3;
 
 pub struct Scene {
@@ -10,7 +10,12 @@ pub struct Scene {
 
 impl Scene {
     pub fn init(_scene_data: &str) -> Self {
-        let sphere1 = Sphere::new(Vector3::new(0.0, -1.0, -5.0), 1.0, Color::new(255, 0, 0));
+        let sphere1 = Sphere::new(
+            Vector3::new(0.0, -1.0, -5.0),
+            1.0,
+            Color::new(255, 0, 0),
+            Diffusive,
+        );
         // let sphere2 = Sphere::new(Vector3::new(2.0, 0.0, -5.0), 1.2, Color::new(255, 0, 0));
         // let sphere3 = Sphere::new(Vector3::new(-2.0, 0.0, -5.0), 1.2, Color::new(255, 0, 0));
         // let sphere4 = Sphere::new(Vector3::new(0.0, -2.0, -5.0), 1.0, Color::new(255, 0, 0));
@@ -21,10 +26,28 @@ impl Scene {
             1.0,
             4.0,
             Color::new(0, 255, 0),
+            Diffusive,
         );
 
-        let flat_plane = FlatPlane::new(Vector3::new(0.0, 0.0, -5.0), 5.0, Color::new(0, 0, 255));
-        let cube = Cube::new(Vector3::new(-2.0, -1.0, -5.0), 1.0, Color::new(0, 0, 255));
+        let flat_plane = FlatPlane::new(
+            Vector3::new(0.0, 0.0, -5.0),
+            5.0,
+            Color::new(0, 0, 255),
+            Diffusive,
+        );
+        let flat_plane2 = FlatPlane::new(
+            Vector3::new(-4.0, -6.0, -5.0),
+            3.0,
+            Color::new(255, 255, 255),
+            Light,
+        );
+
+        let cube = Cube::new(
+            Vector3::new(-2.0, -1.0, -5.0),
+            1.0,
+            Color::new(0, 0, 255),
+            Diffusive,
+        );
 
         let objects: Objects = vec![
             Box::new(sphere1),
@@ -36,6 +59,7 @@ impl Scene {
             Box::new(cylinder),
             Box::new(flat_plane),
             Box::new(cube),
+            Box::new(flat_plane2),
         ];
 
         Self {

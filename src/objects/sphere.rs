@@ -4,19 +4,23 @@ use crate::objects::{discriminant, Object};
 use crate::raytracer::Ray;
 use nalgebra::Vector3;
 
+use super::Texture;
+
 #[derive(Debug)]
 pub struct Sphere {
     pub center: Point,
     pub radius: f64,
     pub color: Color,
+    pub texture: Texture,
 }
 
 impl Sphere {
-    pub fn new(center: Point, radius: f64, color: Color) -> Self {
+    pub fn new(center: Point, radius: f64, color: Color, texture: Texture) -> Self {
         Self {
             center,
             radius,
             color,
+            texture,
         }
     }
 }
@@ -50,5 +54,9 @@ impl Object for Sphere {
 
     fn color(&self) -> Color {
         self.color.clone()
+    }
+
+    fn texture(&self) -> Texture {
+        self.texture.clone()
     }
 }

@@ -7,7 +7,7 @@ pub mod config {
 }
 
 pub mod color {
-    #[derive(Debug, Clone)]
+    #[derive(Debug, Clone, Copy)]
     pub struct Color {
         pub r: u8,
         pub g: u8,
@@ -76,16 +76,16 @@ pub mod objects {
         fn intersection(&self, ray: &Ray) -> Option<(Vector3<f64>, f64)>;
         fn normal_at(&self, point: Vector3<f64>) -> Vector3<f64>;
         fn color(&self) -> Color;
+        fn texture(&self) -> Texture;
     }
 
     pub type Objects = Vec<Box<dyn Object>>;
 
-    #[derive(Debug)]
+    #[derive(Debug, Clone, Copy)]
     pub enum Texture {
-        Smooth(Color),
-        Metal,
-        Wood,
-        Glass,
+        Diffusive,
         Reflective,
+        Glossy,
+        Light,
     }
 }

@@ -4,6 +4,8 @@ use crate::objects::{discriminant, FlatPlane, Object};
 use crate::raytracer::Ray;
 use nalgebra::Vector3;
 
+use super::Texture;
+
 #[derive(Debug)]
 pub struct Cylinder {
     pub center: Point,
@@ -12,15 +14,17 @@ pub struct Cylinder {
     pub bottom: FlatPlane,
     pub top: FlatPlane,
     pub color: Color,
+    pub texture: Texture,
 }
 
 impl Cylinder {
-    pub fn new(center: Point, radius: f64, height: f64, color: Color) -> Self {
-        let bottom = FlatPlane::new(center, radius, color.clone());
+    pub fn new(center: Point, radius: f64, height: f64, color: Color, texture: Texture) -> Self {
+        let bottom = FlatPlane::new(center, radius, color.clone(), texture.clone());
         let top = FlatPlane::new(
             Vector3::new(center.x, center.y + height, center.z),
             radius,
             color.clone(),
+            texture,
         );
         Self {
             center,
@@ -29,6 +33,7 @@ impl Cylinder {
             bottom,
             top,
             color,
+            texture: texture.clone(),
         }
     }
 }
@@ -94,5 +99,9 @@ impl Object for Cylinder {
     }
     fn color(&self) -> Color {
         self.color.clone()
+    }
+
+    fn texture(&self) -> Texture {
+        self.texture.clone()
     }
 }

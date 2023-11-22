@@ -4,19 +4,23 @@ use crate::objects::Object;
 use crate::raytracer::Ray;
 use nalgebra::Vector3;
 
+use super::Texture;
+
 #[derive(Debug)]
 pub struct FlatPlane {
     pub center: Point,
     pub radius: f64,
     pub color: Color,
+    pub texture: Texture,
 }
 
 impl FlatPlane {
-    pub fn new(center: Point, radius: f64, color: Color) -> Self {
+    pub fn new(center: Point, radius: f64, color: Color, texture: Texture) -> Self {
         Self {
             center,
             radius,
             color,
+            texture,
         }
     }
 }
@@ -43,5 +47,8 @@ impl Object for FlatPlane {
     }
     fn color(&self) -> Color {
         self.color.clone()
+    }
+    fn texture(&self) -> Texture {
+        self.texture.clone()
     }
 }

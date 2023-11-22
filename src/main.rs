@@ -1,5 +1,5 @@
 use nalgebra::Vector3;
-use rt::raytracer::{CameraBuilder, Scene};
+use rt::raytracer::{ray, CameraBuilder, Scene};
 
 const OUTPUT_PATH: &str = "output.ppm";
 
@@ -20,5 +20,20 @@ fn main() {
 
     // Perform ray tracing
     camera.send_rays(&scene.objects);
+
+    // Loop through each vector of rays in the camera
+    for ray_vector in &camera.rays {
+        // Loop through each ray in the vector
+        for ray in ray_vector {
+            // Check if the collision vector is not empty
+            if !ray.collisions.is_empty() {
+                // If it's not empty, print each collision color
+                for collision in &ray.collisions {
+                    println!("Collision color: {:?}", collision);
+                }
+            }
+        }
+    }
+
     camera.write_to_ppm(OUTPUT_PATH);
 }
