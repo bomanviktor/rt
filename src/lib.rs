@@ -31,6 +31,11 @@ pub mod color {
     }
 }
 
+pub mod gui {
+    pub mod interface;
+    pub use interface::*;
+}
+
 pub mod raytracer {
     pub mod camera;
     pub use camera::*;
