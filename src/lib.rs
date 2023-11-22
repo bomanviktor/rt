@@ -18,15 +18,39 @@ pub mod color {
         pub fn new(r: u8, g: u8, b: u8) -> Self {
             Self { r, g, b }
         }
+        pub fn black() -> Self {
+            Self { r: 0, g: 0, b: 0 }
+        }
+
+        pub fn red() -> Self {
+            Self { r: 255, g: 0, b: 0 }
+        }
+
+        pub fn green() -> Self {
+            Self { r: 0, g: 255, b: 0 }
+        }
+        pub fn blue() -> Self {
+            Self { r: 0, g: 0, b: 255 }
+        }
+
+        pub fn yellow() -> Self {
+            Self {
+                r: 255,
+                g: 255,
+                b: 0,
+            }
+        }
+
+        pub fn light_yellow() -> Self {
+            Self {
+                r: 255, g: 255, b: 224
+            }
+        }
     }
 
     impl Default for Color {
         fn default() -> Self {
-            Self {
-                r: 169,
-                g: 169,
-                b: 169,
-            }
+            Color::black()
         }
     }
 }
