@@ -1,4 +1,4 @@
-use crate::color::{self, Color};
+use crate::color::Color;
 use crate::config::Point;
 use crate::objects::{Object, Texture};
 use crate::raytracer::Ray;
@@ -55,17 +55,11 @@ impl Object for Cube {
                 {
                     // Check if point is within cube bounds
                     let local_point = point - self.center_point;
-                    if local_point.iter().enumerate().all(|(i, &coord)| {
-                        if i == axis {
-                            coord.abs() <= half_size
-                        } else {
-                            coord.abs() <= half_size
-                        }
-                    }) {
-                        if closest_intersection.is_none() || closest_intersection.unwrap().1 > dist
-                        {
-                            closest_intersection = Some((point, dist));
-                        }
+                    if local_point.iter().all(|&coord| coord.abs() <= half_size)
+                        && (closest_intersection.is_none()
+                            || closest_intersection.unwrap().1 > dist)
+                    {
+                        closest_intersection = Some((point, dist));
                     }
                 }
             }

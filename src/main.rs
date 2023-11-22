@@ -1,5 +1,5 @@
 use nalgebra::Vector3;
-use rt::raytracer::{ray, CameraBuilder, Scene};
+use rt::raytracer::{CameraBuilder, Scene};
 
 const OUTPUT_PATH: &str = "output.ppm";
 
