@@ -8,7 +8,7 @@ use nalgebra::Vector3;
 pub struct Cube {
     pub center_point: Point,
     pub size: f64,
-    pub color: color::Color,
+    pub color: Color,
     pub texture: Texture,
 }
 
@@ -93,9 +93,9 @@ impl Object for Cube {
     }
 
     fn color(&self) -> Color {
-        self.color.clone()
+        self.color
     }
     fn texture(&self) -> Texture {
-        self.texture.clone()
+        self.texture
     }
 }

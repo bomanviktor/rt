@@ -43,7 +43,9 @@ pub mod color {
 
         pub fn light_yellow() -> Self {
             Self {
-                r: 255, g: 255, b: 224
+                r: 255,
+                g: 255,
+                b: 224,
             }
         }
     }

@@ -46,9 +46,9 @@ impl Object for FlatPlane {
         (point - self.center).normalize()
     }
     fn color(&self) -> Color {
-        self.color.clone()
+        self.color
     }
     fn texture(&self) -> Texture {
-        self.texture.clone()
+        self.texture
     }
 }

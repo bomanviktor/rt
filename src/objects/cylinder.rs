@@ -19,11 +19,11 @@ pub struct Cylinder {
 
 impl Cylinder {
     pub fn new(center: Point, radius: f64, height: f64, color: Color, texture: Texture) -> Self {
-        let bottom = FlatPlane::new(center, radius, color.clone(), texture.clone());
+        let bottom = FlatPlane::new(center, radius, color, texture);
         let top = FlatPlane::new(
             Vector3::new(center.x, center.y + height, center.z),
             radius,
-            color.clone(),
+            color,
             texture,
         );
         Self {
@@ -33,7 +33,7 @@ impl Cylinder {
             bottom,
             top,
             color,
-            texture: texture.clone(),
+            texture,
         }
     }
 }
@@ -98,10 +98,10 @@ impl Object for Cylinder {
         }
     }
     fn color(&self) -> Color {
-        self.color.clone()
+        self.color
     }
 
     fn texture(&self) -> Texture {
-        self.texture.clone()
+        self.texture
     }
 }
