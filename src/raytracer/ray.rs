@@ -7,8 +7,6 @@ use nalgebra::Vector3;
 use rand::Rng;
 
 const NUM_SECONDARY_RAYS: usize = 5;
-const SMALL_OFFSET: f64 = 0.001;
-
 #[derive(Debug, Clone)]
 pub struct Ray {
     pub origin: Point,
@@ -28,15 +26,9 @@ impl Ray {
     }
 
     pub fn trace(&mut self, scene: &Scene, depth: u32) {
-        // if depth >= 10 {
-        //     return; // Stop if maximum depth is reached
-        // }
-        ////////////////////////////////////////////////////////////////////////////////////
-        // println!(
-        //     "Tracing ray: Origin = {:?}, Direction = {:?}",
-        //     ray.origin, ray.direction
-        // );
-
+        if depth >= 5 {
+            return; // Stop if maximum depth is reached
+        }
         let mut closest_intersection: Option<(Vector3<f64>, f64)> = None;
         let mut closest_object: Option<&Box<dyn Object>> = None;
 
@@ -68,15 +60,11 @@ impl Ray {
 
             // Iterate over secondary rays
             for _ in 0..NUM_SECONDARY_RAYS {
-                if depth + 1 >= 5 {
-                    continue; // Limit the depth of secondary rays to 5 bounces
-                }
-
                 let new_direction =
                     self.generate_new_direction(object.normal_at(self, first_hit_point));
 
                 let mut secondary_ray = Ray {
-                    origin: first_hit_point + new_direction * SMALL_OFFSET,
+                    origin: first_hit_point * f64::EPSILON,
                     direction: new_direction,
                     collisions: Vec::new(),
                     hit_light_source: false,
@@ -134,6 +122,7 @@ impl Ray {
         }
     }
 
+    #[allow(dead_code)]
     fn reflect(&self, normal: Vector3<f64>) -> Vector3<f64> {
         self.direction - 2.0 * self.direction.dot(&normal) * normal
     }
@@ -144,9 +133,9 @@ impl Ray {
         // Create a coordinate system around the normal
         let w = normal.normalize();
         let a = if w.x.abs() > 0.9 {
-            Vector3::new(0.0, 1.0, 0.0)
+            Vector3::new(0.0, -1.0, 0.0)
         } else {
-            Vector3::new(1.0, 0.0, 0.0)
+            Vector3::new(-1.0, 0.0, 0.0)
         };
         let v = w.cross(&a).normalize();
         let u = w.cross(&v);
@@ -161,7 +150,6 @@ impl Ray {
         let z = r2.sqrt();
 
         // Convert to world coordinates
-        let new_dir = u * x + v * y + w * z;
-        new_dir * new_dir.dotc(&self.reflect(normal))
+        u * x + v * y + w * z
     }
 }
