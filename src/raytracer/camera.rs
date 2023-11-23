@@ -61,10 +61,22 @@ impl Camera {
         writeln!(file, "P3").unwrap();
         writeln!(file, "{} {}", self.pixels[0].len(), self.pixels.len()).unwrap();
         writeln!(file, "255").unwrap();
-        for row in &self.pixels {
-            for pixel in row {
-                writeln!(file, "{} {} {}", pixel.r, pixel.g, pixel.b).unwrap();
-            }
+
+        // Prepare pixel data strings in parallel
+        let pixel_data: Vec<String> = self
+            .pixels
+            .par_iter()
+            .map(|row| {
+                row.iter()
+                    .map(|pixel| format!("{} {} {}", pixel.r, pixel.g, pixel.b))
+                    .collect::<Vec<String>>()
+                    .join(" ")
+            })
+            .collect();
+
+        // Write the prepared pixel data to the file
+        for row in pixel_data {
+            writeln!(file, "{}", row).unwrap();
         }
     }
 }

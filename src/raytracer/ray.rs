@@ -8,7 +8,7 @@ use crate::raytracer::Scene;
 use nalgebra::Vector3;
 use rand::Rng;
 
-const NUM_SECONDARY_RAYS: usize = 50;
+const NUM_SECONDARY_RAYS: usize = 15;
 #[derive(Debug, Clone)]
 pub struct Ray {
     pub origin: Point,
