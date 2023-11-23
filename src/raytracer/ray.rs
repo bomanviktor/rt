@@ -8,7 +8,7 @@ use crate::raytracer::Scene;
 use nalgebra::Vector3;
 use rand::Rng;
 
-const NUM_SECONDARY_RAYS: usize = 5;
+const NUM_SECONDARY_RAYS: usize = 50;
 #[derive(Debug, Clone)]
 pub struct Ray {
     pub origin: Point,
@@ -28,7 +28,8 @@ impl Ray {
     }
 
     pub fn trace(&mut self, scene: &Scene, depth: u32) {
-        if depth >= 5 {
+        let new_rays = NUM_SECONDARY_RAYS / 2_u32.pow(depth) as usize;
+        if depth >= 10 || new_rays == 0 {
             return; // Stop if maximum depth is reached
         }
         let mut closest_intersection: Option<(Vector3<f64>, f64)> = None;
@@ -61,7 +62,7 @@ impl Ray {
             let first_hit_point = closest_intersection.unwrap().0;
 
             // Iterate over secondary rays
-            for _ in 0..NUM_SECONDARY_RAYS {
+            for _ in 0..new_rays {
                 let new_direction =
                     self.generate_new_direction(object.normal_at(self, first_hit_point));
 
