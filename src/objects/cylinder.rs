@@ -1,6 +1,6 @@
 use crate::color::Color;
 use crate::config::Point;
-use crate::objects::{discriminant, FlatPlane, Object};
+use crate::objects::{discriminant, FlatPlane, Intersection, Object};
 use crate::raytracer::Ray;
 use nalgebra::Vector3;
 
@@ -39,7 +39,7 @@ impl Cylinder {
 }
 
 impl Object for Cylinder {
-    fn intersection(&self, ray: &Ray) -> Option<(Vector3<f64>, f64)> {
+    fn intersection(&self, ray: &Ray) -> Intersection {
         let bottom = self.bottom.center;
         let top = self.top.center;
         let axis = (top - bottom).normalize();
@@ -84,7 +84,7 @@ impl Object for Cylinder {
             .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
     }
 
-    fn normal_at(&self, point: Vector3<f64>) -> Vector3<f64> {
+    fn normal_at(&self, _ray: &Ray, point: Point) -> Vector3<f64> {
         // Determine if the point is on the top or bottom cap
         if (point - self.top.center).norm() <= self.radius {
             Vector3::new(0.0, 1.0, 0.0) // Normal for the top cap

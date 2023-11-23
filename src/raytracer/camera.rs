@@ -1,7 +1,6 @@
 use crate::color::Color;
 use crate::config::{Pixels, Point};
-use crate::objects::Objects;
-use crate::raytracer::{Ray, Resolution};
+use crate::raytracer::{Ray, Resolution, Scene};
 use nalgebra::Vector3;
 use std::io::Write;
 
@@ -30,13 +29,15 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn send_rays(&mut self, objects: &Objects) {
+    pub fn send_rays(&mut self, scene: &Scene) {
         for row in &mut self.rays {
             let mut pixel_row = Vec::new();
             for ray in row.iter_mut() {
-                ray.trace(objects, 0);
+                ray.trace(scene, 0);
 
-                if ray.collisions.is_empty() {
+                // Take out !ray.hit_light_source to render based on the normal vector.
+                // Leave it in to render based on ray-tracing.
+                if !ray.hit_light_source || ray.collisions.is_empty() {
                     pixel_row.push(Color::default());
                 } else {
                     pixel_row.push(ray.average_color())

@@ -22,13 +22,23 @@ pub mod color {
             Self { r: 0, g: 0, b: 0 }
         }
 
+        pub fn white() -> Self {
+            Self {
+                r: 255,
+                g: 255,
+                b: 255,
+            }
+        }
+
+        /// #### r: 255, g: 0, b: 0
         pub fn red() -> Self {
             Self { r: 255, g: 0, b: 0 }
         }
-
+        /// #### r: 0, g: 255, b: 0
         pub fn green() -> Self {
             Self { r: 0, g: 255, b: 0 }
         }
+        /// #### r: 0, g: 0, b: 255
         pub fn blue() -> Self {
             Self { r: 0, g: 0, b: 255 }
         }
@@ -83,6 +93,7 @@ pub mod objects {
 
     pub mod sphere;
     use crate::color::Color;
+    use crate::config::Point;
     use crate::raytracer::Ray;
     pub use sphere::*;
 
@@ -99,13 +110,17 @@ pub mod objects {
     }
 
     pub trait Object {
-        fn intersection(&self, ray: &Ray) -> Option<(Vector3<f64>, f64)>;
-        fn normal_at(&self, point: Vector3<f64>) -> Vector3<f64>;
+        fn intersection(&self, ray: &Ray) -> Intersection;
+        fn normal_at(&self, ray: &Ray, point: Vector3<f64>) -> Vector3<f64>;
         fn color(&self) -> Color;
         fn texture(&self) -> Texture;
     }
 
     pub type Objects = Vec<Box<dyn Object>>;
+
+    pub type Distance = f64;
+    /// Type alias for `Option<(Vector3<f64>, f64)>`
+    pub type Intersection = Option<(Point, Distance)>;
 
     #[derive(Debug, Clone, Copy)]
     pub enum Texture {

@@ -1,21 +1,21 @@
 use crate::color::Color;
 use crate::config::Point;
-use crate::objects::{Object, Texture};
+use crate::objects::{Intersection, Object, Texture};
 use crate::raytracer::Ray;
 use nalgebra::Vector3;
 
 #[derive(Debug)]
 pub struct Cube {
-    pub center_point: Point,
+    pub center: Point,
     pub size: f64,
     pub color: Color,
     pub texture: Texture,
 }
 
 impl Cube {
-    pub fn new(center_point: Point, size: f64, color: Color, texture: Texture) -> Self {
+    pub fn new(center: Point, size: f64, color: Color, texture: Texture) -> Self {
         Self {
-            center_point,
+            center,
             size,
             color,
             texture,
@@ -25,9 +25,9 @@ impl Cube {
     fn check_plane_intersection(
         &self,
         ray: &Ray,
-        plane_center: Vector3<f64>,
+        plane_center: Point,
         normal: Vector3<f64>,
-    ) -> Option<(Vector3<f64>, f64)> {
+    ) -> Intersection {
         let denom = normal.dot(&ray.direction);
         if denom.abs() > 1e-6 {
             let v = plane_center - ray.origin;
@@ -41,43 +41,46 @@ impl Cube {
 }
 
 impl Object for Cube {
-    fn intersection(&self, ray: &Ray) -> Option<(Vector3<f64>, f64)> {
+    fn intersection(&self, ray: &Ray) -> Intersection {
+        let mut closest_intersection: Intersection = None;
         let half_size = self.size / 2.0;
-        let mut closest_intersection: Option<(Vector3<f64>, f64)> = None;
+        let (x, y, z) = (0, 1, 2);
 
-        for &axis in &[0, 1, 2] {
-            for &sign in &[-1.0, 1.0] {
+        for axis in [x, y, z] {
+            for sign in [-1.0, 1.0] {
                 let mut normal = Vector3::zeros();
                 normal[axis] = sign;
-                let face_center = self.center_point + half_size * normal;
+                let face_center = self.center + half_size * normal;
 
                 if let Some((point, dist)) = self.check_plane_intersection(ray, face_center, normal)
                 {
                     // Check if point is within cube bounds
-                    let local_point = point - self.center_point;
-                    if local_point.iter().all(|&coord| coord.abs() <= half_size)
+                    let local_point = point - self.center;
+                    if local_point
+                        .iter()
+                        .all(|&coord| coord.abs() <= half_size + f64::EPSILON) //small offset to handle float errors
                         && (closest_intersection.is_none()
-                            || closest_intersection.unwrap().1 > dist)
+                        || closest_intersection.unwrap().1 > dist)
                     {
                         closest_intersection = Some((point, dist));
                     }
                 }
             }
         }
-
         closest_intersection
     }
 
-    fn normal_at(&self, point: Vector3<f64>) -> Vector3<f64> {
+    fn normal_at(&self, _ray: &Ray, point: Point) -> Vector3<f64> {
         // Assuming the cube is axis-aligned, the normal can be derived from the point's closest axis
-        let local_point = point - self.center_point;
+        let local_point = point - self.center;
         let mut max_axis = 0;
-        let mut max_value = local_point[0].abs();
+        let mut max_value = 0.0;
+        let (x, y, z) = (0, 1, 2);
 
-        for i in 1..3 {
-            if local_point[i].abs() > max_value {
-                max_axis = i;
-                max_value = local_point[i].abs();
+        for axis in [x, y, z] {
+            if local_point[axis].abs() > max_value {
+                max_axis = axis;
+                max_value = local_point[axis].abs();
             }
         }
 
@@ -86,10 +89,11 @@ impl Object for Cube {
         normal
     }
 
-    fn color(&self) -> Color {
-        self.color
-    }
     fn texture(&self) -> Texture {
         self.texture
+    }
+
+    fn color(&self) -> Color {
+        self.color
     }
 }

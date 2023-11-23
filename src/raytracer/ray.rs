@@ -1,11 +1,12 @@
 use crate::color::Color;
 use crate::config::Point;
+use crate::objects::Object;
 use crate::objects::Texture;
-use crate::objects::{Object, Objects};
+use crate::raytracer::Scene;
 use nalgebra::Vector3;
 use rand::Rng;
 
-const NUM_SECONDARY_RAYS: usize = 3;
+const NUM_SECONDARY_RAYS: usize = 5;
 const SMALL_OFFSET: f64 = 0.001;
 
 #[derive(Debug, Clone)]
@@ -26,7 +27,7 @@ impl Ray {
         }
     }
 
-    pub fn trace(&mut self, objects: &Objects, depth: u32) {
+    pub fn trace(&mut self, scene: &Scene, depth: u32) {
         // if depth >= 10 {
         //     return; // Stop if maximum depth is reached
         // }
@@ -40,21 +41,23 @@ impl Ray {
         let mut closest_object: Option<&Box<dyn Object>> = None;
 
         // Check for intersection with objects
-        for object in objects {
+        for object in &scene.objects {
             if let Some((hit_point, distance)) = object.intersection(self) {
                 if closest_intersection.is_none() || distance < closest_intersection.unwrap().1 {
                     closest_intersection = Some((hit_point, distance));
                     closest_object = Some(object);
 
-                    //collect color based on normal
-                    let color = object.color();
-                    let color =
-                        self.modify_color_based_on_normal(object.normal_at(hit_point), color);
-                    //add color to rays collisions
-                    self.collisions.push(color);
+                    let mut color = object.color();
+
                     // Check if the object's texture is Light
                     if matches!(object.texture(), Texture::Light) {
                         self.hit_light_source = true;
+                        self.collisions.push(color);
+                        return;
+                    } else {
+                        color = self
+                            .modify_color_based_on_normal(object.normal_at(self, hit_point), color);
+                        self.collisions.push(color);
                     }
                 }
             }
@@ -69,7 +72,8 @@ impl Ray {
                     continue; // Limit the depth of secondary rays to 5 bounces
                 }
 
-                let new_direction = self.generate_new_direction(object.normal_at(first_hit_point));
+                let new_direction =
+                    self.generate_new_direction(object.normal_at(self, first_hit_point));
 
                 let mut secondary_ray = Ray {
                     origin: first_hit_point + new_direction * SMALL_OFFSET,
@@ -79,7 +83,7 @@ impl Ray {
                 };
 
                 // Recursively trace the secondary ray
-                secondary_ray.trace(objects, depth + 1);
+                secondary_ray.trace(scene, depth + 1);
                 // Accumulate colors from secondary rays into the original ray's collisions
                 // also set the hit_light_source to true if the secondary ray hit a light source
                 if secondary_ray.hit_light_source {
@@ -130,6 +134,10 @@ impl Ray {
         }
     }
 
+    fn reflect(&self, normal: Vector3<f64>) -> Vector3<f64> {
+        self.direction - 2.0 * self.direction.dot(&normal) * normal
+    }
+
     fn generate_new_direction(&self, normal: Vector3<f64>) -> Vector3<f64> {
         let mut rng = rand::thread_rng();
 
@@ -153,6 +161,7 @@ impl Ray {
         let z = r2.sqrt();
 
         // Convert to world coordinates
-        u * x + v * y + w * z
+        let new_dir = u * x + v * y + w * z;
+        new_dir * new_dir.dotc(&self.reflect(normal))
     }
 }
