@@ -58,7 +58,7 @@ impl Object for Cube {
                     let local_point = point - self.center;
                     if local_point
                         .iter()
-                        .all(|&coord| coord.abs() <= half_size + f64::EPSILON) //small offset to handle float errors
+                        .all(|&coord| coord.abs() <= half_size) //small offset to handle float errors
                         && (closest_intersection.is_none()
                         || closest_intersection.unwrap().1 > dist)
                     {
@@ -78,7 +78,7 @@ impl Object for Cube {
         let (x, y, z) = (0, 1, 2);
 
         for axis in [x, y, z] {
-            if local_point[axis].abs() > max_value {
+            if local_point[axis].abs() < max_value {
                 max_axis = axis;
                 max_value = local_point[axis].abs();
             }
@@ -89,11 +89,11 @@ impl Object for Cube {
         normal
     }
 
-    fn texture(&self) -> Texture {
-        self.texture
-    }
-
     fn color(&self) -> Color {
         self.color
+    }
+
+    fn texture(&self) -> Texture {
+        self.texture
     }
 }

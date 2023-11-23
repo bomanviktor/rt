@@ -149,7 +149,7 @@ impl CameraBuilder {
             .cross(&view_direction)
             .normalize();
         let up_vector = view_direction.cross(&right_vector);
-        let (width, height) = self.resolution.unwrap();
+        let (width, height) = self.resolution.unwrap_or(DEFAULT_RESOLUTION);
 
         // Convert pixel coordinates to normalized world coordinates
         let normalized_x = (pixel_x as f64) / (width as f64) - 0.5;
@@ -163,7 +163,7 @@ impl CameraBuilder {
 
     pub fn map_ray_directions(&self) -> Vec<Vec<Ray>> {
         let mut rays = Vec::new();
-        let (width, height) = self.resolution.unwrap();
+        let (width, height) = self.resolution.unwrap_or(DEFAULT_RESOLUTION);
 
         for y in 0..height {
             let mut row = Vec::new();
