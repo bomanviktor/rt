@@ -29,12 +29,8 @@ impl Scene {
 
         let flat_plane =
             FlatPlane::new(Vector3::new(0.0, 0.0, -5.0), 5.0, Color::blue(), Diffusive);
-        let light = Sphere::new(
-            Vector3::new(-7.0, -6.0, 10.0),
-            2.0,
-            Color::light_yellow(),
-            Light,
-        );
+
+        let light = Sphere::new(Vector3::new(-7.0, -6.0, -10.0), 2.0, Color::white(), Light);
 
         let cube = Cube::new(
             Vector3::new(-2.0, -1.0, -5.0),

@@ -2,13 +2,14 @@ use std::sync::Arc;
 
 use crate::color::Color;
 use crate::config::Point;
-use crate::objects::Object;
 use crate::objects::Texture;
+use crate::objects::{Intersection, Object};
 use crate::raytracer::Scene;
 use nalgebra::Vector3;
 use rand::Rng;
 
-const NUM_SECONDARY_RAYS: usize = 15;
+const MAX_DEPTH: u8 = 5;
+const NUM_SECONDARY_RAYS: usize = 20;
 #[derive(Debug, Clone)]
 pub struct Ray {
     pub origin: Point,
@@ -27,70 +28,103 @@ impl Ray {
         }
     }
 
-    pub fn trace(&mut self, scene: &Scene, depth: u32) {
-        let new_rays = NUM_SECONDARY_RAYS / 2_u32.pow(depth) as usize;
-        if depth >= 10 || new_rays == 0 {
+    pub fn trace(&mut self, scene: &Scene, depth: u8) {
+        let new_rays = NUM_SECONDARY_RAYS / 2_u8.pow(depth as u32) as usize;
+        if depth >= MAX_DEPTH || new_rays == 0 {
             return; // Stop if maximum depth is reached
         }
-        let mut closest_intersection: Option<(Vector3<f64>, f64)> = None;
-        let mut closest_object: Option<&Arc<dyn Object>> = None;
+        let mut intersection: Intersection = None;
 
         // Check for intersection with objects
         for object in &scene.objects {
             if let Some((hit_point, distance)) = object.intersection(self) {
-                if closest_intersection.is_none() || distance < closest_intersection.unwrap().1 {
-                    closest_intersection = Some((hit_point, distance));
-                    closest_object = Some(object);
-
-                    let mut color = object.color();
-
-                    // Check if the object's texture is Light
-                    if matches!(object.texture(), Texture::Light) {
-                        self.hit_light_source = true;
-                        self.collisions.push(color);
-                        return;
-                    } else {
-                        color = self
-                            .modify_color_based_on_normal(object.normal_at(self, hit_point), color);
-                        self.collisions.push(color);
+                if intersection.is_none() || distance < intersection.unwrap().1 {
+                    intersection = Some((hit_point, distance));
+                    self.collisions.push(object.color());
+                    match object.texture() {
+                        Texture::Diffusive => {
+                            self.diffuse(intersection, object.clone(), new_rays, scene, depth);
+                        }
+                        Texture::Glossy => {
+                            unimplemented!()
+                            // self.glossy()
+                        }
+                        Texture::Reflective => {
+                            unimplemented!()
+                            // self.reflective()
+                        }
+                        Texture::Light => {
+                            self.hit_light_source = true;
+                        }
                     }
-                }
-            }
-        }
 
-        if let Some(object) = closest_object {
-            let first_hit_point = closest_intersection.unwrap().0;
-
-            // Iterate over secondary rays
-            for _ in 0..new_rays {
-                let new_direction =
-                    self.generate_new_direction(object.normal_at(self, first_hit_point));
-
-                let mut secondary_ray = Ray {
-                    origin: first_hit_point * f64::EPSILON,
-                    direction: new_direction,
-                    collisions: Vec::new(),
-                    hit_light_source: false,
-                };
-
-                // Recursively trace the secondary ray
-                secondary_ray.trace(scene, depth + 1);
-                // Accumulate colors from secondary rays into the original ray's collisions
-                // also set the hit_light_source to true if the secondary ray hit a light source
-                if secondary_ray.hit_light_source {
-                    self.collisions.extend(secondary_ray.collisions);
-                    self.hit_light_source = true;
                 }
             }
         }
     }
-    fn modify_color_based_on_normal(&self, normal: Vector3<f64>, original_color: Color) -> Color {
-        let dot = normal.dot(&self.direction.normalize()).abs();
-        Color::new(
-            (original_color.r as f64 * dot) as u8,
-            (original_color.g as f64 * dot) as u8,
-            (original_color.b as f64 * dot) as u8,
-        )
+
+    fn diffuse(
+        &mut self,
+        intersection: Intersection,
+        object: Arc<dyn Object>,
+        new_rays: usize,
+        scene: &Scene,
+        depth: u8,
+    ) {
+        let first_hit_point = intersection.unwrap().0;
+
+        // Iterate over secondary rays
+        for _ in 0..new_rays {
+            let new_direction = self.diffuse_direction(object.normal_at(self, first_hit_point));
+
+            let mut secondary_ray = Ray {
+                origin: first_hit_point * f64::EPSILON,
+                direction: new_direction,
+                collisions: self.collisions.clone(),
+                hit_light_source: false,
+            };
+
+            // Recursively trace the secondary ray
+            secondary_ray.trace(scene, depth + 1);
+            // Accumulate colors from secondary rays into the original ray's collisions
+            // also set the hit_light_source to true if the secondary ray hit a light source
+            if secondary_ray.hit_light_source {
+                self.collisions.extend(secondary_ray.collisions);
+                self.hit_light_source = true;
+            }
+        }
+    }
+
+    fn diffuse_direction(&self, normal: Vector3<f64>) -> Vector3<f64> {
+        let mut rng = rand::thread_rng();
+
+        // Create a coordinate system around the normal
+        let w = normal.normalize();
+        let a = if w.x.abs() > 0.9 {
+            Vector3::new(0.0, -1.0, 0.0)
+        } else {
+            Vector3::new(-1.0, 0.0, 0.0)
+        };
+        let v = w.cross(&a).normalize();
+        let u = w.cross(&v);
+
+        // Generate random points on a hemisphere
+        let r1: f64 = rng.gen();
+        let r2: f64 = rng.gen();
+        let sin_theta = (1.0 - r2 * r2).sqrt();
+        let phi = 2.0 * std::f64::consts::PI * r1;
+        let x = phi.cos() * sin_theta;
+        let y = phi.sin() * sin_theta;
+        let z = r2.sqrt();
+
+        // Convert to world coordinates
+        u * x + v * y + w * z
+    }
+
+    // TODO: remove the macro
+    #[allow(dead_code)]
+    fn reflect(&self, normal: Vector3<f64>) -> Vector3<f64> {
+        self.direction - 2.0 * self.direction.dot(&normal) * normal
     }
 
     pub fn average_color(&self) -> Color {
@@ -125,34 +159,14 @@ impl Ray {
         }
     }
 
+    // TODO: remove the macro
     #[allow(dead_code)]
-    fn reflect(&self, normal: Vector3<f64>) -> Vector3<f64> {
-        self.direction - 2.0 * self.direction.dot(&normal) * normal
-    }
-
-    fn generate_new_direction(&self, normal: Vector3<f64>) -> Vector3<f64> {
-        let mut rng = rand::thread_rng();
-
-        // Create a coordinate system around the normal
-        let w = normal.normalize();
-        let a = if w.x.abs() > 0.9 {
-            Vector3::new(0.0, -1.0, 0.0)
-        } else {
-            Vector3::new(-1.0, 0.0, 0.0)
-        };
-        let v = w.cross(&a).normalize();
-        let u = w.cross(&v);
-
-        // Generate random points on a hemisphere
-        let r1: f64 = rng.gen();
-        let r2: f64 = rng.gen();
-        let sin_theta = (1.0 - r2 * r2).sqrt();
-        let phi = 2.0 * std::f64::consts::PI * r1;
-        let x = phi.cos() * sin_theta;
-        let y = phi.sin() * sin_theta;
-        let z = r2.sqrt();
-
-        // Convert to world coordinates
-        u * x + v * y + w * z
+    fn modify_color_based_on_normal(&self, normal: Vector3<f64>, original_color: Color) -> Color {
+        let dot = normal.dot(&self.direction.normalize()).abs();
+        Color::new(
+            (original_color.r as f64 * dot) as u8,
+            (original_color.g as f64 * dot) as u8,
+            (original_color.b as f64 * dot) as u8,
+        )
     }
 }
