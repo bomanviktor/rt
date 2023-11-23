@@ -2,7 +2,9 @@ use crate::color::Color;
 use crate::config::{Pixels, Point};
 use crate::raytracer::{Ray, Resolution, Scene};
 use nalgebra::Vector3;
+use rayon::prelude::*;
 use std::io::Write;
+use std::sync::Arc;
 
 const DEFAULT_CAMERA_POSITION: Point = Point::new(1.0, 0.5, 0.0);
 const DEFAULT_SAMPLE_SIZE: u16 = 1;
@@ -29,24 +31,29 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn send_rays(&mut self, scene: &Scene) {
-        for row in &mut self.rays {
-            let mut pixel_row = Vec::new();
-            for ray in row.iter_mut() {
-                ray.trace(scene, 0);
+    pub fn send_rays(&mut self, scene: Arc<Scene>) {
+        // Using Rayon's parallel iterator for processing each row in parallel
+        self.pixels = self
+            .rays
+            .par_iter_mut()
+            .map(|row| {
+                let mut pixel_row = Vec::with_capacity(row.len());
+                for ray in row.iter_mut() {
+                    ray.trace(&scene, 0);
 
-                // Take out !ray.hit_light_source to render based on the normal vector.
-                // Leave it in to render based on ray-tracing.
-                if !ray.hit_light_source || ray.collisions.is_empty() {
-                    pixel_row.push(Color::default());
-                } else {
-                    pixel_row.push(ray.average_color())
+                    // Take out !ray.hit_light_source to render based on the normal vector.
+                    // Leave it in to render based on ray-tracing.
+                    if !ray.hit_light_source || ray.collisions.is_empty() {
+                        pixel_row.push(Color::default());
+                    } else {
+                        pixel_row.push(ray.average_color())
+                    }
+                    // Clear the collisions for the next frame
+                    ray.collisions.clear();
                 }
-                // Clear the collisions for the next frame
-                ray.collisions.clear();
-            }
-            self.pixels.push(pixel_row);
-        }
+                pixel_row
+            })
+            .collect();
     }
 
     pub fn write_to_ppm(&self, path: &str) {

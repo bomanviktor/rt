@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use nalgebra::Vector3;
 use rt::raytracer::{CameraBuilder, Scene};
 
@@ -16,9 +18,9 @@ fn main() {
         .build();
 
     let scene_data = "scene info from gui here";
-    let scene = Scene::init(scene_data);
-
+    //let scene = Scene::init(scene_data);
+    let scene = Arc::new(Scene::init(scene_data));
     // Perform ray tracing
-    camera.send_rays(&scene);
+    camera.send_rays(scene.clone());
     camera.write_to_ppm(OUTPUT_PATH);
 }

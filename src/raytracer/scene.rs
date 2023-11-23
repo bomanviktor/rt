@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::color::Color;
 use crate::config::Point;
 use crate::objects::{Cube, Cylinder, FlatPlane, Objects, Sphere, Texture::*};
@@ -42,19 +44,19 @@ impl Scene {
         );
 
         let objects: Objects = vec![
-            Box::new(sphere1),
-            // Box::new(sphere2),
-            // Box::new(sphere3),
-            // Box::new(sphere4),
-            // Box::new(sphere5),
-            // Box::new(sphere6),
-            Box::new(cylinder),
-            Box::new(flat_plane),
-            Box::new(cube),
-            Box::new(light.clone()),
+            Arc::new(sphere1),
+            // Arc::new(sphere2),
+            // Arc::new(sphere3),
+            // Arc::new(sphere4),
+            // Arc::new(sphere5),
+            // Arc::new(sphere6),
+            Arc::new(cylinder),
+            Arc::new(flat_plane),
+            Arc::new(cube),
+            Arc::new(light.clone()),
         ];
 
-        let light_sources: Objects = vec![Box::new(light)];
+        let light_sources: Objects = vec![Arc::new(light)];
 
         Self {
             objects,

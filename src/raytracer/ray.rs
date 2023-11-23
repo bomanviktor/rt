@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::color::Color;
 use crate::config::Point;
 use crate::objects::Object;
@@ -38,7 +40,7 @@ impl Ray {
         // );
 
         let mut closest_intersection: Option<(Vector3<f64>, f64)> = None;
-        let mut closest_object: Option<&Box<dyn Object>> = None;
+        let mut closest_object: Option<&Arc<dyn Object>> = None;
 
         // Check for intersection with objects
         for object in &scene.objects {

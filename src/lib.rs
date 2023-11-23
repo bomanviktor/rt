@@ -82,6 +82,8 @@ pub mod raytracer {
 pub mod objects {
     pub mod cube;
 
+    use std::sync::Arc;
+
     pub use cube::*;
     use nalgebra::Vector3;
 
@@ -109,14 +111,14 @@ pub mod objects {
         }
     }
 
-    pub trait Object {
+    pub trait Object: Send + Sync {
         fn intersection(&self, ray: &Ray) -> Intersection;
         fn normal_at(&self, ray: &Ray, point: Vector3<f64>) -> Vector3<f64>;
         fn color(&self) -> Color;
         fn texture(&self) -> Texture;
     }
 
-    pub type Objects = Vec<Box<dyn Object>>;
+    pub type Objects = Vec<Arc<dyn Object>>;
 
     pub type Distance = f64;
     /// Type alias for `Option<(Vector3<f64>, f64)>`
