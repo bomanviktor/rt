@@ -4,6 +4,7 @@ use crate::raytracer::{Ray, Resolution, Scene};
 use nalgebra::Vector3;
 use rayon::prelude::*;
 use std::io::Write;
+use std::ops::RangeInclusive;
 use std::sync::Arc;
 
 const DEFAULT_CAMERA_POSITION: Point = Point::new(1.0, 0.5, 0.0);
@@ -78,6 +79,67 @@ impl Camera {
         for row in pixel_data {
             writeln!(file, "{}", row).unwrap();
         }
+    }
+
+    pub fn anti_aliasing(&mut self, weight: f64) {
+        if weight < 1.0 {
+            panic!("wtf dude");
+        }
+        let w = self.resolution.0 as usize;
+        let h = self.resolution.1 as usize;
+
+        let mut anti_aliased_pixels = Vec::new();
+        for row in 0..h {
+            let mut anti_aliased_pixel_row = Vec::new();
+            for column in 0..w {
+                let mut total_r = self.pixels[row][column].r as f64 * weight;
+                let mut total_g = self.pixels[row][column].g as f64 * weight;
+                let mut total_b = self.pixels[row][column].b as f64 * weight;
+
+                // TODO: Improve this BS.
+                // Right now it is just getting the ranges that we will use to get the average.
+                let mut rows: RangeInclusive<usize> = row - 1..=row + 1; // Every row except for:
+                if row == 0 {
+                    rows = 0..=1; // First row,
+                }
+                if row == 1 {
+                    rows = 0..=2; // Second row,
+                }
+                if row == h - 1 {
+                    rows = h - 2..=h - 1; // Last row.
+                }
+
+                let mut cols: RangeInclusive<usize> = column - 1..=column + 1;
+                if column == 0 {
+                    cols = 0..=1;
+                }
+                if column == 1 {
+                    cols = 0..=2;
+                }
+                if column == w - 1 {
+                    cols = w - 2..=w - 1
+                }
+
+                // Add all the colors of the ranges together
+                let mut total_pixels = weight;
+                for y in rows.clone() {
+                    for x in cols.clone() {
+                        total_pixels += 1.0;
+                        total_r += self.pixels[y][x].r as f64;
+                        total_g += self.pixels[y][x].g as f64;
+                        total_b += self.pixels[y][x].b as f64;
+                    }
+                }
+
+                anti_aliased_pixel_row.push(Color::new(
+                    (total_r / total_pixels) as u8,
+                    (total_g / total_pixels) as u8,
+                    (total_b / total_pixels) as u8,
+                ))
+            }
+            anti_aliased_pixels.push(anti_aliased_pixel_row);
+        }
+        self.pixels = anti_aliased_pixels;
     }
 }
 

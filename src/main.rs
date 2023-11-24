@@ -26,6 +26,10 @@ fn main() {
 
     // Perform ray tracing
     camera.send_rays(scene.clone());
+    let anti_aliasing = true;
+    if anti_aliasing {
+        camera.anti_aliasing(4.0);
+    }
 
     camera.write_to_ppm(OUTPUT_PATH);
 
