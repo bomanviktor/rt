@@ -12,6 +12,8 @@ use std::rc::Rc;
 struct AppState {
     spheres: Vec<SphereConfig>,
     cylinders: Vec<CylinderConfig>,
+    cubes: Vec<CubeConfig>,
+    flat_planes: Vec<FlatPlaneConfig>,
 }
 #[allow(dead_code)]
 struct ObjectConfig {
@@ -39,10 +41,28 @@ struct CylinderConfig {
     height_entry: Rc<RefCell<Entry>>,
 }
 
+struct CubeConfig {
+    pos_x_entry: Rc<RefCell<Entry>>,
+    pos_y_entry: Rc<RefCell<Entry>>,
+    pos_z_entry: Rc<RefCell<Entry>>,
+    size_entry: Rc<RefCell<Entry>>,
+    material_selector: Rc<RefCell<ComboBoxText>>,
+}
+
+struct FlatPlaneConfig {
+    pos_x_entry: Rc<RefCell<Entry>>,
+    pos_y_entry: Rc<RefCell<Entry>>,
+    pos_z_entry: Rc<RefCell<Entry>>,
+    radius_entry: Rc<RefCell<Entry>>,
+    material_selector: Rc<RefCell<ComboBoxText>>,
+}
+
 pub fn launch_gui() {
     let app_state = Rc::new(RefCell::new(AppState {
         spheres: Vec::new(),
         cylinders: Vec::new(),
+        cubes: Vec::new(),
+        flat_planes: Vec::new(),
     }));
 
     gtk::init().expect("Failed to initialize GTK.");
@@ -102,6 +122,22 @@ pub fn launch_gui() {
         vbox_clone.pack_start(&cylinder_section, false, false, 0);
         vbox_clone.show_all();
     }));
+
+    add_cube_button.connect_clicked(clone!(@strong vbox_clone, @strong app_state => move |_| {
+    let cube_count = app_state.borrow().cubes.len();
+    let cube_section = create_cube_section(app_state.clone(), cube_count + 1);
+    vbox_clone.pack_start(&cube_section, false, false, 0);
+    vbox_clone.show_all();
+    }));
+
+    add_flat_plane_button.connect_clicked(
+        clone!(@strong vbox_clone, @strong app_state => move |_| {
+        let plane_count = app_state.borrow().flat_planes.len();
+        let plane_section = create_flat_plane_section(app_state.clone(), plane_count + 1);
+        vbox_clone.pack_start(&plane_section, false, false, 0);
+        vbox_clone.show_all();
+        }),
+    );
 
     // Separator
     let separator = Separator::new(Orientation::Horizontal);
@@ -164,6 +200,26 @@ pub fn launch_gui() {
             let material = cylinder.material_selector.borrow().get_active_text().unwrap_or_else(|| "Lambertian".into());
 
             println!("Cylinder {}: X: {}, Y: {}, Z: {}, Radius: {}, Height: {}, Material: {}", index + 1, pos_x, pos_y, pos_z, radius, height, material);
+        }
+
+        for (index, cube) in app_state_borrowed.cubes.iter().enumerate() {
+            let pos_x = cube.pos_x_entry.borrow().get_text().to_string();
+            let pos_y = cube.pos_y_entry.borrow().get_text().to_string();
+            let pos_z = cube.pos_z_entry.borrow().get_text().to_string();
+            let size = cube.size_entry.borrow().get_text().to_string();
+            let material = cube.material_selector.borrow().get_active_text().unwrap_or_else(|| "Lambertian".into());
+
+            println!("Cube {}: X: {}, Y: {}, Z: {}, Size: {}, Material: {}", index + 1, pos_x, pos_y, pos_z, size, material);
+        }
+
+        for (index, flat_plane) in app_state_borrowed.flat_planes.iter().enumerate() {
+            let pos_x = flat_plane.pos_x_entry.borrow().get_text().to_string();
+            let pos_y = flat_plane.pos_y_entry.borrow().get_text().to_string();
+            let pos_z = flat_plane.pos_z_entry.borrow().get_text().to_string();
+            let radius = flat_plane.radius_entry.borrow().get_text().to_string();
+            let material = flat_plane.material_selector.borrow().get_active_text().unwrap_or_else(|| "Lambertian".into());
+
+            println!("Flat Plane {}: X: {}, Y: {}, Z: {}, Radius: {}, Material: {}", index + 1, pos_x, pos_y, pos_z, radius, material);
         }
 
 
@@ -283,7 +339,7 @@ fn create_cylinder_section(app_state: Rc<RefCell<AppState>>, cylinder_count: usi
 
 #[allow(dead_code)]
 //Todo: refine this function
-fn crate_cube_section(cube_count: usize) -> gtk::Box {
+fn create_cube_section(app_state: Rc<RefCell<AppState>>, cube_count: usize) -> gtk::Box {
     let cube_section = gtk::Box::new(gtk::Orientation::Horizontal, 0);
     let label_text = format!("Cube {}", cube_count);
     let cube_label = gtk::Label::new(Some(&label_text));
@@ -301,9 +357,9 @@ fn crate_cube_section(cube_count: usize) -> gtk::Box {
     pos_z_entry.set_placeholder_text(Some("Z Position"));
     cube_section.pack_start(&pos_z_entry, false, false, 0);
 
-    let radius_entry = Entry::new();
-    radius_entry.set_placeholder_text(Some("Radius"));
-    cube_section.pack_start(&radius_entry, false, false, 0);
+    let size_entry = Entry::new();
+    size_entry.set_placeholder_text(Some("Size"));
+    cube_section.pack_start(&size_entry, false, false, 0);
 
     let material_selector = ComboBoxText::new();
     material_selector.append_text("Lambertian");
@@ -312,5 +368,55 @@ fn crate_cube_section(cube_count: usize) -> gtk::Box {
     material_selector.set_active(Some(0));
     cube_section.pack_start(&material_selector, false, false, 0);
 
+    let cube_config = CubeConfig {
+        pos_x_entry: Rc::new(RefCell::new(pos_x_entry)),
+        pos_y_entry: Rc::new(RefCell::new(pos_y_entry)),
+        pos_z_entry: Rc::new(RefCell::new(pos_z_entry)),
+        size_entry: Rc::new(RefCell::new(size_entry)),
+        material_selector: Rc::new(RefCell::new(material_selector)),
+    };
+    app_state.borrow_mut().cubes.push(cube_config);
+
     cube_section
+}
+
+fn create_flat_plane_section(app_state: Rc<RefCell<AppState>>, plane_count: usize) -> gtk::Box {
+    let flat_plane_section = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    let label_text = format!("Flat Plane {}", plane_count);
+    let flat_plane_label = gtk::Label::new(Some(&label_text));
+    flat_plane_section.pack_start(&flat_plane_label, false, false, 0);
+
+    let pos_x_entry = Entry::new();
+    pos_x_entry.set_placeholder_text(Some("X Position"));
+    flat_plane_section.pack_start(&pos_x_entry, false, false, 0);
+
+    let pos_y_entry = Entry::new();
+    pos_y_entry.set_placeholder_text(Some("Y Position"));
+    flat_plane_section.pack_start(&pos_y_entry, false, false, 0);
+
+    let pos_z_entry = Entry::new();
+    pos_z_entry.set_placeholder_text(Some("Z Position"));
+    flat_plane_section.pack_start(&pos_z_entry, false, false, 0);
+
+    let radius_entry = Entry::new();
+    radius_entry.set_placeholder_text(Some("Radius"));
+    flat_plane_section.pack_start(&radius_entry, false, false, 0);
+
+    let material_selector = ComboBoxText::new();
+    material_selector.append_text("Lambertian");
+    material_selector.append_text("Metal");
+    material_selector.append_text("Dielectric");
+    material_selector.set_active(Some(0));
+    flat_plane_section.pack_start(&material_selector, false, false, 0);
+
+    let flat_plane_config = FlatPlaneConfig {
+        pos_x_entry: Rc::new(RefCell::new(pos_x_entry)),
+        pos_y_entry: Rc::new(RefCell::new(pos_y_entry)),
+        pos_z_entry: Rc::new(RefCell::new(pos_z_entry)),
+        radius_entry: Rc::new(RefCell::new(radius_entry)),
+        material_selector: Rc::new(RefCell::new(material_selector)),
+    };
+    app_state.borrow_mut().flat_planes.push(flat_plane_config);
+
+    flat_plane_section
 }
