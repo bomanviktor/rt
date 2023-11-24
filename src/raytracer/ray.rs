@@ -57,7 +57,6 @@ impl Ray {
                             self.hit_light_source = true;
                         }
                     }
-
                 }
             }
         }
