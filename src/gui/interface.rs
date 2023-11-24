@@ -131,11 +131,11 @@ pub fn launch_gui() {
     flow_box.set_max_children_per_line(10); // Adjust as needed
     flow_box.set_selection_mode(gtk::SelectionMode::None);
 
-    add_sphere_button.connect_clicked(clone!(@strong vbox_clone, @strong app_state => move |_| {
+    add_sphere_button.connect_clicked(clone!(@strong flow_box, @strong app_state => move |_| {
         let sphere_count = app_state.borrow().spheres.len();
         let sphere_section = create_sphere_section(app_state.clone(), sphere_count + 1);
-        vbox_clone.pack_start(&sphere_section, false, false, 0);
-        vbox_clone.show_all();
+        flow_box.add(&sphere_section);
+        flow_box.show_all();
     }));
 
     add_cylinder_button.connect_clicked(clone!(@strong flow_box, @strong app_state => move |_| {
@@ -195,7 +195,14 @@ pub fn launch_gui() {
     let height_entry = Entry::new();
     height_entry.set_placeholder_text(Some("Height"));
     vbox.pack_start(&height_entry, false, false, 0);
-    vbox.pack_start(&flow_box, true, true, 0);
+    vbox.pack_start(&flow_box, false, false, 0);
+
+    let brightness_entry_clone = brightness_entry.clone();
+    let cam_x_entry_clone = cam_x_entry.clone();
+    let cam_y_entry_clone = cam_y_entry.clone();
+    let cam_angle_entry_clone = cam_angle_entry.clone();
+    let width_entry_clone = width_entry.clone();
+    let height_entry_clone = height_entry.clone();
 
     // Render Button
     render_button.connect_clicked(clone!(@strong app_state => move |_| {
@@ -242,6 +249,12 @@ pub fn launch_gui() {
 
             println!("Flat Plane {}: X: {}, Y: {}, Z: {}, Radius: {}, Material: {}", index + 1, pos_x, pos_y, pos_z, radius, material);
         }
+        println!("Brightness: {}", brightness_entry_clone.get_value());
+        println!("Camera X Position: {}", cam_x_entry_clone.get_text());
+        println!("Camera Y Position: {}", cam_y_entry_clone.get_text());
+        println!("Camera Angle: {}", cam_angle_entry_clone.get_text());
+        println!("Resolution Width: {}", width_entry_clone.get_text());
+        println!("Resolution Height: {}", height_entry_clone.get_text());
 
 
     }));
@@ -270,34 +283,34 @@ fn validate_and_parse_entry(entry: &gtk::Entry, default_value: f64, label: &str)
     }
 }
 
-fn create_sphere_section(app_state: Rc<RefCell<AppState>>, sphere_count: usize) -> gtk::Box {
+fn create_sphere_section(app_state: Rc<RefCell<AppState>>, sphere_count: usize) -> gtk::Widget {
     let provider = CssProvider::new();
     provider
         .load_from_path("src/gui/style.css")
         .expect("Failed to load CSS");
 
-    let sphere_section = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    let grid = gtk::Grid::new();
+    grid.set_column_spacing(10); // Adjust the spacing as needed
+
     let label_text = format!("Sphere {}", sphere_count);
     let sphere_label = gtk::Label::new(Some(&label_text));
-    sphere_section.pack_start(&sphere_label, false, false, 0);
-    let style_context = sphere_label.get_style_context();
-    style_context.add_provider(&provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
+    grid.attach(&sphere_label, 0, 0, 1, 1); // Column 0, Row 0
 
     let pos_x_entry = Entry::new();
     pos_x_entry.set_placeholder_text(Some("X Position"));
-    sphere_section.pack_start(&pos_x_entry, false, false, 0);
+    grid.attach(&pos_x_entry, 1, 0, 1, 1); // Column 1, Row 0
 
     let pos_y_entry = Entry::new();
     pos_y_entry.set_placeholder_text(Some("Y Position"));
-    sphere_section.pack_start(&pos_y_entry, false, false, 0);
+    grid.attach(&pos_y_entry, 1, 1, 1, 1); // Column 1, Row 1
 
     let pos_z_entry = Entry::new();
     pos_z_entry.set_placeholder_text(Some("Z Position"));
-    sphere_section.pack_start(&pos_z_entry, false, false, 0);
+    grid.attach(&pos_z_entry, 1, 2, 1, 1); // Column 1, Row 2
 
     let radius_entry = Entry::new();
     radius_entry.set_placeholder_text(Some("Radius"));
-    sphere_section.pack_start(&radius_entry, false, false, 0);
+    grid.attach(&radius_entry, 1, 3, 1, 1); // Column 1, Row 3
 
     // Apply styles to entries
     let entries = vec![&pos_x_entry, &pos_y_entry, &pos_z_entry, &radius_entry];
@@ -311,7 +324,7 @@ fn create_sphere_section(app_state: Rc<RefCell<AppState>>, sphere_count: usize) 
     material_selector.append_text("Metal");
     material_selector.append_text("Dielectric");
     material_selector.set_active(Some(0));
-    sphere_section.pack_start(&material_selector, false, false, 0);
+    grid.attach(&material_selector, 1, 4, 1, 1); // Column 1, Row 4
 
     // Apply styles to ComboBoxText
     let style_context = material_selector.get_style_context();
@@ -326,7 +339,7 @@ fn create_sphere_section(app_state: Rc<RefCell<AppState>>, sphere_count: usize) 
     };
     app_state.borrow_mut().spheres.push(sphere_config);
 
-    sphere_section
+    grid.upcast::<gtk::Widget>() // Return the grid as a generic widget
 }
 
 fn create_cylinder_section(app_state: Rc<RefCell<AppState>>, cylinder_count: usize) -> gtk::Widget {
