@@ -14,6 +14,4 @@ fn main() {
 
     // Pass AppState to launch_gui
     launch_gui(app_state.clone());
-
-
 }
