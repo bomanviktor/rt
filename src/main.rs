@@ -1,26 +1,19 @@
-// use nalgebra::Vector3;
-// use rt::raytracer::{CameraBuilder, Scene};
-use rt::gui::launch_gui;
-
-// const OUTPUT_PATH: &str = "output.ppm";
+use rt::gui::{launch_gui, AppState};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 fn main() {
-    launch_gui();
-    // New camera setup
-    // let mut camera = CameraBuilder::new()
-    //     .sample_size(1)
-    //     .position_by_coordinates(Vector3::new(0.0, -3.0, 2.0))
-    //     .look_at(Vector3::new(0.0, 0.0, -5.0))
-    //     .up_direction_by_coordinates(Vector3::new(0.0, 4.0, 0.0))
-    //     .focal_length(0.5)
-    //     .resolution((1600, 900))
-    //     .sensor_width(1.0)
-    //     .build();
-    //
-    // let scene_data = "scene info from gui here";
-    // let scene = Scene::init(scene_data);
-    //
-    // // Perform ray tracing
-    // camera.send_rays(&scene.objects);
-    // camera.write_to_ppm(OUTPUT_PATH);
+    // Shared state between GUI and main logic
+    // Initialize AppState with empty vectors
+    let app_state = Rc::new(RefCell::new(AppState {
+        spheres: vec![],
+        cylinders: vec![],
+        cubes: vec![],
+        flat_plane: vec![],
+    }));
+
+    // Pass AppState to launch_gui
+    launch_gui(app_state.clone());
+
+
 }
