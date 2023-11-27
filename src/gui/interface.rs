@@ -11,7 +11,7 @@ use std::rc::Rc;
 
 use crate::color::Color;
 use crate::config::Point;
-use crate::objects::{Objects, Sphere};
+use crate::objects::{Cube, Cylinder, FlatPlane, Objects, Sphere};
 use crate::raytracer::{CameraBuilder, Scene};
 
 pub struct AppState {
@@ -152,30 +152,30 @@ pub fn launch_gui(_app_state: Rc<RefCell<AppState>>) {
     flow_box.set_max_children_per_line(10); // Adjust as needed
     flow_box.set_selection_mode(gtk::SelectionMode::None);
 
-    add_sphere_button.connect_clicked(clone!(@strong flow_box, @strong app_state => move |_| {
+    add_sphere_button.connect_clicked(clone!(@strong app_state, @strong flow_box => move |_| {
         let sphere_count = app_state.borrow().spheres.len();
-        let sphere_section = create_sphere_section(app_state.clone(), sphere_count + 1);
+        let sphere_section = create_sphere_section(app_state.clone(), sphere_count + 1, flow_box.clone());
         flow_box.add(&sphere_section);
         flow_box.show_all();
     }));
 
     add_cylinder_button.connect_clicked(clone!(@strong flow_box, @strong app_state => move |_| {
         let cylinder_count = app_state.borrow().cylinders.len();
-        let cylinder_section = create_cylinder_section(app_state.clone(), cylinder_count + 1);
+        let cylinder_section = create_cylinder_section(app_state.clone(), cylinder_count + 1, flow_box.clone());
         flow_box.add(&cylinder_section);
         flow_box.show_all();
     }));
 
     add_cube_button.connect_clicked(clone!(@strong flow_box, @strong app_state => move |_| {
         let cube_count = app_state.borrow().cubes.len();
-        let cube_section = create_cube_section(app_state.clone(), cube_count + 1);
+        let cube_section = create_cube_section(app_state.clone(), cube_count + 1, flow_box.clone());
         flow_box.add(&cube_section);
         flow_box.show_all();
     }));
 
     add_flat_plane_button.connect_clicked(clone!(@strong flow_box, @strong app_state => move |_| {
         let flat_plane_count = app_state.borrow().flat_plane.len();
-        let flat_plane_section = create_flat_plane_section(app_state.clone(), flat_plane_count + 1);
+        let flat_plane_section = create_flat_plane_section(app_state.clone(), flat_plane_count + 1, flow_box.clone());
         flow_box.add(&flat_plane_section);
         flow_box.show_all();
     }));
@@ -324,9 +324,6 @@ pub fn launch_gui(_app_state: Rc<RefCell<AppState>>) {
         println!("Resolution Height: {}", height_entry_clone.get_text());
 
 
-        // println!("Invalid input detected. Please enter numbers in 0.0 format");
-
-
     if !all_inputs_valid {
         message_label.set_markup(red_style);
         println!("Invalid input detected. Please enter numbers in 0.0 format");
@@ -368,7 +365,7 @@ pub fn launch_gui(_app_state: Rc<RefCell<AppState>>) {
     gtk::main();
 }
 
-// // Function to validate position entries
+// Function to validate position entries
 fn is_valid_float(input: &str) -> bool {
     // Check if the input is a valid floating-point number
     let is_float = input.parse::<f64>().is_ok();
@@ -380,7 +377,11 @@ fn is_valid_float(input: &str) -> bool {
     is_float && has_decimal_point
 }
 
-fn create_sphere_section(app_state: Rc<RefCell<AppState>>, sphere_count: usize) -> gtk::Widget {
+fn create_sphere_section(
+    app_state: Rc<RefCell<AppState>>,
+    sphere_count: usize,
+    flow_box: gtk::FlowBox,
+) -> gtk::Widget {
     let provider = CssProvider::new();
     provider
         .load_from_path("src/gui/style.css")
@@ -440,6 +441,26 @@ fn create_sphere_section(app_state: Rc<RefCell<AppState>>, sphere_count: usize) 
     let color_button = gtk::ColorButton::new();
     grid.attach(&color_button, 0, 12, 1, 1); // Column 0, Row 12
 
+    // Create a delete button for the sphere section
+    let delete_button = gtk::Button::with_label("Delete");
+    grid.attach(&delete_button, 0, 13, 1, 1); //Column 0, Row 12
+
+    // Connect a handler to the delete button
+    delete_button.connect_clicked(clone!(@strong app_state, @strong flow_box => move |_| {
+        {
+            let mut app_state = app_state.borrow_mut();
+            app_state.spheres.remove(sphere_count - 1); // Adjust logic as needed to identify the correct sphere
+        }
+
+        // Remove the entire sphere section from the flow box
+        let children = flow_box.get_children();
+        if let Some(sphere_section) = children.get(sphere_count - 1) {
+            flow_box.remove(sphere_section);
+        }
+
+        flow_box.show_all();
+    }));
+
     // Apply styles to ComboBoxText and Entries
     let entries = vec![&pos_x_entry, &pos_y_entry, &pos_z_entry, &radius_entry];
     for entry in entries {
@@ -463,7 +484,11 @@ fn create_sphere_section(app_state: Rc<RefCell<AppState>>, sphere_count: usize) 
     grid.upcast::<gtk::Widget>() // Return the grid as a generic widget
 }
 
-fn create_cylinder_section(app_state: Rc<RefCell<AppState>>, cylinder_count: usize) -> gtk::Widget {
+fn create_cylinder_section(
+    app_state: Rc<RefCell<AppState>>,
+    cylinder_count: usize,
+    flow_box: gtk::FlowBox,
+) -> gtk::Widget {
     let provider = CssProvider::new();
     provider
         .load_from_path("src/gui/style.css")
@@ -534,14 +559,33 @@ fn create_cylinder_section(app_state: Rc<RefCell<AppState>>, cylinder_count: usi
     material_selector.append_text("Metal");
     material_selector.append_text("Dielectric");
     material_selector.set_active(Some(0));
-    grid.attach(&material_selector, 0, 12, 1, 1); // Column 0, Row 11
+    grid.attach(&material_selector, 0, 12, 1, 1); // Column 0, Row 12
 
     // Color Button Label and ColorPicker
     let color_label = gtk::Label::new(Some("Color"));
-    grid.attach(&color_label, 0, 13, 1, 1); // Column 0, Row 12
+    grid.attach(&color_label, 0, 13, 1, 1); // Column 0, Row 13
 
     let color_button = gtk::ColorButton::new();
-    grid.attach(&color_button, 0, 14, 1, 1); // Column 0, Row 13
+    grid.attach(&color_button, 0, 14, 1, 1); // Column 0, Row 14
+
+    let delete_button = gtk::Button::with_label("Delete");
+    grid.attach(&delete_button, 0, 15, 1, 1); //Column 0, Row 15
+
+    // Connect a handler to the delete button
+    delete_button.connect_clicked(clone!(@strong app_state => move |_| {
+        {
+            let mut app_state = app_state.borrow_mut();
+            app_state.cylinders.remove(cylinder_count - 1); // Adjust logic as needed to identify the correct sphere
+        }
+
+        // Remove the entire sphere section from the flow box
+        let children = flow_box.get_children();
+        if let Some(cylinder_section) = children.get(cylinder_count - 1) {
+            flow_box.remove(cylinder_section);
+        }
+
+        flow_box.show_all();
+    }));
 
     // Apply styles to ComboBoxText and Entries
     let entries = vec![&pos_x_entry, &pos_y_entry, &pos_z_entry, &radius_entry];
@@ -568,7 +612,11 @@ fn create_cylinder_section(app_state: Rc<RefCell<AppState>>, cylinder_count: usi
 }
 
 //Todo: refine this function
-fn create_cube_section(app_state: Rc<RefCell<AppState>>, cube_count: usize) -> gtk::Widget {
+fn create_cube_section(
+    app_state: Rc<RefCell<AppState>>,
+    cube_count: usize,
+    flow_box: gtk::FlowBox,
+) -> gtk::Widget {
     let provider = CssProvider::new();
     provider
         .load_from_path("src/gui/style.css")
@@ -628,6 +676,25 @@ fn create_cube_section(app_state: Rc<RefCell<AppState>>, cube_count: usize) -> g
     let color_button = gtk::ColorButton::new();
     grid.attach(&color_button, 0, 12, 1, 1); // Column 0, Row 12
 
+    let delete_button = gtk::Button::with_label("Delete");
+    grid.attach(&delete_button, 0, 13, 1, 1); //Column 0, Row 13
+
+    // Connect a handler to the delete button
+    delete_button.connect_clicked(clone!(@strong app_state => move |_| {
+        {
+            let mut app_state = app_state.borrow_mut();
+            app_state.cubes.remove(cube_count - 1); // Adjust logic as needed to identify the correct sphere
+        }
+
+        // Remove the entire sphere section from the flow box
+        let children = flow_box.get_children();
+        if let Some(cube_section) = children.get(cube_count - 1) {
+            flow_box.remove(cube_section);
+        }
+
+        flow_box.show_all();
+    }));
+
     // Apply styles to ComboBoxText and Entries
     let entries = vec![&pos_x_entry, &pos_y_entry, &pos_z_entry, &radius_entry];
     for entry in entries {
@@ -654,6 +721,7 @@ fn create_cube_section(app_state: Rc<RefCell<AppState>>, cube_count: usize) -> g
 fn create_flat_plane_section(
     app_state: Rc<RefCell<AppState>>,
     flat_plane_count: usize,
+    flow_box: gtk::FlowBox,
 ) -> gtk::Widget {
     let provider = CssProvider::new();
     provider
@@ -713,6 +781,25 @@ fn create_flat_plane_section(
 
     let color_button = gtk::ColorButton::new();
     grid.attach(&color_button, 0, 12, 1, 1); // Column 0, Row 12
+
+    let delete_button = gtk::Button::with_label("Delete");
+    grid.attach(&delete_button, 0, 13, 1, 1); //Column 0, Row 13
+
+    // Connect a handler to the delete button
+    delete_button.connect_clicked(clone!(@strong app_state => move |_| {
+        {
+            let mut app_state = app_state.borrow_mut();
+            app_state.flat_plane.remove(flat_plane_count - 1); // Adjust logic as needed to identify the correct sphere
+        }
+
+        // Remove the entire sphere section from the flow box
+        let children = flow_box.get_children();
+        if let Some(flat_plane_section) = children.get(flat_plane_count - 1) {
+            flow_box.remove(flat_plane_section);
+        }
+
+        flow_box.show_all();
+    }));
 
     // Apply styles to ComboBoxText and Entries
     let entries = vec![&pos_x_entry, &pos_y_entry, &pos_z_entry, &radius_entry];
@@ -778,13 +865,128 @@ pub fn update_scene_from_gui(app_state: Rc<RefCell<AppState>>) -> Scene {
     }
 
     // Creating Cylinders
-    // Similar to spheres, create Cylinder objects from cylinder_config
+    for cylinder_config in app_state_borrowed.cylinders.iter() {
+        let pos_x = cylinder_config
+            .pos_x_entry
+            .borrow()
+            .get_text()
+            .parse::<f64>()
+            .unwrap_or(0.0);
+        let pos_y = cylinder_config
+            .pos_y_entry
+            .borrow()
+            .get_text()
+            .parse::<f64>()
+            .unwrap_or(0.0);
+        let pos_z = cylinder_config
+            .pos_z_entry
+            .borrow()
+            .get_text()
+            .parse::<f64>()
+            .unwrap_or(0.0);
+        let radius = cylinder_config
+            .radius_entry
+            .borrow()
+            .get_text()
+            .parse::<f64>()
+            .unwrap_or(1.0);
+        let height = cylinder_config
+            .height_entry
+            .borrow()
+            .get_text()
+            .parse::<f64>()
+            .unwrap_or(1.0);
+        let color = cylinder_config.color_button.borrow().get_rgba();
+        let cylinder_color = Color::new(
+            (color.red * 255.0) as u8,
+            (color.green * 255.0) as u8,
+            (color.blue * 255.0) as u8,
+        );
+
+        let cylinder = Cylinder::new(
+            Vector3::new(pos_x, pos_y, pos_z),
+            radius,
+            height,
+            cylinder_color,
+        );
+        objects.push(Box::new(cylinder));
+    }
 
     // Creating Cubes
-    // Similar to spheres, create Cube objects from cube_config
+    for cube_config in app_state_borrowed.cubes.iter() {
+        let pos_x = cube_config
+            .pos_x_entry
+            .borrow()
+            .get_text()
+            .parse::<f64>()
+            .unwrap_or(0.0);
+        let pos_y = cube_config
+            .pos_y_entry
+            .borrow()
+            .get_text()
+            .parse::<f64>()
+            .unwrap_or(0.0);
+        let pos_z = cube_config
+            .pos_z_entry
+            .borrow()
+            .get_text()
+            .parse::<f64>()
+            .unwrap_or(0.0);
+        let radius = cube_config
+            .radius_entry
+            .borrow()
+            .get_text()
+            .parse::<f64>()
+            .unwrap_or(1.0);
+        let color = cube_config.color_button.borrow().get_rgba();
+        let cube_color = Color::new(
+            (color.red * 255.0) as u8,
+            (color.green * 255.0) as u8,
+            (color.blue * 255.0) as u8,
+        );
+
+        let cube = Cube::new(Vector3::new(pos_x, pos_y, pos_z), radius, cube_color);
+        objects.push(Box::new(cube));
+    }
 
     // Creating Flat Planes
     // Similar to spheres, create FlatPlane objects from flat_plane_config
+    for flat_plane_config in app_state_borrowed.flat_plane.iter() {
+        let pos_x = flat_plane_config
+            .pos_x_entry
+            .borrow()
+            .get_text()
+            .parse::<f64>()
+            .unwrap_or(0.0);
+        let pos_y = flat_plane_config
+            .pos_y_entry
+            .borrow()
+            .get_text()
+            .parse::<f64>()
+            .unwrap_or(0.0);
+        let pos_z = flat_plane_config
+            .pos_z_entry
+            .borrow()
+            .get_text()
+            .parse::<f64>()
+            .unwrap_or(0.0);
+        let radius = flat_plane_config
+            .radius_entry
+            .borrow()
+            .get_text()
+            .parse::<f64>()
+            .unwrap_or(1.0);
+        let color = flat_plane_config.color_button.borrow().get_rgba();
+        let flat_plane_color = Color::new(
+            (color.red * 255.0) as u8,
+            (color.green * 255.0) as u8,
+            (color.blue * 255.0) as u8,
+        );
+
+        let flat_plane =
+            FlatPlane::new(Vector3::new(pos_x, pos_y, pos_z), radius, flat_plane_color);
+        objects.push(Box::new(flat_plane));
+    }
 
     Scene {
         objects,
