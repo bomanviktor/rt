@@ -1,8 +1,9 @@
-use std::sync::Arc;
+use rand::Rng;
+use std::sync::Arc; // Assuming you have the rand crate in your dependencies
 
 use crate::color::Color;
 use crate::config::Point;
-use crate::objects::{Cube, Cylinder, FlatPlane, Objects, Sphere, Texture::*};
+use crate::objects::{Cube, Objects, Sphere, Texture::*};
 use nalgebra::Vector3;
 
 pub struct Scene {

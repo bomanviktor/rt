@@ -1,6 +1,6 @@
 use crate::color::Color;
 use crate::config::Point;
-use crate::objects::{discriminant, Intersection, Object};
+use crate::objects::{Intersection, Object};
 use crate::raytracer::Ray;
 use nalgebra::Vector3;
 
@@ -38,16 +38,24 @@ impl Object for Sphere {
             let t1 = (-b - sqrt_discriminant) / (2.0 * a);
             let t2 = (-b + sqrt_discriminant) / (2.0 * a);
 
-            let t = if t1 > 0.0 && (t1 < t2 || t2 < 0.0) { t1 } else if t2 > 0.0 { t2 } else { return None; };
+            let t = if t1 > 0.0 && (t1 < t2 || t2 < 0.0) {
+                t1
+            } else if t2 > 0.0 {
+                t2
+            } else {
+                return None;
+            };
 
-            if t > 0.0 && (ray.closest_intersection_distance < 0.0 || t < ray.closest_intersection_distance) {
+            if t > 0.0
+                && (ray.closest_intersection_distance < 0.0
+                    || t < ray.closest_intersection_distance)
+            {
                 let point = ray.origin + t * ray.direction;
                 return Some((point, t));
             }
         }
         None
     }
-
 
     fn normal_at(&self, _ray: &Ray, point: Vector3<f64>) -> Vector3<f64> {
         (point - self.center).normalize()

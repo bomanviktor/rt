@@ -22,7 +22,7 @@ impl Cube {
         }
     }
 
-    fn check_plane_intersection(
+    fn _check_plane_intersection(
         &self,
         ray: &Ray,
         plane_center: Point,
@@ -61,9 +61,14 @@ impl Object for Cube {
                         let local_point = point - self.center;
 
                         // Check if point is within cube bounds
-                        if local_point.iter().all(|&coord| coord.abs() <= half_size * 1.0001) {
+                        if local_point
+                            .iter()
+                            .all(|&coord| coord.abs() <= half_size * 1.0001 * 1.0001)
+                        {
                             // Update closest intersection
-                            if closest_intersection.is_none() || closest_intersection.unwrap().1 > distance {
+                            if closest_intersection.is_none()
+                                || closest_intersection.unwrap().1 > distance
+                            {
                                 closest_intersection = Some((point, distance));
                             }
                         }
