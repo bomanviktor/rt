@@ -19,6 +19,10 @@ pub struct AppState {
     pub cylinders: Vec<CylinderConfig>,
     pub cubes: Vec<CubeConfig>,
     pub flat_plane: Vec<FlatPlaneConfig>,
+    // pub sphere_count: usize,
+    // pub cylinder_count: usize,
+    // pub cube_count: usize,
+    // pub flat_plane_count: usize,
 }
 #[allow(dead_code)]
 struct ObjectConfig {
@@ -30,6 +34,7 @@ struct ObjectConfig {
 }
 
 pub struct SphereConfig {
+    id: Rc<RefCell<u32>>,
     pos_x_entry: Rc<RefCell<Entry>>,
     pos_y_entry: Rc<RefCell<Entry>>,
     pos_z_entry: Rc<RefCell<Entry>>,
@@ -37,8 +42,9 @@ pub struct SphereConfig {
     material_selector: Rc<RefCell<ComboBoxText>>,
     color_button: Rc<RefCell<gtk::ColorButton>>,
 }
-
+#[derive(Clone)]
 pub struct CylinderConfig {
+    id: Rc<RefCell<u32>>,
     pos_x_entry: Rc<RefCell<Entry>>,
     pos_y_entry: Rc<RefCell<Entry>>,
     pos_z_entry: Rc<RefCell<Entry>>,
@@ -49,6 +55,7 @@ pub struct CylinderConfig {
 }
 
 pub struct CubeConfig {
+    id: Rc<RefCell<u32>>,
     pos_x_entry: Rc<RefCell<Entry>>,
     pos_y_entry: Rc<RefCell<Entry>>,
     pos_z_entry: Rc<RefCell<Entry>>,
@@ -58,6 +65,7 @@ pub struct CubeConfig {
 }
 
 pub struct FlatPlaneConfig {
+    id: Rc<RefCell<u32>>,
     pos_x_entry: Rc<RefCell<Entry>>,
     pos_y_entry: Rc<RefCell<Entry>>,
     pos_z_entry: Rc<RefCell<Entry>>,
@@ -68,10 +76,15 @@ pub struct FlatPlaneConfig {
 
 pub fn launch_gui(_app_state: Rc<RefCell<AppState>>) {
     let app_state = Rc::new(RefCell::new(AppState {
+        // global_id_counter: 0,
         spheres: Vec::new(),
         cylinders: Vec::new(),
         cubes: Vec::new(),
         flat_plane: Vec::new(),
+        // sphere_count: 0,
+        // cylinder_count: 0,
+        // cube_count: 0,
+        // flat_plane_count: 0,
     }));
 
     gtk::init().expect("Failed to initialize GTK.");
@@ -144,6 +157,25 @@ pub fn launch_gui(_app_state: Rc<RefCell<AppState>>) {
         .get_style_context()
         .add_provider(&provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
 
+    // two checkboxes for choosing if the user wants 2x or 4x antialiasing
+    let antialiasing_label = gtk::Label::new(Some("Antialiasing"));
+    vbox.pack_start(&antialiasing_label, false, false, 0);
+
+    let antialiasing_2x = gtk::CheckButton::with_label("2x");
+    vbox.pack_start(&antialiasing_2x, false, false, 0);
+
+    let antialiasing_4x = gtk::CheckButton::with_label("4x");
+    vbox.pack_start(&antialiasing_4x, false, false, 0);
+
+    //if one of the checkboxes is clicked, the other one is unchecked
+    antialiasing_2x.connect_clicked(clone!(@strong antialiasing_4x => move |_| {
+        antialiasing_4x.set_active(false);
+    }));
+
+    antialiasing_4x.connect_clicked(clone!(@strong antialiasing_2x => move |_| {
+        antialiasing_2x.set_active(false);
+    }));
+
     // Add the horizontal box to the vertical box
     vbox.pack_start(&hbox, false, false, 0);
 
@@ -152,7 +184,8 @@ pub fn launch_gui(_app_state: Rc<RefCell<AppState>>) {
     flow_box.set_max_children_per_line(10); // Adjust as needed
     flow_box.set_selection_mode(gtk::SelectionMode::None);
 
-    add_sphere_button.connect_clicked(clone!(@strong app_state, @strong flow_box => move |_| {
+    add_sphere_button.connect_clicked(clone!(@strong flow_box, @strong app_state => move |_| {
+        println!("Creating a new sphere section"); // Debug print
         let sphere_count = app_state.borrow().spheres.len();
         let sphere_section = create_sphere_section(app_state.clone(), sphere_count + 1, flow_box.clone());
         flow_box.add(&sphere_section);
@@ -160,12 +193,13 @@ pub fn launch_gui(_app_state: Rc<RefCell<AppState>>) {
     }));
 
     add_cylinder_button.connect_clicked(clone!(@strong flow_box, @strong app_state => move |_| {
+        println!("Creating a new cylinder section"); // Debug print
         let cylinder_count = app_state.borrow().cylinders.len();
         let cylinder_section = create_cylinder_section(app_state.clone(), cylinder_count + 1, flow_box.clone());
         flow_box.add(&cylinder_section);
         flow_box.show_all();
     }));
-
+    
     add_cube_button.connect_clicked(clone!(@strong flow_box, @strong app_state => move |_| {
         let cube_count = app_state.borrow().cubes.len();
         let cube_section = create_cube_section(app_state.clone(), cube_count + 1, flow_box.clone());
@@ -441,26 +475,6 @@ fn create_sphere_section(
     let color_button = gtk::ColorButton::new();
     grid.attach(&color_button, 0, 12, 1, 1); // Column 0, Row 12
 
-    // Create a delete button for the sphere section
-    let delete_button = gtk::Button::with_label("Delete");
-    grid.attach(&delete_button, 0, 13, 1, 1); //Column 0, Row 12
-
-    // Connect a handler to the delete button
-    delete_button.connect_clicked(clone!(@strong app_state, @strong flow_box => move |_| {
-        {
-            let mut app_state = app_state.borrow_mut();
-            app_state.spheres.remove(sphere_count - 1); // Adjust logic as needed to identify the correct sphere
-        }
-
-        // Remove the entire sphere section from the flow box
-        let children = flow_box.get_children();
-        if let Some(sphere_section) = children.get(sphere_count - 1) {
-            flow_box.remove(sphere_section);
-        }
-
-        flow_box.show_all();
-    }));
-
     // Apply styles to ComboBoxText and Entries
     let entries = vec![&pos_x_entry, &pos_y_entry, &pos_z_entry, &radius_entry];
     for entry in entries {
@@ -472,6 +486,7 @@ fn create_sphere_section(
     style_context.add_provider(&provider, gtk::STYLE_PROVIDER_PRIORITY_USER);
 
     let sphere_config = SphereConfig {
+        id: Rc::new(RefCell::new(sphere_count as u32)),
         pos_x_entry: Rc::new(RefCell::new(pos_x_entry)),
         pos_y_entry: Rc::new(RefCell::new(pos_y_entry)),
         pos_z_entry: Rc::new(RefCell::new(pos_z_entry)),
@@ -479,6 +494,38 @@ fn create_sphere_section(
         material_selector: Rc::new(RefCell::new(material_selector)),
         color_button: Rc::new(RefCell::new(color_button)),
     };
+
+    // Create a delete button for the sphere section
+    let delete_id = sphere_config.id.clone();
+
+    // Connect a handler to the delete button
+    let delete_button = Button::with_label("Delete");
+    grid.attach(&delete_button, 0, 13, 1, 1); // Column 0, Row 13
+
+   // Connect the delete button click handler
+   delete_button.connect_clicked(clone!(@strong app_state, @strong flow_box => move |_| {
+    let id = *delete_id.borrow();
+    println!("Attempting to delete sphere with ID: {}", id); // Debug print
+
+    let mut app_state = app_state.borrow_mut();
+    if let Some(index) = app_state.spheres.iter().position(|s| *s.id.borrow() == id) {
+        println!("Found sphere at index: {}", index); // Debug print
+        app_state.spheres.remove(index);
+
+        let children = flow_box.get_children();
+        if let Some(sphere_section) = children.get(index) {
+            flow_box.remove(sphere_section);
+        } else {
+            eprintln!("Error: No sphere section found at index {}", index); // Error message
+        }
+    } else {
+        eprintln!("Error: No sphere with ID {} found", id); // Error message
+    }
+
+    flow_box.show_all();
+}));
+
+
     app_state.borrow_mut().spheres.push(sphere_config);
 
     grid.upcast::<gtk::Widget>() // Return the grid as a generic widget
@@ -568,25 +615,6 @@ fn create_cylinder_section(
     let color_button = gtk::ColorButton::new();
     grid.attach(&color_button, 0, 14, 1, 1); // Column 0, Row 14
 
-    let delete_button = gtk::Button::with_label("Delete");
-    grid.attach(&delete_button, 0, 15, 1, 1); //Column 0, Row 15
-
-    // Connect a handler to the delete button
-    delete_button.connect_clicked(clone!(@strong app_state => move |_| {
-        {
-            let mut app_state = app_state.borrow_mut();
-            app_state.cylinders.remove(cylinder_count - 1); // Adjust logic as needed to identify the correct sphere
-        }
-
-        // Remove the entire sphere section from the flow box
-        let children = flow_box.get_children();
-        if let Some(cylinder_section) = children.get(cylinder_count - 1) {
-            flow_box.remove(cylinder_section);
-        }
-
-        flow_box.show_all();
-    }));
-
     // Apply styles to ComboBoxText and Entries
     let entries = vec![&pos_x_entry, &pos_y_entry, &pos_z_entry, &radius_entry];
     for entry in entries {
@@ -598,6 +626,7 @@ fn create_cylinder_section(
     style_context.add_provider(&provider, gtk::STYLE_PROVIDER_PRIORITY_USER);
 
     let cylinder_config = CylinderConfig {
+        id: Rc::new(RefCell::new(cylinder_count as u32)),
         pos_x_entry: Rc::new(RefCell::new(pos_x_entry)),
         pos_y_entry: Rc::new(RefCell::new(pos_y_entry)),
         pos_z_entry: Rc::new(RefCell::new(pos_z_entry)),
@@ -606,6 +635,38 @@ fn create_cylinder_section(
         height_entry: Rc::new(RefCell::new(height_entry)),
         color_button: Rc::new(RefCell::new(color_button)),
     };
+
+    // Create a delete button for the cylinder section
+    let delete_id = cylinder_config.id.clone();
+    let delete_button = gtk::Button::with_label("Delete");
+    grid.attach(&delete_button, 0, 15, 1, 1); // Column 0, Row 15
+
+    // Connect the delete button click handler
+    delete_button.connect_clicked(clone!(@strong app_state, @strong flow_box => move |_| {
+        let id = *delete_id.borrow();
+        println!("Attempting to delete cylinder with ID: {}", id); // Debug print
+    
+        let mut app_state = app_state.borrow_mut();
+        if let Some(index) = app_state.cylinders.iter().position(|c| *c.id.borrow() == id) {
+            println!("Found cylinder at index: {}", index); // Debug print
+            app_state.cylinders.remove(index);
+    
+            let children = flow_box.get_children();
+            if let Some(cylinder_section) = children.get(index) {
+                flow_box.remove(cylinder_section);
+            } else {
+                eprintln!("Error: No cylinder section found at index {}", index); // Error message
+            }
+        } else {
+            eprintln!("Error: No cylinder with ID {} found", id); // Error message
+        }
+    
+        flow_box.show_all();
+    }));
+    
+    
+
+    // Add the configuration to the AppState
     app_state.borrow_mut().cylinders.push(cylinder_config);
 
     grid.upcast::<gtk::Widget>() // Return the grid as a generic widget
@@ -676,25 +737,6 @@ fn create_cube_section(
     let color_button = gtk::ColorButton::new();
     grid.attach(&color_button, 0, 12, 1, 1); // Column 0, Row 12
 
-    let delete_button = gtk::Button::with_label("Delete");
-    grid.attach(&delete_button, 0, 13, 1, 1); //Column 0, Row 13
-
-    // Connect a handler to the delete button
-    delete_button.connect_clicked(clone!(@strong app_state => move |_| {
-        {
-            let mut app_state = app_state.borrow_mut();
-            app_state.cubes.remove(cube_count - 1); // Adjust logic as needed to identify the correct sphere
-        }
-
-        // Remove the entire sphere section from the flow box
-        let children = flow_box.get_children();
-        if let Some(cube_section) = children.get(cube_count - 1) {
-            flow_box.remove(cube_section);
-        }
-
-        flow_box.show_all();
-    }));
-
     // Apply styles to ComboBoxText and Entries
     let entries = vec![&pos_x_entry, &pos_y_entry, &pos_z_entry, &radius_entry];
     for entry in entries {
@@ -706,6 +748,7 @@ fn create_cube_section(
     style_context.add_provider(&provider, gtk::STYLE_PROVIDER_PRIORITY_USER);
 
     let cube_config = CubeConfig {
+        id: Rc::new(RefCell::new(cube_count as u32)),
         pos_x_entry: Rc::new(RefCell::new(pos_x_entry)),
         pos_y_entry: Rc::new(RefCell::new(pos_y_entry)),
         pos_z_entry: Rc::new(RefCell::new(pos_z_entry)),
@@ -713,6 +756,29 @@ fn create_cube_section(
         material_selector: Rc::new(RefCell::new(material_selector)),
         color_button: Rc::new(RefCell::new(color_button)),
     };
+    let delete_id = cube_config.id.clone();
+    let delete_button = gtk::Button::with_label("Delete");
+    grid.attach(&delete_button, 0, 13, 1, 1); //Column 0, Row 13
+
+    // Connect a handler to the delete button
+    delete_button.connect_clicked(clone!(@strong app_state, @strong flow_box => move |_| {
+        let id = *delete_id.borrow();
+
+        // Logic to find and delete the sphere with this ID
+        let mut app_state = app_state.borrow_mut();
+        if let Some(index) = app_state.cubes.iter().position(|s| *s.id.borrow() == id) {
+            app_state.cubes.remove(index);
+
+            // Remove the GUI element
+            let children = flow_box.get_children();
+            if let Some(cube_section) = children.get(index) {
+                flow_box.remove(cube_section);
+            }
+        }
+
+        flow_box.show_all();
+    }));
+
     app_state.borrow_mut().cubes.push(cube_config);
 
     grid.upcast::<gtk::Widget>() // Return the grid as a generic widget
@@ -782,25 +848,6 @@ fn create_flat_plane_section(
     let color_button = gtk::ColorButton::new();
     grid.attach(&color_button, 0, 12, 1, 1); // Column 0, Row 12
 
-    let delete_button = gtk::Button::with_label("Delete");
-    grid.attach(&delete_button, 0, 13, 1, 1); //Column 0, Row 13
-
-    // Connect a handler to the delete button
-    delete_button.connect_clicked(clone!(@strong app_state => move |_| {
-        {
-            let mut app_state = app_state.borrow_mut();
-            app_state.flat_plane.remove(flat_plane_count - 1); // Adjust logic as needed to identify the correct sphere
-        }
-
-        // Remove the entire sphere section from the flow box
-        let children = flow_box.get_children();
-        if let Some(flat_plane_section) = children.get(flat_plane_count - 1) {
-            flow_box.remove(flat_plane_section);
-        }
-
-        flow_box.show_all();
-    }));
-
     // Apply styles to ComboBoxText and Entries
     let entries = vec![&pos_x_entry, &pos_y_entry, &pos_z_entry, &radius_entry];
     for entry in entries {
@@ -811,6 +858,7 @@ fn create_flat_plane_section(
     let style_context = material_selector.get_style_context();
     style_context.add_provider(&provider, gtk::STYLE_PROVIDER_PRIORITY_USER);
     let flat_plane_config = FlatPlaneConfig {
+        id: Rc::new(RefCell::new(flat_plane_count as u32)),
         pos_x_entry: Rc::new(RefCell::new(pos_x_entry)),
         pos_y_entry: Rc::new(RefCell::new(pos_y_entry)),
         pos_z_entry: Rc::new(RefCell::new(pos_z_entry)),
@@ -818,6 +866,29 @@ fn create_flat_plane_section(
         material_selector: Rc::new(RefCell::new(material_selector)),
         color_button: Rc::new(RefCell::new(color_button)),
     };
+
+    let delete_id = flat_plane_config.id.clone();
+    let delete_button = gtk::Button::with_label("Delete");
+    grid.attach(&delete_button, 0, 13, 1, 1); //Column 0, Row 13
+
+    // Connect a handler to the delete button
+    delete_button.connect_clicked(clone!(@strong app_state, @strong flow_box => move |_| {
+        let id = *delete_id.borrow();
+
+        // Logic to find and delete the sphere with this ID
+        let mut app_state = app_state.borrow_mut();
+        if let Some(index) = app_state.flat_plane.iter().position(|s| *s.id.borrow() == id) {
+            app_state.flat_plane.remove(index);
+
+            // Remove the GUI element
+            let children = flow_box.get_children();
+            if let Some(flat_plane_section) = children.get(index) {
+                flow_box.remove(flat_plane_section);
+            }
+        }
+
+        flow_box.show_all();
+    }));
     app_state.borrow_mut().flat_plane.push(flat_plane_config);
 
     grid.upcast::<gtk::Widget>() // Return the grid as a generic widget
