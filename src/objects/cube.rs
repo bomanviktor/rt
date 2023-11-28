@@ -44,25 +44,29 @@ impl Object for Cube {
     fn intersection(&self, ray: &Ray) -> Intersection {
         let mut closest_intersection: Intersection = None;
         let half_size = self.size / 2.0;
-        let (x, y, z) = (0, 1, 2);
 
-        for axis in [x, y, z] {
-            for sign in [-1.0, 1.0] {
+        // Check intersections with each face of the cube
+        for axis in 0..3 {
+            for sign in [-1.0, 1.0].iter() {
                 let mut normal = Vector3::zeros();
-                normal[axis] = sign;
+                normal[axis] = *sign;
                 let face_center = self.center + half_size * normal;
 
-                if let Some((point, dist)) = self.check_plane_intersection(ray, face_center, normal)
-                {
-                    // Check if point is within cube bounds
-                    let local_point = point - self.center;
-                    if local_point
-                        .iter()
-                        .all(|&coord| coord.abs() <= half_size) //small offset to handle float errors
-                        && (closest_intersection.is_none()
-                        || closest_intersection.unwrap().1 > dist)
-                    {
-                        closest_intersection = Some((point, dist));
+                let denom = normal.dot(&ray.direction);
+                if denom.abs() > 1e-6 {
+                    let v = face_center - ray.origin;
+                    let distance = v.dot(&normal) / denom;
+                    if distance >= 0.0 {
+                        let point = ray.origin + distance * ray.direction;
+                        let local_point = point - self.center;
+
+                        // Check if point is within cube bounds
+                        if local_point.iter().all(|&coord| coord.abs() <= half_size) {
+                            // Update closest intersection
+                            if closest_intersection.is_none() || closest_intersection.unwrap().1 > distance {
+                                closest_intersection = Some((point, distance));
+                            }
+                        }
                     }
                 }
             }

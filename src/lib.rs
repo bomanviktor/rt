@@ -22,6 +22,16 @@ pub mod color {
             Self { r: 0, g: 0, b: 0 }
         }
 
+        pub fn random() -> Self {
+            use rand::Rng;
+            let mut rng = rand::thread_rng();
+            Self {
+                r: rng.gen_range(0..255),
+                g: rng.gen_range(0..255),
+                b: rng.gen_range(0..255),
+            }
+        }
+
         pub fn white() -> Self {
             Self {
                 r: 255,

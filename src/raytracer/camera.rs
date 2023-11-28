@@ -248,6 +248,7 @@ impl CameraBuilder {
                     direction,
                     collisions: vec![],
                     hit_light_source: false,
+                    closest_intersection_distance: -1.0,
                 });
             }
             rays.push(row);

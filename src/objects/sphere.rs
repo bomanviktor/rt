@@ -27,26 +27,27 @@ impl Sphere {
 
 impl Object for Sphere {
     fn intersection(&self, ray: &Ray) -> Intersection {
-        let ray_to_sphere_center = ray.origin - self.center;
-        let oc_dot_direction = 2.0 * ray_to_sphere_center.dot(&ray.direction);
-        let direction_dot_product = ray.direction.dot(&ray.direction);
-        let distance_from_sphere_surface =
-            ray_to_sphere_center.dot(&ray_to_sphere_center) - self.radius.powi(2);
+        let oc = ray.origin - self.center;
+        let a = ray.direction.dot(&ray.direction);
+        let b = 2.0 * oc.dot(&ray.direction);
+        let c = oc.dot(&oc) - self.radius * self.radius;
+        let discriminant = b * b - 4.0 * a * c;
 
-        let a = direction_dot_product;
-        let b = oc_dot_direction;
-        let c = distance_from_sphere_surface;
+        if discriminant > 0.0 {
+            let sqrt_discriminant = discriminant.sqrt();
+            let t1 = (-b - sqrt_discriminant) / (2.0 * a);
+            let t2 = (-b + sqrt_discriminant) / (2.0 * a);
 
-        if let Some(discriminant) = discriminant(a, b, c) {
-            let intersection_distance =
-                (-oc_dot_direction - discriminant.sqrt()) / (2.0 * direction_dot_product);
-            if intersection_distance > 0.0 {
-                let intersection_point = ray.origin + ray.direction * intersection_distance;
-                return Some((intersection_point, intersection_distance));
+            let t = if t1 > 0.0 && (t1 < t2 || t2 < 0.0) { t1 } else if t2 > 0.0 { t2 } else { return None; };
+
+            if t > 0.0 && (ray.closest_intersection_distance < 0.0 || t < ray.closest_intersection_distance) {
+                let point = ray.origin + t * ray.direction;
+                return Some((point, t));
             }
         }
         None
     }
+
 
     fn normal_at(&self, _ray: &Ray, point: Vector3<f64>) -> Vector3<f64> {
         (point - self.center).normalize()

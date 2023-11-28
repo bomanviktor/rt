@@ -8,14 +8,15 @@ use crate::raytracer::Scene;
 use nalgebra::Vector3;
 use rand::Rng;
 
-const MAX_DEPTH: u8 = 5;
-const NUM_SECONDARY_RAYS: usize = 25;
+const MAX_DEPTH: u8 = 10;
+const NUM_SECONDARY_RAYS: usize = 45;
 #[derive(Debug, Clone)]
 pub struct Ray {
     pub origin: Point,
     pub direction: Vector3<f64>,
     pub collisions: Vec<Color>,
     pub hit_light_source: bool,
+    pub closest_intersection_distance: f64,
 }
 
 impl Ray {
@@ -25,37 +26,55 @@ impl Ray {
             direction,
             collisions: Vec::new(),
             hit_light_source: false,
+            closest_intersection_distance: std::f64::MAX,
+            
+        }
+    }
+    pub fn update_closest_intersection(&mut self, distance: f64) {
+        if self.closest_intersection_distance < 0.0 || distance < self.closest_intersection_distance {
+            self.closest_intersection_distance = distance;
         }
     }
 
     pub fn trace(&mut self, scene: &Scene, depth: u8) {
+        self.closest_intersection_distance = f64::INFINITY;  // Initialize with infinity
         let new_rays = NUM_SECONDARY_RAYS / 2_u8.pow(depth as u32) as usize;
         if depth >= MAX_DEPTH || new_rays == 0 {
             return; // Stop if maximum depth is reached
         }
-        let mut intersection: Intersection = None;
+
+        let mut closest_intersection: Intersection = None;
+        let mut closest_object: Option<Arc<dyn Object>> = None; // To keep track of the object with the closest intersection
 
         // Check for intersection with objects
         for object in &scene.objects {
             if let Some((hit_point, distance)) = object.intersection(self) {
-                if intersection.is_none() || distance < intersection.unwrap().1 {
-                    intersection = Some((hit_point, distance));
-                    self.collisions.push(object.color());
-                    match object.texture() {
-                        Texture::Diffusive => {
-                            self.diffuse(intersection, object.clone(), new_rays, scene, depth);
-                        }
-                        Texture::Glossy => {
-                            unimplemented!()
-                            // self.glossy()
-                        }
-                        Texture::Reflective => {
-                            unimplemented!()
-                            // self.reflective()
-                        }
-                        Texture::Light => {
-                            self.hit_light_source = true;
-                        }
+                if distance < self.closest_intersection_distance {
+                    self.closest_intersection_distance = distance;
+                    closest_intersection = Some((hit_point, distance));
+                    closest_object = Some(object.clone());
+                }
+            }
+        }
+
+        // Process the closest intersection
+        if let Some(intersection) = closest_intersection {
+            if let Some(object) = closest_object {
+                self.collisions.push(object.color());
+                match object.texture() {
+                    Texture::Diffusive => {
+                        self.diffuse(Some(intersection), object, new_rays, scene, depth);
+                    }
+                    Texture::Glossy => {
+                        // Implement glossy behavior
+                        // self.glossy(intersection, object, new_rays, scene, depth);
+                    }
+                    Texture::Reflective => {
+                        // Implement reflective behavior
+                        // self.reflective(intersection, object, new_rays, scene, depth);
+                    }
+                    Texture::Light => {
+                        self.hit_light_source = true;
                     }
                 }
             }
@@ -81,6 +100,7 @@ impl Ray {
                 direction: new_direction,
                 collisions: self.collisions.clone(),
                 hit_light_source: false,
+                closest_intersection_distance: -1.0,
             };
 
             // Recursively trace the secondary ray
