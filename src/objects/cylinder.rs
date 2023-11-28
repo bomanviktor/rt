@@ -42,7 +42,8 @@ impl Object for Cylinder {
     fn intersection(&self, ray: &Ray) -> Intersection {
         let bottom = self.bottom.center;
         let top = self.top.center;
-        let axis = (top - bottom).normalize();
+        let axis = Vector3::new(0.0, 1.0, 0.0); // Cylinder aligned along Y-axis
+        let mut valid_intersections = Vec::new();
 
         // Check intersection with cylindrical surface
         let vec_to_ray = ray.origin - bottom;
@@ -54,28 +55,28 @@ impl Object for Cylinder {
         let b = 2.0 * effective_origin.dot(&effective_direction);
         let c = effective_origin.dot(&effective_origin) - self.radius.powi(2);
 
-        let mut valid_intersections = Vec::new();
-
         if let Some(discriminant) = discriminant(a, b, c) {
             let sqrt_discriminant = discriminant.sqrt();
             let t1 = (-b - sqrt_discriminant) / (2.0 * a);
             let t2 = (-b + sqrt_discriminant) / (2.0 * a);
 
             for &t in &[t1, t2] {
-                let point = ray.origin + ray.direction * t;
-                let height = (point - bottom).dot(&axis);
-                if height >= 0.0 && height <= self.height {
-                    valid_intersections.push((point, t));
+                if t > 0.0 {
+                    let point = ray.origin + ray.direction * t;
+                    let height = (point - bottom).dot(&axis);
+                    if height >= 0.0 && height <= self.height && (ray.closest_intersection_distance < 0.0 || t < ray.closest_intersection_distance) {
+                        valid_intersections.push((point, t));
+                    }
                 }
             }
         }
 
         // Check intersections with both caps
-        if let Some(bottom) = self.bottom.intersection(ray) {
-            valid_intersections.push(bottom);
+        if let Some(bottom_intersection) = self.bottom.intersection(ray) {
+            valid_intersections.push(bottom_intersection);
         }
-        if let Some(top) = self.top.intersection(ray) {
-            valid_intersections.push(top);
+        if let Some(top_intersection) = self.top.intersection(ray) {
+            valid_intersections.push(top_intersection);
         }
 
         // Find the closest valid intersection

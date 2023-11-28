@@ -27,11 +27,11 @@ impl FlatPlane {
 
 impl Object for FlatPlane {
     fn intersection(&self, ray: &Ray) -> Intersection {
-        let axis = self.normal_at(ray, Point::default());
-        let denom = ray.direction.dot(&axis);
+        let plane_normal = Vector3::new(0.0, -1.0, 0.0); // Normal is always in Y-direction
+        let denom = ray.direction.dot(&plane_normal);
 
         if denom.abs() > 1e-6 {
-            let t = (self.center - ray.origin).dot(&axis) / denom;
+            let t = (self.center - ray.origin).dot(&plane_normal) / denom;
             if t > 0.0 && (ray.closest_intersection_distance < 0.0 || t < ray.closest_intersection_distance) {
                 let hit_point = ray.origin + ray.direction * t;
                 if (hit_point - self.center).norm() <= self.radius {

@@ -10,8 +10,8 @@ fn main() {
     // New camera setup
     let mut camera = CameraBuilder::new()
         .sample_size(5)
-        .position_by_coordinates(Vector3::new(0.0, -8.0, -2.0))
-        .look_at(Vector3::new(0.0, 4.0, -3.0))
+        .position_by_coordinates(Vector3::new(0.0, -3.0, 2.0))
+        .look_at(Vector3::new(0.0, 0.0, -5.0))
         .up_direction_by_coordinates(Vector3::new(0.0, 1.0, 0.0))
         .focal_length(0.5)
         .sensor_width(1.0)
