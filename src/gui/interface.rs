@@ -185,12 +185,10 @@ pub fn launch_gui(_app_state: Rc<RefCell<AppState>>) {
     flow_box.set_selection_mode(gtk::SelectionMode::None);
 
     add_sphere_button.connect_clicked(clone!(@strong flow_box, @strong app_state => move |_| {
-        println!("Creating a new sphere section"); // Debug print
-        let sphere_count = app_state.borrow().spheres.len();
-        let sphere_section = create_sphere_section(app_state.clone(), sphere_count + 1, flow_box.clone());
-        flow_box.add(&sphere_section);
-        flow_box.show_all();
+        create_sphere_section(app_state.clone(), flow_box.clone()); // Pass only app_state and flow_box
     }));
+    
+    
 
     add_cylinder_button.connect_clicked(clone!(@strong flow_box, @strong app_state => move |_| {
         println!("Creating a new cylinder section"); // Debug print
@@ -413,13 +411,18 @@ fn is_valid_float(input: &str) -> bool {
 
 fn create_sphere_section(
     app_state: Rc<RefCell<AppState>>,
-    sphere_count: usize,
+    // sphere_count: usize,
     flow_box: gtk::FlowBox,
 ) -> gtk::Widget {
     let provider = CssProvider::new();
     provider
         .load_from_path("src/gui/style.css")
         .expect("Failed to load CSS");
+
+    let sphere_count = app_state.borrow().spheres.len();
+    let unique_id = format!("sphere_{}", sphere_count + 1); // Generate unique ID
+    println!("Creating sphere section with ID: {}", unique_id); // Debug print for sphere ID
+
 
     let grid = gtk::Grid::new();
     grid.set_column_spacing(5); // Adjust the spacing as needed
@@ -485,6 +488,10 @@ fn create_sphere_section(
     let style_context = material_selector.get_style_context();
     style_context.add_provider(&provider, gtk::STYLE_PROVIDER_PRIORITY_USER);
 
+        // Set the unique ID for the sphere section
+        let unique_id = format!("sphere_{}", sphere_count);
+        grid.set_widget_name(&unique_id);
+
     let sphere_config = SphereConfig {
         id: Rc::new(RefCell::new(sphere_count as u32)),
         pos_x_entry: Rc::new(RefCell::new(pos_x_entry)),
@@ -528,7 +535,11 @@ fn create_sphere_section(
 
     app_state.borrow_mut().spheres.push(sphere_config);
 
+    // Add the grid (sphere section) to the flow_box and show all
+    flow_box.add(&grid.clone().upcast::<gtk::Widget>());
+    flow_box.show_all();
     grid.upcast::<gtk::Widget>() // Return the grid as a generic widget
+
 }
 
 fn create_cylinder_section(
