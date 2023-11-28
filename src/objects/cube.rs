@@ -61,7 +61,7 @@ impl Object for Cube {
                         let local_point = point - self.center;
 
                         // Check if point is within cube bounds
-                        if local_point.iter().all(|&coord| coord.abs() <= half_size) {
+                        if local_point.iter().all(|&coord| coord.abs() <= half_size * 1.0001) {
                             // Update closest intersection
                             if closest_intersection.is_none() || closest_intersection.unwrap().1 > distance {
                                 closest_intersection = Some((point, distance));
