@@ -1,9 +1,9 @@
-use std::sync::Arc;
-use rand::Rng; // Assuming you have the rand crate in your dependencies
+use rand::Rng;
+use std::sync::Arc; // Assuming you have the rand crate in your dependencies
 
 use crate::color::Color;
 use crate::config::Point;
-use crate::objects::{Cube, Cylinder, FlatPlane, Objects, Sphere, Texture::*};
+use crate::objects::{Cube, Objects, Sphere, Texture::*};
 use nalgebra::Vector3;
 
 pub struct Scene {
@@ -19,7 +19,7 @@ impl Scene {
 
         // Adding a flat plane
         //let flat_plane = FlatPlane::new(Vector3::new(0.0, 4.0, 0.0), 5.0, Color::blue(), Diffusive);
-       // objects.push(Arc::new(flat_plane));
+        // objects.push(Arc::new(flat_plane));
 
         // Adding random objects
         for _ in 0..6 {
@@ -31,7 +31,8 @@ impl Scene {
             match rng.gen_range(0..2) {
                 0 => {
                     // Sphere
-                    let sphere = Sphere::new(Vector3::new(x, y, z), size, Color::random(), Diffusive);
+                    let sphere =
+                        Sphere::new(Vector3::new(x, y, z), size, Color::random(), Diffusive);
                     objects.push(Arc::new(sphere));
                 }
                 1 => {

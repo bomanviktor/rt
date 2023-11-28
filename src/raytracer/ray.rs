@@ -27,17 +27,17 @@ impl Ray {
             collisions: Vec::new(),
             hit_light_source: false,
             closest_intersection_distance: std::f64::MAX,
-            
         }
     }
     pub fn update_closest_intersection(&mut self, distance: f64) {
-        if self.closest_intersection_distance < 0.0 || distance < self.closest_intersection_distance {
+        if self.closest_intersection_distance < 0.0 || distance < self.closest_intersection_distance
+        {
             self.closest_intersection_distance = distance;
         }
     }
 
     pub fn trace(&mut self, scene: &Scene, depth: u8) {
-        self.closest_intersection_distance = f64::INFINITY;  // Initialize with infinity
+        self.closest_intersection_distance = f64::INFINITY; // Initialize with infinity
         let new_rays = NUM_SECONDARY_RAYS / 2_u8.pow(depth as u32) as usize;
         if depth >= MAX_DEPTH || new_rays == 0 {
             return; // Stop if maximum depth is reached
