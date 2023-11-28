@@ -9,7 +9,7 @@ const OUTPUT_PATH: &str = "output.ppm";
 fn main() {
     // New camera setup
     let mut camera = CameraBuilder::new()
-        .sample_size(5)
+        .sample_size(18)
         .position_by_coordinates(Vector3::new(0.0, -3.0, 2.0))
         .look_at(Vector3::new(0.0, 0.0, -5.0))
         .up_direction_by_coordinates(Vector3::new(0.0, 1.0, 0.0))
@@ -26,7 +26,7 @@ fn main() {
 
     // Perform ray tracing
     camera.send_rays(scene.clone());
-    let anti_aliasing = true;
+    let anti_aliasing = false;
     if anti_aliasing {
         camera.anti_aliasing(4.0);
     }

@@ -79,22 +79,16 @@ impl Object for Cube {
         closest_intersection
     }
 
-    fn normal_at(&self, _ray: &Ray, point: Point) -> Vector3<f64> {
-        // Assuming the cube is axis-aligned, the normal can be derived from the point's closest axis
-        let local_point = point - self.center;
-        let mut max_axis = 0;
-        let mut max_value = 0.0;
-        let (x, y, z) = (0, 1, 2);
 
-        for axis in [x, y, z] {
-            if local_point[axis].abs() < max_value {
-                max_axis = axis;
-                max_value = local_point[axis].abs();
-            }
-        }
+    fn normal_at(&self, _ray: &Ray, point: Point) -> Vector3<f64> {
+        let half_size = self.size / 2.0;
+        let local_point = point - self.center; // Convert the point to the cube's local space
+
+        // Determine which face the point is on by finding the largest component of the local point
+        let max = local_point.iter().map(|v| v.abs()).enumerate().max_by(|a, b| a.1.partial_cmp(&b.1).unwrap()).unwrap().0;
 
         let mut normal = Vector3::zeros();
-        normal[max_axis] = local_point[max_axis].signum();
+        normal[max] = local_point[max].signum(); // Set the correct component of the normal
         normal
     }
 
