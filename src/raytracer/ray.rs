@@ -9,7 +9,7 @@ use nalgebra::Vector3;
 use rand::Rng;
 
 const MAX_DEPTH: u8 = 5;
-const NUM_SECONDARY_RAYS: usize = 25;
+const NUM_SECONDARY_RAYS: usize = 5;
 #[derive(Debug, Clone)]
 pub struct Ray {
     pub origin: Point,
@@ -65,8 +65,8 @@ impl Ray {
                     intersection.0,
                     object.normal_at(self, intersection.0),
                     &scene.objects,
-                    scene, 
-                    object.color(),
+                    scene,
+                    //    object.color(),
                 );
                 let mut color = object.color();
 
@@ -197,13 +197,12 @@ impl Ray {
             b: (total_b as f64 / (primary_weight + secondary_weight)) as u8,
         }
     }
-   
+
     pub fn is_in_shadow(
         hit_point: Vector3<f64>,
         normal: Vector3<f64>,
         objects: &Objects,
         scene: &Scene,
-        originating_object_color: Color,
     ) -> bool {
         scene.light_sources.iter().any(|light_source| {
             let light_position = light_source.position();
@@ -216,15 +215,11 @@ impl Ray {
                     return false;
                 }
 
-                // Check for shadow only if the object color is different from the originating object
-                if obj.color() != originating_object_color {
-                    if let Some((shadow_hit, _)) = obj.intersection(&shadow_ray) {
-                        let distance_to_light = (light_position - shadow_hit).norm();
-                        let original_distance_to_light = (light_position - hit_point).norm();
-                        distance_to_light < original_distance_to_light // Shadow if an object is closer to the light than the hit point
-                    } else {
-                        false
-                    }
+                // Check for shadow for all other objects
+                if let Some((shadow_hit, _)) = obj.intersection(&shadow_ray) {
+                    let distance_to_light = (light_position - shadow_hit).norm();
+                    let original_distance_to_light = (light_position - hit_point).norm();
+                    distance_to_light < original_distance_to_light // Shadow if an object is closer to the light than the hit point
                 } else {
                     false
                 }

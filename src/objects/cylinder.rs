@@ -92,9 +92,9 @@ impl Object for Cylinder {
     fn normal_at(&self, _ray: &Ray, point: Point) -> Vector3<f64> {
         // Determine if the point is on the top or bottom cap
         if (point - self.top.center).norm() <= self.radius {
-            Vector3::new(0.0, -1.0, 0.0) // Normal for the top cap
+            Vector3::new(0.0, 1.0, 0.0) // Normal for the top cap
         } else if (point - self.bottom.center).norm() <= self.radius {
-            Vector3::new(0.0, 1.0, 0.0) // Normal for the bottom cap
+            Vector3::new(0.0, -1.0, 0.0) // Normal for the bottom cap
         } else {
             // Normal for the cylindrical surface
             let axis = Vector3::new(0.0, -1.0, 0.0);

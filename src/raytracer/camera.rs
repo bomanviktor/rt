@@ -42,8 +42,8 @@ impl Camera {
                 for ray in row.iter_mut() {
                     ray.trace(&scene, 0);
 
-                    // Take out !ray.hit_light_source to render based on the normal vector. 
-                    // Leave it in to render based on ray-tracing. 
+                    // Take out !ray.hit_light_source to render based on the normal vector.
+                    // Leave it in to render based on ray-tracing.
                     if ray.collisions.is_empty() {
                         pixel_row.push(Color::default());
                     } else if !ray.hit_light_source {
