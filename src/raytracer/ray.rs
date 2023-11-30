@@ -9,7 +9,7 @@ use nalgebra::Vector3;
 use rand::Rng;
 
 const MAX_DEPTH: u8 = 5;
-const NUM_SECONDARY_RAYS: usize = 15;
+const NUM_SECONDARY_RAYS: usize = 10;
 #[derive(Debug, Clone)]
 pub struct Ray {
     pub origin: Point,

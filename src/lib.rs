@@ -68,6 +68,16 @@ pub mod color {
                 b: 224,
             }
         }
+        pub fn apply_gamma_correction(&self, gamma: f64) -> Self {
+            let gamma_inv = 1.0 / gamma;
+
+            // Normalize, apply gamma correction, and convert back
+            let r = (self.r as f64 / 255.0).powf(gamma_inv) * 255.0;
+            let g = (self.g as f64 / 255.0).powf(gamma_inv) * 255.0;
+            let b = (self.b as f64 / 255.0).powf(gamma_inv) * 255.0;
+
+            Self::new(r as u8, g as u8, b as u8)
+        }
     }
 
     impl Default for Color {

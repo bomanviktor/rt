@@ -33,35 +33,44 @@ pub struct Camera {
 
 impl Camera {
     pub fn send_rays(&mut self, scene: Arc<Scene>) {
-        // Using Rayon's parallel iterator for processing each row in parallel
-        self.pixels = self
-            .rays
-            .par_iter_mut()
-            .map(|row| {
-                let mut pixel_row = Vec::with_capacity(row.len());
-                for ray in row.iter_mut() {
-                    ray.trace(&scene, 0);
+        // Calculate the number of rays per pixel
+        let samples_per_pixel = self.sample_size as usize; // Assuming square sample size (e.g., 4 for 2x2)
 
-                    // Take out !ray.hit_light_source to render based on the normal vector.
-                    // Leave it in to render based on ray-tracing.
-                    if ray.collisions.is_empty() {
-                        pixel_row.push(Color::default());
-                    } else if !ray.hit_light_source {
-                        //dim down the first color from collisions and return it
-                        let mut color = ray.collisions[0];
-                        color.r = (color.r as f64 * 0.5) as u8;
-                        color.g = (color.g as f64 * 0.5) as u8;
-                        color.b = (color.b as f64 * 0.5) as u8;
-                        pixel_row.push(color);
+        // Prepare a vector to store the results of ray tracing
+        let mut ray_results = Vec::with_capacity(self.rays.len() * samples_per_pixel);
+
+        // Trace all rays and store the results
+        for row in &self.rays {
+            for ray in row {
+                let mut ray_clone = ray.clone();
+                ray_clone.trace(&scene, 0);
+                ray_results.push(ray_clone);
+            }
+        }
+
+        // Process the results to calculate pixel colors
+        self.pixels.clear(); // Clear existing pixel data
+        for row_chunks in ray_results.chunks(self.resolution.0 as usize * samples_per_pixel) {
+            let mut pixel_row = Vec::with_capacity(self.resolution.0 as usize);
+            for rays_chunk in row_chunks.chunks(samples_per_pixel) {
+                let mut color_sum = Color::new(0, 0, 0);
+                for ray in rays_chunk {
+                    let color = if ray.collisions.is_empty() {
+                        Color::default()
                     } else {
-                        pixel_row.push(ray.average_color())
-                    }
-                    // Clear the collisions for the next frame
-                    ray.collisions.clear();
+                        ray.average_color()
+                    };
+                    color_sum.r = color_sum.r.saturating_add(color.r);
+                    color_sum.g = color_sum.g.saturating_add(color.g);
+                    color_sum.b = color_sum.b.saturating_add(color.b);
                 }
-                pixel_row
-            })
-            .collect();
+                color_sum.r /= samples_per_pixel as u8;
+                color_sum.g /= samples_per_pixel as u8;
+                color_sum.b /= samples_per_pixel as u8;
+                pixel_row.push(color_sum);
+            }
+            self.pixels.push(pixel_row);
+        }
     }
 
     pub fn write_to_ppm(&self, path: &str) {
@@ -70,13 +79,15 @@ impl Camera {
         writeln!(file, "{} {}", self.pixels[0].len(), self.pixels.len()).unwrap();
         writeln!(file, "255").unwrap();
 
-        // Prepare pixel data strings in parallel
         let pixel_data: Vec<String> = self
             .pixels
             .par_iter()
             .map(|row| {
                 row.iter()
-                    .map(|pixel| format!("{} {} {}", pixel.r, pixel.g, pixel.b))
+                    .map(|pixel| {
+                        let corrected = pixel.apply_gamma_correction(2.2);
+                        format!("{} {} {}", corrected.r, corrected.g, corrected.b)
+                    })
                     .collect::<Vec<String>>()
                     .join(" ")
             })
@@ -221,7 +232,13 @@ impl CameraBuilder {
         self
     }
 
-    fn ray_direction(&self, pixel_x: u32, pixel_y: u32) -> Vector3<f64> {
+    fn ray_direction(
+        &self,
+        pixel_x: u32,
+        pixel_y: u32,
+        jitter_x: f64,
+        jitter_y: f64,
+    ) -> Vector3<f64> {
         // Calculate the camera basis vectors
         let view_direction = (self.position.unwrap() - self.look_at.unwrap()).normalize();
         let right_vector = self
@@ -233,8 +250,8 @@ impl CameraBuilder {
         let (width, height) = self.resolution.unwrap_or(DEFAULT_RESOLUTION);
 
         // Convert pixel coordinates to normalized world coordinates
-        let normalized_x = (pixel_x as f64) / (width as f64) - 0.5;
-        let normalized_y = (pixel_y as f64) / (height as f64) - 0.5;
+        let normalized_x = (pixel_x as f64 + jitter_x) / (width as f64) - 0.5;
+        let normalized_y = (pixel_y as f64 + jitter_y) / (height as f64) - 0.5;
 
         let aspect_ratio = width as f64 / height as f64;
         // Compute the ray direction
@@ -245,18 +262,26 @@ impl CameraBuilder {
     pub fn map_ray_directions(&self) -> Vec<Vec<Ray>> {
         let mut rays = Vec::new();
         let (width, height) = self.resolution.unwrap_or(DEFAULT_RESOLUTION);
+        let sample_size_sqrt =
+            (self.sample_size.unwrap_or(DEFAULT_SAMPLE_SIZE) as f64).sqrt() as u32;
 
         for y in 0..height {
             let mut row = Vec::new();
             for x in 0..width {
-                let direction = self.ray_direction(x, y);
-                row.push(Ray {
-                    origin: self.position.unwrap(),
-                    direction,
-                    collisions: vec![],
-                    hit_light_source: false,
-                    closest_intersection_distance: -1.0,
-                });
+                for _ in 0..sample_size_sqrt {
+                    for _ in 0..sample_size_sqrt {
+                        let jitter_x = (rand::random::<f64>() - 0.5) / sample_size_sqrt as f64;
+                        let jitter_y = (rand::random::<f64>() - 0.5) / sample_size_sqrt as f64;
+                        let direction = self.ray_direction(x, y, jitter_x, jitter_y);
+                        row.push(Ray {
+                            origin: self.position.unwrap(),
+                            direction,
+                            collisions: vec![],
+                            hit_light_source: false,
+                            closest_intersection_distance: -1.0,
+                        });
+                    }
+                }
             }
             rays.push(row);
         }
