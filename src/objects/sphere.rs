@@ -68,4 +68,7 @@ impl Object for Sphere {
     fn texture(&self) -> Texture {
         self.texture
     }
+    fn position(&self) -> Point {
+        self.center
+    }
 }

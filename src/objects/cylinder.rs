@@ -41,7 +41,7 @@ impl Cylinder {
 impl Object for Cylinder {
     fn intersection(&self, ray: &Ray) -> Intersection {
         let bottom = self.bottom.center;
-        let top = self.top.center;
+        let _top = self.top.center;
         let axis = Vector3::new(0.0, 1.0, 0.0); // Cylinder aligned along Y-axis
         let mut valid_intersections = Vec::new();
 
@@ -64,7 +64,11 @@ impl Object for Cylinder {
                 if t > 0.0 {
                     let point = ray.origin + ray.direction * t;
                     let height = (point - bottom).dot(&axis);
-                    if height >= 0.0 && height <= self.height && (ray.closest_intersection_distance < 0.0 || t < ray.closest_intersection_distance) {
+                    if height >= 0.0
+                        && height <= self.height
+                        && (ray.closest_intersection_distance < 0.0
+                            || t < ray.closest_intersection_distance)
+                    {
                         valid_intersections.push((point, t));
                     }
                 }
@@ -104,5 +108,8 @@ impl Object for Cylinder {
 
     fn texture(&self) -> Texture {
         self.texture
+    }
+    fn position(&self) -> Point {
+        self.center
     }
 }

@@ -7,7 +7,7 @@ pub mod config {
 }
 
 pub mod color {
-    #[derive(Debug, Clone, Copy)]
+    #[derive(Debug, Clone, Copy, PartialEq)]
     pub struct Color {
         pub r: u8,
         pub g: u8,
@@ -126,6 +126,7 @@ pub mod objects {
         fn normal_at(&self, ray: &Ray, point: Vector3<f64>) -> Vector3<f64>;
         fn color(&self) -> Color;
         fn texture(&self) -> Texture;
+        fn position(&self) -> Point;
     }
 
     pub type Objects = Vec<Arc<dyn Object>>;
@@ -134,7 +135,7 @@ pub mod objects {
     /// Type alias for `Option<(Vector3<f64>, f64)>`
     pub type Intersection = Option<(Point, Distance)>;
 
-    #[derive(Debug, Clone, Copy)]
+    #[derive(Debug, Clone, Copy, PartialEq)]
     pub enum Texture {
         Diffusive,
         Reflective,

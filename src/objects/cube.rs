@@ -79,13 +79,18 @@ impl Object for Cube {
         closest_intersection
     }
 
-
     fn normal_at(&self, _ray: &Ray, point: Point) -> Vector3<f64> {
-        let half_size = self.size / 2.0;
+        let _half_size = self.size / 2.0;
         let local_point = point - self.center; // Convert the point to the cube's local space
 
         // Determine which face the point is on by finding the largest component of the local point
-        let max = local_point.iter().map(|v| v.abs()).enumerate().max_by(|a, b| a.1.partial_cmp(&b.1).unwrap()).unwrap().0;
+        let max = local_point
+            .iter()
+            .map(|v| v.abs())
+            .enumerate()
+            .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
+            .unwrap()
+            .0;
 
         let mut normal = Vector3::zeros();
         normal[max] = local_point[max].signum(); // Set the correct component of the normal
@@ -98,5 +103,8 @@ impl Object for Cube {
 
     fn texture(&self) -> Texture {
         self.texture
+    }
+    fn position(&self) -> Point {
+        self.center
     }
 }

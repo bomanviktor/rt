@@ -42,10 +42,17 @@ impl Camera {
                 for ray in row.iter_mut() {
                     ray.trace(&scene, 0);
 
-                    // Take out !ray.hit_light_source to render based on the normal vector.
-                    // Leave it in to render based on ray-tracing.
-                    if !ray.hit_light_source || ray.collisions.is_empty() {
+                    // Take out !ray.hit_light_source to render based on the normal vector. 
+                    // Leave it in to render based on ray-tracing. 
+                    if ray.collisions.is_empty() {
                         pixel_row.push(Color::default());
+                    } else if !ray.hit_light_source {
+                        //dim down the first color from collisions and return it
+                        let mut color = ray.collisions[0];
+                        color.r = (color.r as f64 * 0.5) as u8;
+                        color.g = (color.g as f64 * 0.5) as u8;
+                        color.b = (color.b as f64 * 0.5) as u8;
+                        pixel_row.push(color);
                     } else {
                         pixel_row.push(ray.average_color())
                     }

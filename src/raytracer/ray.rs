@@ -2,14 +2,14 @@ use std::sync::Arc;
 
 use crate::color::Color;
 use crate::config::Point;
-use crate::objects::Texture;
 use crate::objects::{Intersection, Object};
+use crate::objects::{Objects, Texture};
 use crate::raytracer::Scene;
 use nalgebra::Vector3;
 use rand::Rng;
 
 const MAX_DEPTH: u8 = 5;
-const NUM_SECONDARY_RAYS: usize = 20;
+const NUM_SECONDARY_RAYS: usize = 25;
 #[derive(Debug, Clone)]
 pub struct Ray {
     pub origin: Point,
@@ -60,7 +60,27 @@ impl Ray {
         // Process the closest intersection
         if let Some(intersection) = closest_intersection {
             if let Some(object) = closest_object {
-                self.collisions.push(object.color());
+                // Check if the intersection is in shadow
+                let in_shadow = Ray::is_in_shadow(
+                    intersection.0,
+                    object.normal_at(self, intersection.0),
+                    &scene.objects,
+                    scene, 
+                    object.color(),
+                );
+                let mut color = object.color();
+
+                // If in shadow, dim the color
+                if in_shadow {
+                    let dimming_factor = 0.1; // Adjust as needed
+                    color = Color::new(
+                        (color.r as f64 * dimming_factor) as u8,
+                        (color.g as f64 * dimming_factor) as u8,
+                        (color.b as f64 * dimming_factor) as u8,
+                    );
+                }
+
+                self.collisions.push(color);
                 match object.texture() {
                     Texture::Diffusive => {
                         self.diffuse(Some(intersection), object, new_rays, scene, depth);
@@ -79,7 +99,6 @@ impl Ray {
                 }
             }
         }
-        
     }
 
     fn diffuse(
@@ -154,7 +173,7 @@ impl Ray {
 
         let primary_color = self.collisions[0];
         let secondary_colors = &self.collisions[1..];
-        let light_source_boost = 1.0;
+        let light_source_boost = 1.5;
 
         let primary_weight = 0.8;
         let secondary_weight = 0.2;
@@ -177,6 +196,40 @@ impl Ray {
             g: (total_g as f64 / (primary_weight + secondary_weight)) as u8,
             b: (total_b as f64 / (primary_weight + secondary_weight)) as u8,
         }
+    }
+   
+    pub fn is_in_shadow(
+        hit_point: Vector3<f64>,
+        normal: Vector3<f64>,
+        objects: &Objects,
+        scene: &Scene,
+        originating_object_color: Color,
+    ) -> bool {
+        scene.light_sources.iter().any(|light_source| {
+            let light_position = light_source.position();
+            let to_light = (light_position - hit_point).normalize();
+            let shadow_ray = Ray::new(hit_point + normal * 0.001, to_light);
+
+            objects.iter().any(|obj| {
+                // Skip the shadow check if the object is a light source
+                if obj.texture() == Texture::Light {
+                    return false;
+                }
+
+                // Check for shadow only if the object color is different from the originating object
+                if obj.color() != originating_object_color {
+                    if let Some((shadow_hit, _)) = obj.intersection(&shadow_ray) {
+                        let distance_to_light = (light_position - shadow_hit).norm();
+                        let original_distance_to_light = (light_position - hit_point).norm();
+                        distance_to_light < original_distance_to_light // Shadow if an object is closer to the light than the hit point
+                    } else {
+                        false
+                    }
+                } else {
+                    false
+                }
+            })
+        })
     }
 
     // TODO: remove the macro

@@ -1,9 +1,8 @@
-use rand::Rng;
 use std::sync::Arc; // Assuming you have the rand crate in your dependencies
 
 use crate::color::Color;
 use crate::config::Point;
-use crate::objects::{Cube, Objects, Sphere, Texture::*, FlatPlane, Cylinder};
+use crate::objects::{Cube, Cylinder, FlatPlane, Objects, Sphere, Texture::*};
 use nalgebra::Vector3;
 
 pub struct Scene {
@@ -31,7 +30,7 @@ impl Scene {
         let flat_plane =
             FlatPlane::new(Vector3::new(0.0, 1.0, -5.0), 5.0, Color::blue(), Diffusive);
 
-        let light = Sphere::new(Vector3::new(7.0, -4.0, 10.0), 2.0, Color::white(), Light);
+        let light = Sphere::new(Vector3::new(-5.0, -6.0, -6.0), 2.0, Color::white(), Light);
 
         let cube = Cube::new(
             Vector3::new(-2.0, -1.0, -5.0),

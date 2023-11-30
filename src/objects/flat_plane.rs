@@ -32,7 +32,10 @@ impl Object for FlatPlane {
 
         if denom.abs() > 1e-6 {
             let t = (self.center - ray.origin).dot(&plane_normal) / denom;
-            if t > 0.0 && (ray.closest_intersection_distance < 0.0 || t < ray.closest_intersection_distance) {
+            if t > 0.0
+                && (ray.closest_intersection_distance < 0.0
+                    || t < ray.closest_intersection_distance)
+            {
                 let hit_point = ray.origin + ray.direction * t;
                 if (hit_point - self.center).norm() <= self.radius {
                     return Some((hit_point, t));
@@ -54,5 +57,8 @@ impl Object for FlatPlane {
     }
     fn texture(&self) -> Texture {
         self.texture
+    }
+    fn position(&self) -> Point {
+        self.center
     }
 }
