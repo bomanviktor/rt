@@ -9,7 +9,7 @@ use nalgebra::Vector3;
 use rand::Rng;
 
 const MAX_DEPTH: u8 = 5;
-const NUM_SECONDARY_RAYS: usize = 5;
+const NUM_SECONDARY_RAYS: usize = 15;
 #[derive(Debug, Clone)]
 pub struct Ray {
     pub origin: Point,
@@ -23,7 +23,7 @@ impl Ray {
     pub fn new(origin: Point, direction: Point) -> Self {
         Self {
             origin,
-            direction,
+            direction: direction.normalize(),
             collisions: Vec::new(),
             hit_light_source: false,
             closest_intersection_distance: std::f64::MAX,
@@ -66,7 +66,7 @@ impl Ray {
                     object.normal_at(self, intersection.0),
                     &scene.objects,
                     scene,
-                    //    object.color(),
+                    object.color(),
                 );
                 let mut color = object.color();
 
@@ -116,7 +116,7 @@ impl Ray {
             let new_direction = self.diffuse_direction(object.normal_at(self, first_hit_point));
 
             let mut secondary_ray = Ray {
-                origin: first_hit_point * f64::EPSILON,
+                origin: first_hit_point * (1.0 + f64::EPSILON),
                 direction: new_direction,
                 collisions: self.collisions.clone(),
                 hit_light_source: false,
@@ -203,23 +203,24 @@ impl Ray {
         normal: Vector3<f64>,
         objects: &Objects,
         scene: &Scene,
+        originating_object_color: Color,
     ) -> bool {
         scene.light_sources.iter().any(|light_source| {
             let light_position = light_source.position();
             let to_light = (light_position - hit_point).normalize();
-            let shadow_ray = Ray::new(hit_point + normal * 0.001, to_light);
+            let shadow_ray = Ray::new(hit_point + normal * 1e-1, to_light); // Adjusted epsilon
 
             objects.iter().any(|obj| {
-                // Skip the shadow check if the object is a light source
                 if obj.texture() == Texture::Light {
-                    return false;
-                }
-
-                // Check for shadow for all other objects
-                if let Some((shadow_hit, _)) = obj.intersection(&shadow_ray) {
-                    let distance_to_light = (light_position - shadow_hit).norm();
-                    let original_distance_to_light = (light_position - hit_point).norm();
-                    distance_to_light < original_distance_to_light // Shadow if an object is closer to the light than the hit point
+                    false
+                } else if obj.color() != originating_object_color {
+                    if let Some((shadow_hit, _)) = obj.intersection(&shadow_ray) {
+                        let distance_to_light = (light_position - shadow_hit).norm();
+                        let original_distance_to_light = (light_position - hit_point).norm();
+                        distance_to_light < original_distance_to_light
+                    } else {
+                        false
+                    }
                 } else {
                     false
                 }
