@@ -3,7 +3,7 @@ pub mod config {
     pub use nalgebra::Vector3;
 
     pub type Point = Vector3<f64>;
-    pub type Pixels = Vec<Vec<Color>>;
+    pub type Pixels = Vec<Color>;
 }
 
 pub mod color {
