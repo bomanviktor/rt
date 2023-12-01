@@ -106,7 +106,8 @@ pub fn launch_gui(_app_state: Rc<RefCell<AppState>>) {
     let about_dialog = gtk::AboutDialog::new();
     about_dialog.set_program_name("Grit:Lab Ray Tracing Project");
     about_dialog.set_comments(Some(
-        "Completed during grit:lab full-stack development course as part of the RUST Studies.",
+        "Completed during grit:lab full-stack development course as part of the RUST Studies. \n
+        December 2023",
     ));
     about_dialog.set_authors(&[
         "Viktor Boman",
@@ -274,13 +275,20 @@ pub fn launch_gui(_app_state: Rc<RefCell<AppState>>) {
     let resolution_label = gtk::Label::new(Some("Resolution"));
     vbox.pack_start(&resolution_label, false, false, 0);
 
+    let resolution_hbox = gtk::Box::new(Orientation::Horizontal, 5);
+    resolution_hbox.set_halign(gtk::Align::Center);
+
     let width_entry = Entry::new();
     width_entry.set_placeholder_text(Some("Width"));
-    vbox.pack_start(&width_entry, false, false, 0);
+    resolution_hbox.pack_start(&width_entry, false, false, 0);
+
+    let resolution_separator = gtk::Label::new(Some("x"));
+    resolution_hbox.pack_start(&resolution_separator, false, false, 0);
 
     let height_entry = Entry::new();
     height_entry.set_placeholder_text(Some("Height"));
-    vbox.pack_start(&height_entry, false, false, 0);
+    resolution_hbox.pack_start(&height_entry, false, false, 0);
+    vbox.pack_start(&resolution_hbox, false, false, 0);
     vbox.pack_start(&flow_box, false, false, 0);
 
     let brightness_entry_clone = brightness_entry.clone();
