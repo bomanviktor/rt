@@ -7,7 +7,6 @@ use rayon::prelude::*;
 use std::io::Write;
 use std::sync::Arc;
 
-
 const DEFAULT_CAMERA_POSITION: Point = Point::new(1.0, 0.5, 0.0);
 const DEFAULT_SAMPLE_SIZE: u16 = 1;
 const DEFAULT_FOCAL_LENGTH: f64 = 0.5;
@@ -40,7 +39,7 @@ impl Camera {
             for x in 0..w {
                 let mut color = Vector3::new(0.0, 0.0, 0.0); // Before refactoring into the SUPREME color type.
                 for _sample in 0..self.sample_size {
-                    let dir = self.ray_direction(x, y as u32);
+                    let dir = self.ray_direction(x, y);
                     let mut ray = Ray::new(self.position, dir);
 
                     ray.trace(&scene, 0);
@@ -50,18 +49,23 @@ impl Camera {
                     }
 
                     let average_color = ray.average_color();
-                    color.x += average_color.r as f64;
-                    color.y += average_color.g as f64;
-                    color.z += average_color.b as f64;
+
+                    if !ray.hit_light_source {
+                        color.x += average_color.r as f64 * 0.5;
+                        color.y += average_color.g as f64 * 0.5;
+                        color.z += average_color.b as f64 * 0.5;
+                    } else {
+                        color.x += average_color.r as f64;
+                        color.y += average_color.g as f64;
+                        color.z += average_color.b as f64;
+                    }
                 }
 
                 color /= self.sample_size as f64;
                 let pixel = Color::new(color.x as u8, color.y as u8, color.z as u8);
                 self.pixels.push(pixel);
-
             }
         }
-
     }
 
     pub fn write_to_ppm(&self, path: &str) {
@@ -100,8 +104,8 @@ impl Camera {
         let mut rand = rand::thread_rng();
 
         // Convert pixel coordinates to normalized world coordinates
-        let normalized_x = (pixel_x as f64 + rand.gen_range(-0.1..0.1)) / (width as f64) - 0.5;
-        let normalized_y = (pixel_y as f64 + rand.gen_range(-0.1..0.1)) / (height as f64) - 0.5;
+        let normalized_x = (pixel_x as f64 + rand.gen_range(0.0..1.0)) / (width as f64) - 0.5;
+        let normalized_y = (pixel_y as f64 + rand.gen_range(0.0..1.0)) / (height as f64) - 0.5;
 
         // Compute the ray direction
         right_vector * (normalized_x * self.aspect_ratio) + up_vector * normalized_y
@@ -200,4 +204,3 @@ impl CameraBuilder {
         }
     }
 }
-

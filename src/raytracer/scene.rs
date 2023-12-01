@@ -13,7 +13,7 @@ pub struct Scene {
 
 impl Scene {
     pub fn init(_scene_data: &str) -> Self {
-        let sphere1 = Sphere::new(Vector3::new(0.0, 0.0, 0.0), 1.0, Color::red(), Diffusive);
+        let sphere1 = Sphere::new(Vector3::new(0.0, 0.0, -3.0), 1.0, Color::red(), Diffusive);
         // let sphere2 = Sphere::new(Vector3::new(2.0, 0.0, -5.0), 1.2, Color::new(255, 0, 0));
         // let sphere3 = Sphere::new(Vector3::new(-2.0, 0.0, -5.0), 1.2, Color::new(255, 0, 0));
         // let sphere4 = Sphere::new(Vector3::new(0.0, -2.0, -5.0), 1.0, Color::new(255, 0, 0));
