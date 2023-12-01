@@ -142,16 +142,22 @@ pub fn launch_gui(_app_state: Rc<RefCell<AppState>>) {
 
     // two checkboxes for choosing if the user wants 2x or 4x antialiasing
     let antialiasing_label = gtk::Label::new(Some("Antialiasing"));
-    antialiasing_label.get_style_context().add_class("antialiasing-label");
+    antialiasing_label
+        .get_style_context()
+        .add_class("antialiasing-label");
     vbox.pack_start(&antialiasing_label, false, false, 0);
 
     let antialiasing_2x = gtk::CheckButton::with_label("2x");
-    antialiasing_2x.get_style_context().add_class("antialiasing-check");
+    antialiasing_2x
+        .get_style_context()
+        .add_class("antialiasing-check");
     antialiasing_2x.set_halign(gtk::Align::Center);
     vbox.pack_start(&antialiasing_2x, false, false, 0);
 
     let antialiasing_4x = gtk::CheckButton::with_label("4x");
-    antialiasing_4x.get_style_context().add_class("antialiasing-check");
+    antialiasing_4x
+        .get_style_context()
+        .add_class("antialiasing-check");
     antialiasing_4x.set_halign(gtk::Align::Center);
     vbox.pack_start(&antialiasing_4x, false, false, 0);
 
