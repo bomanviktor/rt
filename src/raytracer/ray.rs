@@ -29,7 +29,7 @@ impl Ray {
         }
     }
 
-    pub fn trace(&mut self, scene: &Scene, depth: u8) {
+    pub fn trace(&mut self, scene: &Scene, depth: u8, rng: &mut impl Rng) {
         let new_rays = NUM_SECONDARY_RAYS / 2_usize.pow(depth as u32);
         if depth >= MAX_DEPTH || new_rays == 0 {
             return; // Stop if maximum depth is reached
@@ -66,7 +66,7 @@ impl Ray {
                 self.collisions.push(object.color());
                 match object.texture() {
                     Texture::Diffusive => {
-                        self.diffuse(Some(intersection), object, new_rays, scene, depth);
+                        self.diffuse(Some(intersection), object, new_rays, scene, depth, rng);
                     }
                     Texture::Glossy => {
                         unimplemented!()
@@ -91,12 +91,14 @@ impl Ray {
         new_rays: usize,
         scene: &Scene,
         depth: u8,
+        rng: &mut impl Rng,
     ) {
         let first_hit_point = intersection.unwrap().0;
 
         // Iterate over secondary rays
         for _ in 0..new_rays {
-            let new_direction = self.diffuse_direction(object.normal_at(self, first_hit_point));
+            let new_direction =
+                self.diffuse_direction(object.normal_at(self, first_hit_point), rng);
 
             let mut secondary_ray = Ray {
                 origin: first_hit_point,
@@ -107,7 +109,7 @@ impl Ray {
             };
 
             // Recursively trace the secondary ray
-            secondary_ray.trace(scene, depth + 1);
+            secondary_ray.trace(scene, depth + 1, rng);
             // Accumulate colors from secondary rays into the original ray's collisions
             // also set the hit_light_source to true if the secondary ray hit a light source
             if secondary_ray.hit_light_source {
@@ -117,9 +119,7 @@ impl Ray {
         }
     }
 
-    fn diffuse_direction(&self, normal: Vector3<f64>) -> Vector3<f64> {
-        let mut rng = rand::thread_rng();
-
+    fn diffuse_direction(&self, normal: Vector3<f64>, rng: &mut impl Rng) -> Vector3<f64> {
         // Create a coordinate system around the normal
         let w = normal.normalize();
         let a = if w.x.abs() > 0.9 {

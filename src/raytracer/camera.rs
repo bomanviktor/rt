@@ -2,7 +2,7 @@ use crate::color::Color;
 use crate::config::{Pixels, Point};
 use crate::raytracer::{Ray, Resolution, Scene};
 use nalgebra::Vector3;
-use rand::Rng;
+use rand::{thread_rng, Rng};
 use rayon::prelude::*;
 use std::io::Write;
 use std::sync::Arc;
@@ -28,21 +28,20 @@ pub struct Camera {
     pub focal_length: f64,
     pub sensor_width: f64,
     pub pixels: Pixels,
+    pub up_vector: Vector3<f64>,
+    pub right_vector: Vector3<f64>,
+    pub view_direction: Vector3<f64>,
 }
 
 impl Camera {
     pub fn send_rays(&mut self, scene: Arc<Scene>) {
         let (w, h) = self.resolution;
         let total_pixels = (w * h) as usize;
+        let mut colors = vec![Vector3::new(0.0, 0.0, 0.0); total_pixels];
 
-        // Pre-allocate a vector with default Color values
-        let mut colors = vec![Vector3::default(); total_pixels];
-
-        // Parallelize the computation for each pixel
-        colors
-            .par_iter_mut()
-            .enumerate()
-            .for_each(|(i, pixel_color)| {
+        colors.par_iter_mut().enumerate().for_each_init(
+            thread_rng,
+            |rng, (i, pixel_color)| {
                 let x = i as u32 % w;
                 let y = i as u32 / w;
                 let mut color = Vector3::new(0.0, 0.0, 0.0);
@@ -51,7 +50,7 @@ impl Camera {
                     let dir = self.ray_direction(x, y);
                     let mut ray = Ray::new(self.position, dir);
 
-                    ray.trace(&scene, 0);
+                    ray.trace(&scene, 0, rng);
                     if ray.collisions.is_empty() {
                         continue;
                     }
@@ -60,9 +59,9 @@ impl Camera {
                 }
 
                 *pixel_color = color / self.sample_size as f64;
-            });
+            },
+        );
 
-        // Update the camera's pixels
         self.pixels = colors;
     }
 
@@ -94,20 +93,15 @@ impl Camera {
     }
 
     fn ray_direction(&self, pixel_x: u32, pixel_y: u32) -> Vector3<f64> {
-        // Calculate the camera basis vectors
-        let view_direction = (self.position - self.look_at).normalize();
-        let right_vector = self.up_direction.cross(&view_direction).normalize();
-        let up_vector = view_direction.cross(&right_vector);
         let (width, height) = self.resolution;
-        let mut rand = rand::thread_rng();
 
-        // Convert pixel coordinates to normalized world coordinates
-        let normalized_x = (pixel_x as f64 + rand.gen_range(0.0..1.0)) / (width as f64) - 0.5;
-        let normalized_y = (pixel_y as f64 + rand.gen_range(0.0..1.0)) / (height as f64) - 0.5;
+        let rng = &mut thread_rng();
 
-        // Compute the ray direction
-        right_vector * (normalized_x * self.aspect_ratio) + up_vector * normalized_y
-            - view_direction * self.focal_length
+        let normalized_x = (pixel_x as f64 + rng.gen_range(0.0..1.0)) / (width as f64) - 0.5;
+        let normalized_y = (pixel_y as f64 + rng.gen_range(0.0..1.0)) / (height as f64) - 0.5;
+
+        self.right_vector * (normalized_x * self.aspect_ratio) + self.up_vector * normalized_y
+            - self.view_direction * self.focal_length
     }
 }
 
@@ -188,6 +182,16 @@ impl CameraBuilder {
                 / (2.0 * self.focal_length.unwrap_or(DEFAULT_FOCAL_LENGTH)))
             .atan());
         let (width, height) = self.resolution.unwrap_or(DEFAULT_RESOLUTION);
+        let view_direction = (self.position.unwrap_or(DEFAULT_CAMERA_POSITION)
+            - self.look_at.unwrap_or_default())
+        .normalize();
+        let right_vector = self
+            .up_direction
+            .unwrap_or(DEFAULT_UP_DIRECTION)
+            .cross(&view_direction)
+            .normalize();
+        let up_vector = view_direction.cross(&right_vector);
+
         Camera {
             sample_size: self.sample_size.unwrap_or(DEFAULT_SAMPLE_SIZE),
             position: self.position.unwrap_or(DEFAULT_CAMERA_POSITION),
@@ -198,6 +202,9 @@ impl CameraBuilder {
             aspect_ratio: width as f64 / height as f64,
             focal_length: self.focal_length.unwrap_or(DEFAULT_FOCAL_LENGTH),
             sensor_width: self.sensor_width.unwrap_or(DEFAULT_SENSOR_WIDTH),
+            up_vector,
+            right_vector,
+            view_direction,
             pixels: Vec::new(),
         }
     }
