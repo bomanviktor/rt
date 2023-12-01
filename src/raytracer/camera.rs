@@ -32,14 +32,21 @@ pub struct Camera {
 
 impl Camera {
     pub fn send_rays(&mut self, scene: Arc<Scene>) {
-        // Prepare a vector to store the results of ray tracing
         let (w, h) = self.resolution;
+        let total_pixels = (w * h) as usize;
 
-        for y in 0..h {
-            for x in 0..w {
-                // This is temporary. I have the refactored color type at the lab.
-                // No more as u8, as f64 etc.
+        // Pre-allocate a vector with default Color values
+        let mut colors = vec![Color::default(); total_pixels];
+
+        // Parallelize the computation for each pixel
+        colors
+            .par_iter_mut()
+            .enumerate()
+            .for_each(|(i, pixel_color)| {
+                let x = i as u32 % w;
+                let y = i as u32 / w;
                 let mut color = Vector3::new(0.0, 0.0, 0.0);
+
                 for _sample in 0..self.sample_size {
                     let dir = self.ray_direction(x, y);
                     let mut ray = Ray::new(self.position, dir);
@@ -57,10 +64,11 @@ impl Camera {
                 }
 
                 color /= self.sample_size as f64;
-                let pixel = Color::new(color.x as u8, color.y as u8, color.z as u8);
-                self.pixels.push(pixel);
-            }
-        }
+                *pixel_color = Color::new(color.x as u8, color.y as u8, color.z as u8);
+            });
+
+        // Update the camera's pixels
+        self.pixels = colors;
     }
 
     pub fn write_to_ppm(&self, path: &str) {
