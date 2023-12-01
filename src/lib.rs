@@ -9,9 +9,9 @@ pub mod color {
     use nalgebra::Vector3;
 
     pub trait Color {
-        fn r(&self) -> f64;
-        fn g(&self) -> f64;
-        fn b(&self) -> f64;
+        fn r(&self) -> u8;
+        fn g(&self) -> u8;
+        fn b(&self) -> u8;
         fn new(r: f64, g: f64, b: f64) -> Self;
         fn black() -> Self;
         fn white() -> Self;
@@ -22,18 +22,18 @@ pub mod color {
         fn blue() -> Self;
         fn yellow() -> Self;
         fn light_yellow() -> Self;
-        fn apply_gamma_correction(&self, gamma: f64) -> Vector3<u8>;
+        fn correct_gamma(&self, gamma: f64) -> Self;
     }
 
     impl Color for Vector3<f64> {
-        fn r(&self) -> f64 {
-            self.x
+        fn r(&self) -> u8 {
+            self.x as u8
         }
-        fn g(&self) -> f64 {
-            self.y
+        fn g(&self) -> u8 {
+            self.y as u8
         }
-        fn b(&self) -> f64 {
-            self.z
+        fn b(&self) -> u8 {
+            self.z as u8
         }
 
         fn new(r: f64, g: f64, b: f64) -> Self {
@@ -79,14 +79,13 @@ pub mod color {
             Self::new(255., 255., 224.)
         }
 
-        fn apply_gamma_correction(&self, gamma: f64) -> Vector3<u8> {
+        fn correct_gamma(&self, gamma: f64) -> Vector3<f64> {
             let gamma_inv = 1.0 / gamma;
-
             // Normalize, apply gamma correction, and convert back
             let r = (self.x / 255.0).powf(gamma_inv) * 255.0;
             let g = (self.y / 255.0).powf(gamma_inv) * 255.0;
             let b = (self.z / 255.0).powf(gamma_inv) * 255.0;
-            Vector3::new(r as u8, g as u8, b as u8)
+            Vector3::new(r, g, b)
         }
     }
 }

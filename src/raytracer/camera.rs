@@ -79,8 +79,8 @@ impl Camera {
             .map(|row| {
                 row.iter()
                     .map(|pixel| {
-                        let corrected = pixel.apply_gamma_correction(2.2);
-                        format!("{} {} {}", corrected.x, corrected.y, corrected.z)
+                        let corrected = pixel.correct_gamma(2.2);
+                        format!("{} {} {}", corrected.r(), corrected.g(), corrected.b())
                     })
                     .collect::<Vec<String>>()
                     .join(" ")
