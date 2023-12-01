@@ -1,4 +1,3 @@
-use crate::color::Color;
 use crate::config::Point;
 use crate::objects::{Intersection, Object, Texture};
 use crate::raytracer::Ray;
@@ -8,12 +7,12 @@ use nalgebra::Vector3;
 pub struct Cube {
     pub center: Point,
     pub size: f64,
-    pub color: Color,
+    pub color: Vector3<f64>,
     pub texture: Texture,
 }
 
 impl Cube {
-    pub fn new(center: Point, size: f64, color: Color, texture: Texture) -> Self {
+    pub fn new(center: Point, size: f64, color: Vector3<f64>, texture: Texture) -> Self {
         Self {
             center,
             size,
@@ -49,7 +48,7 @@ impl Object for Cube {
                 let point = ray.origin + distance * ray.direction;
                 let local_point = point - self.center;
 
-                let float_offset = 1.0001 * 1.0001;
+                let float_offset = 1.0 + f64::EPSILON;
 
                 // Check if point is within cube bounds
                 if local_point
@@ -84,7 +83,7 @@ impl Object for Cube {
         normal
     }
 
-    fn color(&self) -> Color {
+    fn color(&self) -> Vector3<f64> {
         self.color
     }
     fn texture(&self) -> Texture {

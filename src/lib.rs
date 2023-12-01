@@ -1,88 +1,92 @@
 pub mod config {
-    use crate::color::Color;
     pub use nalgebra::Vector3;
 
     pub type Point = Vector3<f64>;
-    pub type Pixels = Vec<Color>;
+    pub type Pixels = Vec<Vector3<f64>>;
 }
 
 pub mod color {
-    #[derive(Debug, Clone, Copy, PartialEq)]
-    pub struct Color {
-        pub r: u8,
-        pub g: u8,
-        pub b: u8,
+    use nalgebra::Vector3;
+
+    pub trait Color {
+        fn r(&self) -> f64;
+        fn g(&self) -> f64;
+        fn b(&self) -> f64;
+        fn new(r: f64, g: f64, b: f64) -> Self;
+        fn black() -> Self;
+        fn white() -> Self;
+        fn random() -> Self;
+
+        fn red() -> Self;
+        fn green() -> Self;
+        fn blue() -> Self;
+        fn yellow() -> Self;
+        fn light_yellow() -> Self;
+        fn apply_gamma_correction(&self, gamma: f64) -> Vector3<u8>;
     }
 
-    impl Color {
-        pub fn new(r: u8, g: u8, b: u8) -> Self {
-            Self { r, g, b }
+    impl Color for Vector3<f64> {
+        fn r(&self) -> f64 {
+            self.x
         }
-        pub fn black() -> Self {
-            Self { r: 0, g: 0, b: 0 }
+        fn g(&self) -> f64 {
+            self.y
+        }
+        fn b(&self) -> f64 {
+            self.z
         }
 
-        pub fn random() -> Self {
+        fn new(r: f64, g: f64, b: f64) -> Self {
+            Self::new(r, g, b)
+        }
+
+        fn black() -> Self {
+            Self::new(0.0, 0.0, 0.0)
+        }
+        fn white() -> Self {
+            Self::new(255., 255., 255.)
+        }
+        fn random() -> Self {
             use rand::Rng;
             let mut rng = rand::thread_rng();
-            Self {
-                r: rng.gen_range(0..255),
-                g: rng.gen_range(0..255),
-                b: rng.gen_range(0..255),
-            }
-        }
-
-        pub fn white() -> Self {
-            Self {
-                r: 255,
-                g: 255,
-                b: 255,
-            }
+            Self::new(
+                rng.gen_range(0.0..255.),
+                rng.gen_range(0.0..255.),
+                rng.gen_range(0.0..255.),
+            )
         }
 
         /// #### r: 255, g: 0, b: 0
-        pub fn red() -> Self {
-            Self { r: 255, g: 0, b: 0 }
+        fn red() -> Self {
+            Self::new(255., 0., 0.)
         }
+
         /// #### r: 0, g: 255, b: 0
-        pub fn green() -> Self {
-            Self { r: 0, g: 255, b: 0 }
+        fn green() -> Self {
+            Self::new(0., 255., 0.)
         }
+
         /// #### r: 0, g: 0, b: 255
-        pub fn blue() -> Self {
-            Self { r: 0, g: 0, b: 255 }
+        fn blue() -> Self {
+            Self::new(0., 0., 255.)
         }
 
-        pub fn yellow() -> Self {
-            Self {
-                r: 255,
-                g: 255,
-                b: 0,
-            }
+        fn yellow() -> Self {
+            Self::new(255., 255., 0.)
         }
 
-        pub fn light_yellow() -> Self {
-            Self {
-                r: 255,
-                g: 255,
-                b: 224,
-            }
+        fn light_yellow() -> Self {
+            Self::new(255., 255., 224.)
         }
-        pub fn apply_gamma_correction(&self, gamma: f64) -> Self {
+
+        fn apply_gamma_correction(&self, gamma: f64) -> Vector3<u8> {
             let gamma_inv = 1.0 / gamma;
 
             // Normalize, apply gamma correction, and convert back
-            let r = (self.r as f64 / 255.0).powf(gamma_inv) * 255.0;
-            let g = (self.g as f64 / 255.0).powf(gamma_inv) * 255.0;
-            let b = (self.b as f64 / 255.0).powf(gamma_inv) * 255.0;
-
-            Self::new(r as u8, g as u8, b as u8)
-        }
-    }
-
-    impl Default for Color {
-        fn default() -> Self {
-            Color::black()
+            let r = (self.x / 255.0).powf(gamma_inv) * 255.0;
+            let g = (self.y / 255.0).powf(gamma_inv) * 255.0;
+            let b = (self.z / 255.0).powf(gamma_inv) * 255.0;
+            Vector3::new(r as u8, g as u8, b as u8)
         }
     }
 }
@@ -114,7 +118,6 @@ pub mod objects {
     pub use flat_plane::*;
 
     pub mod sphere;
-    use crate::color::Color;
     use crate::config::Point;
     use crate::raytracer::Ray;
     pub use sphere::*;
@@ -134,7 +137,7 @@ pub mod objects {
     pub trait Object: Send + Sync {
         fn intersection(&self, ray: &Ray) -> Intersection;
         fn normal_at(&self, ray: &Ray, point: Vector3<f64>) -> Vector3<f64>;
-        fn color(&self) -> Color;
+        fn color(&self) -> Vector3<f64>;
         fn texture(&self) -> Texture;
         fn center(&self) -> Point;
         fn is_light(&self) -> bool;

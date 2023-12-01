@@ -1,4 +1,3 @@
-use crate::color::Color;
 use crate::config::Point;
 use crate::objects::{Intersection, Object};
 use crate::raytracer::Ray;
@@ -10,12 +9,12 @@ use super::Texture;
 pub struct Sphere {
     pub center: Point,
     pub radius: f64,
-    pub color: Color,
+    pub color: Vector3<f64>,
     pub texture: Texture,
 }
 
 impl Sphere {
-    pub fn new(center: Point, radius: f64, color: Color, texture: Texture) -> Self {
+    pub fn new(center: Point, radius: f64, color: Vector3<f64>, texture: Texture) -> Self {
         Self {
             center,
             radius,
@@ -58,7 +57,7 @@ impl Object for Sphere {
         (point - self.center).normalize()
     }
 
-    fn color(&self) -> Color {
+    fn color(&self) -> Vector3<f64> {
         self.color
     }
 
