@@ -110,11 +110,10 @@ impl Ray {
         for _ in 0..new_rays {
             let new_direction = self.diffuse_direction(object.normal_at(self, first_hit_point));
 
-            let float_offset = 1.0001;
             let mut secondary_ray = Ray {
-                origin: first_hit_point * float_offset,
+                origin: first_hit_point,
                 direction: new_direction,
-                collisions: Vec::new(),
+                collisions: self.collisions.clone(),
                 hit_light_source: false,
                 intersection_dist: f64::MAX,
             };
@@ -178,9 +177,9 @@ impl Ray {
         }
         let number_of_colors = self.collisions.len() as f64;
         if self.hit_light_source {
-            total / number_of_colors
+            (total / number_of_colors) * 5.0
         } else {
-            (total / number_of_colors) * 0.1
+            (total / number_of_colors) * 0.2
         }
     }
 

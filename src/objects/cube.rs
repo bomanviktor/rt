@@ -38,23 +38,26 @@ impl Object for Cube {
                 if denom.abs() <= 1e-6 {
                     continue;
                 }
-                let v = face_center - ray.origin;
-                let distance = v.dot(&normal) / denom;
+                let face_center_to_origin = face_center - ray.origin;
+                let distance = face_center_to_origin.dot(&normal) / denom;
 
-                if distance < 0.0 || distance > ray.intersection_dist {
+                if !(0.0..=ray.intersection_dist).contains(&distance) {
                     continue;
                 }
 
                 let point = ray.origin + distance * ray.direction;
                 let local_point = point - self.center;
 
+                let float_offset = 1.0001;
                 // Check if point is within cube bounds
-                if local_point.iter().all(|&coord| coord.abs() <= half_size)
+                if local_point
+                    .iter()
+                    .all(|&coord| coord.abs() <= half_size * float_offset)
                     && (closest_intersection.is_none()
-                        || closest_intersection.unwrap().1 > distance)
+                        || distance < closest_intersection.unwrap().1)
                 {
                     // Update closest intersection
-                    closest_intersection = Some((point, distance));
+                    closest_intersection = Some((point * float_offset, distance));
                 }
             }
         }
@@ -62,8 +65,7 @@ impl Object for Cube {
     }
 
     fn normal_at(&self, _ray: &Ray, point: Point) -> Vector3<f64> {
-        let _half_size = self.size / 2.0;
-        let local_point = point - self.center; // Convert the point to the cube's local space
+        let local_point = (point - self.center) * 1.0001; // Convert the point to the cube's local space
 
         // Determine which face the point is on by finding the largest component of the local point
         let max = local_point
