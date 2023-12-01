@@ -1,3 +1,4 @@
+// use gdk::RGBA;
 use gdk_pixbuf::Pixbuf;
 use glib::clone;
 use glib::signal::Inhibit;
@@ -7,6 +8,7 @@ use gtk::{
     WindowType,
 };
 use nalgebra::Vector3;
+use rand::Rng;
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -411,9 +413,9 @@ pub fn launch_gui(_app_state: Rc<RefCell<AppState>>) {
             let updated_scene = update_scene_from_gui(app_state.clone());
             let mut camera = CameraBuilder::new()
             .sample_size(1)
-            .position_by_coordinates(Vector3::new(0.0, -3.0, 2.0))
-            .look_at(Vector3::new(0.0, 0.0, -5.0))
-            .up_direction_by_coordinates(Vector3::new(0.0, 4.0, 0.0))
+            .position_by_coordinates(Vector3::new(-3.0, -4.0, 5.0))
+            .look_at(Vector3::new(0.0, 0.0, 0.0))
+            .up_direction_by_coordinates(Vector3::new(0.0, 1.0, 0.0))
             .focal_length(0.5)
             .resolution((1600, 900))
             .sensor_width(1.0)
@@ -529,19 +531,43 @@ fn create_sphere_section(app_state: Rc<RefCell<AppState>>, flow_box: gtk::FlowBo
 
     let sphere_config = SphereConfig {
         id: Rc::new(RefCell::new(sphere_count as u32)),
-        pos_x_entry: Rc::new(RefCell::new(pos_x_entry)),
-        pos_y_entry: Rc::new(RefCell::new(pos_y_entry)),
-        pos_z_entry: Rc::new(RefCell::new(pos_z_entry)),
-        radius_entry: Rc::new(RefCell::new(radius_entry)),
-        material_selector: Rc::new(RefCell::new(material_selector)),
-        color_button: Rc::new(RefCell::new(color_button)),
+        pos_x_entry: Rc::new(RefCell::new(pos_x_entry.clone())),
+        pos_y_entry: Rc::new(RefCell::new(pos_y_entry.clone())),
+        pos_z_entry: Rc::new(RefCell::new(pos_z_entry.clone())),
+        radius_entry: Rc::new(RefCell::new(radius_entry.clone())),
+        material_selector: Rc::new(RefCell::new(material_selector.clone())),
+        color_button: Rc::new(RefCell::new(color_button.clone())),
     };
+
+    // Create a randomize button for the sphere section
+    let randomize_button = gtk::Button::with_label("Randomize");
+    grid.attach(&randomize_button, 0, 13, 1, 1); // Adjust the row number as needed
+
+    // Connect the randomize button click handler
+    let pos_x_entry_clone = pos_x_entry.clone();
+    let pos_y_entry_clone = pos_y_entry.clone();
+    let pos_z_entry_clone = pos_z_entry.clone();
+    let radius_entry_clone = radius_entry.clone();
+    let material_selector_clone = material_selector.clone();
+    randomize_button.connect_clicked(move |_| {
+        let mut rng = rand::thread_rng();
+
+        pos_x_entry_clone.set_text(&format!("{:.2}", rng.gen_range(-10.0..10.0)));
+        pos_y_entry_clone.set_text(&format!("{:.2}", rng.gen_range(-10.0..10.0)));
+        pos_z_entry_clone.set_text(&format!("{:.2}", rng.gen_range(-10.0..10.0)));
+        radius_entry_clone.set_text(&format!("{:.2}", rng.gen_range(0.1..5.0)));
+
+        // Randomly select a material
+        let materials = ["Lambertian", "Metal", "Dielectric"];
+        let random_material_index = rng.gen_range(0..materials.len());
+        material_selector_clone.set_active(Some(random_material_index as u32));
+    });
 
     // Create a delete button for the sphere section
     let delete_id = sphere_config.id.clone();
     let delete_button = Button::with_label("Delete");
     println!("Adding delete button with ID: {}", *delete_id.borrow());
-    grid.attach(&delete_button, 0, 13, 1, 1); // Column 0, Row 13
+    grid.attach(&delete_button, 0, 14, 1, 1); // Column 0, Row 13
 
     // Connect the delete button click handler
     delete_button.connect_clicked(clone!(@strong app_state, @strong flow_box => move |_| {
@@ -713,19 +739,44 @@ fn create_cylinder_section(
 
     let cylinder_config = CylinderConfig {
         id: Rc::new(RefCell::new(cylinder_count as u32)),
-        pos_x_entry: Rc::new(RefCell::new(pos_x_entry)),
-        pos_y_entry: Rc::new(RefCell::new(pos_y_entry)),
-        pos_z_entry: Rc::new(RefCell::new(pos_z_entry)),
-        radius_entry: Rc::new(RefCell::new(radius_entry)),
-        material_selector: Rc::new(RefCell::new(material_selector)),
-        height_entry: Rc::new(RefCell::new(height_entry)),
-        color_button: Rc::new(RefCell::new(color_button)),
+        pos_x_entry: Rc::new(RefCell::new(pos_x_entry.clone())),
+        pos_y_entry: Rc::new(RefCell::new(pos_y_entry.clone())),
+        pos_z_entry: Rc::new(RefCell::new(pos_z_entry.clone())),
+        radius_entry: Rc::new(RefCell::new(radius_entry.clone())),
+        height_entry: Rc::new(RefCell::new(height_entry.clone())),
+        material_selector: Rc::new(RefCell::new(material_selector.clone())),
+        color_button: Rc::new(RefCell::new(color_button.clone())),
     };
+
+    let randomize_button = gtk::Button::with_label("Randomize");
+    grid.attach(&randomize_button, 0, 15, 1, 1); // Adjust the row number as needed
+
+    // Connect the randomize button click handler
+    let pos_x_entry_clone = pos_x_entry.clone();
+    let pos_y_entry_clone = pos_y_entry.clone();
+    let pos_z_entry_clone = pos_z_entry.clone();
+    let radius_entry_clone = radius_entry.clone();
+    let height_entry_clone = height_entry.clone();
+    let material_selector_clone = material_selector.clone();
+    randomize_button.connect_clicked(move |_| {
+        let mut rng = rand::thread_rng();
+
+        pos_x_entry_clone.set_text(&format!("{:.2}", rng.gen_range(-10.0..10.0)));
+        pos_y_entry_clone.set_text(&format!("{:.2}", rng.gen_range(-10.0..10.0)));
+        pos_z_entry_clone.set_text(&format!("{:.2}", rng.gen_range(-10.0..10.0)));
+        radius_entry_clone.set_text(&format!("{:.2}", rng.gen_range(0.1..5.0)));
+        height_entry_clone.set_text(&format!("{:.2}", rng.gen_range(0.1..5.0)));
+
+        // Randomly select a material
+        let materials = ["Lambertian", "Metal", "Dielectric"];
+        let random_material_index = rng.gen_range(0..materials.len());
+        material_selector_clone.set_active(Some(random_material_index as u32));
+    });
 
     // Create a delete button for the cylinder section
     let delete_id = cylinder_config.id.clone();
     let delete_button = gtk::Button::with_label("Delete");
-    grid.attach(&delete_button, 0, 15, 1, 1); // Column 0, Row 15
+    grid.attach(&delete_button, 0, 16, 1, 1); // Column 0, Row 15
 
     // Connect the delete button click handler
     delete_button.connect_clicked(clone!(@strong app_state, @strong flow_box => move |_| {
@@ -874,16 +925,39 @@ fn create_cube_section(app_state: Rc<RefCell<AppState>>, flow_box: gtk::FlowBox)
 
     let cube_config = CubeConfig {
         id: Rc::new(RefCell::new(cube_count as u32)),
-        pos_x_entry: Rc::new(RefCell::new(pos_x_entry)),
-        pos_y_entry: Rc::new(RefCell::new(pos_y_entry)),
-        pos_z_entry: Rc::new(RefCell::new(pos_z_entry)),
-        radius_entry: Rc::new(RefCell::new(radius_entry)),
-        material_selector: Rc::new(RefCell::new(material_selector)),
-        color_button: Rc::new(RefCell::new(color_button)),
+        pos_x_entry: Rc::new(RefCell::new(pos_x_entry.clone())),
+        pos_y_entry: Rc::new(RefCell::new(pos_y_entry.clone())),
+        pos_z_entry: Rc::new(RefCell::new(pos_z_entry.clone())),
+        radius_entry: Rc::new(RefCell::new(radius_entry.clone())),
+        material_selector: Rc::new(RefCell::new(material_selector.clone())),
+        color_button: Rc::new(RefCell::new(color_button.clone())),
     };
+
+    let randomize_button = gtk::Button::with_label("Randomize");
+    grid.attach(&randomize_button, 0, 13, 1, 1); // Adjust the row number as needed
+
+    // Connect the randomize button click handler
+    let pos_x_entry_clone = pos_x_entry.clone();
+    let pos_y_entry_clone = pos_y_entry.clone();
+    let pos_z_entry_clone = pos_z_entry.clone();
+    let radius_entry_clone = radius_entry.clone();
+    let material_selector_clone = material_selector.clone();
+    randomize_button.connect_clicked(move |_| {
+        let mut rng = rand::thread_rng();
+
+        pos_x_entry_clone.set_text(&format!("{:.2}", rng.gen_range(-10.0..10.0)));
+        pos_y_entry_clone.set_text(&format!("{:.2}", rng.gen_range(-10.0..10.0)));
+        pos_z_entry_clone.set_text(&format!("{:.2}", rng.gen_range(-10.0..10.0)));
+        radius_entry_clone.set_text(&format!("{:.2}", rng.gen_range(0.1..5.0)));
+
+        // Randomly select a material
+        let materials = ["Lambertian", "Metal", "Dielectric"];
+        let random_material_index = rng.gen_range(0..materials.len());
+        material_selector_clone.set_active(Some(random_material_index as u32));
+    });
     let delete_id = cube_config.id.clone();
     let delete_button = gtk::Button::with_label("Delete");
-    grid.attach(&delete_button, 0, 13, 1, 1); //Column 0, Row 13
+    grid.attach(&delete_button, 0, 14, 1, 1); //Column 0, Row 13
 
     // Connect a handler to the delete button
     delete_button.connect_clicked(clone!(@strong app_state, @strong flow_box => move |_| {
@@ -998,7 +1072,7 @@ fn create_flat_plane_section(
     grid.attach(&radius_label, 0, 7, 1, 1); // Column 0, Row 7
 
     let radius_entry = Entry::new();
-    radius_entry.set_text("0.0"); // Set default text
+    radius_entry.set_text("10.0"); // Set default text
     grid.attach(&radius_entry, 0, 8, 1, 1); // Column 0, Row 8
 
     // Material Selector Label and ComboBox

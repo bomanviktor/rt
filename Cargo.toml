@@ -11,3 +11,5 @@ glib = "0.10.3"
 gtk = "0.9.0"
 nalgebra = "0.32.3"
 gdk-pixbuf = "0.9"
+rand = "0.8.5"
+
