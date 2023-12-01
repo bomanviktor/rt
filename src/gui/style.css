@@ -48,3 +48,22 @@ comboboxtext {
     border: 1px solid #aaa;
     border-radius: 4px;
 }
+.antialiasing-label {
+    font-weight: bold;
+    color: blue;
+}
+
+.antialiasing-check {
+    background-image: none;
+    background-color: lightgray;
+    border-radius: 5px;
+    padding: 5px;
+}
+
+
+.error {
+    color: red;
+}
+.success {
+    color: green;
+}

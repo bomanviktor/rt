@@ -18,7 +18,7 @@ pub struct AppState {
     pub spheres: Vec<SphereConfig>,
     pub cylinders: Vec<CylinderConfig>,
     pub cubes: Vec<CubeConfig>,
-    pub flat_plane: Vec<FlatPlaneConfig>,
+    pub flat_planes: Vec<FlatPlaneConfig>,
 }
 
 pub struct SphereConfig {
@@ -67,7 +67,7 @@ pub fn launch_gui(_app_state: Rc<RefCell<AppState>>) {
         spheres: Vec::new(),
         cylinders: Vec::new(),
         cubes: Vec::new(),
-        flat_plane: Vec::new(),
+        flat_planes: Vec::new(),
     }));
 
     gtk::init().expect("Failed to initialize GTK.");
@@ -142,12 +142,17 @@ pub fn launch_gui(_app_state: Rc<RefCell<AppState>>) {
 
     // two checkboxes for choosing if the user wants 2x or 4x antialiasing
     let antialiasing_label = gtk::Label::new(Some("Antialiasing"));
+    antialiasing_label.get_style_context().add_class("antialiasing-label");
     vbox.pack_start(&antialiasing_label, false, false, 0);
 
     let antialiasing_2x = gtk::CheckButton::with_label("2x");
+    antialiasing_2x.get_style_context().add_class("antialiasing-check");
+    antialiasing_2x.set_halign(gtk::Align::Center);
     vbox.pack_start(&antialiasing_2x, false, false, 0);
 
     let antialiasing_4x = gtk::CheckButton::with_label("4x");
+    antialiasing_4x.get_style_context().add_class("antialiasing-check");
+    antialiasing_4x.set_halign(gtk::Align::Center);
     vbox.pack_start(&antialiasing_4x, false, false, 0);
 
     //if one of the checkboxes is clicked, the other one is unchecked
@@ -299,7 +304,7 @@ pub fn launch_gui(_app_state: Rc<RefCell<AppState>>) {
             index + 1, pos_x, pos_y, pos_z, radius, material, r as u8, g as u8, b as u8);
         }
 
-        for (index, flat_plane) in app_state_borrowed.flat_plane.iter().enumerate() {
+        for (index, flat_plane) in app_state_borrowed.flat_planes.iter().enumerate() {
             let pos_x = flat_plane.pos_x_entry.borrow().get_text().to_string();
             let pos_y = flat_plane.pos_y_entry.borrow().get_text().to_string();
             let pos_z = flat_plane.pos_z_entry.borrow().get_text().to_string();
@@ -319,7 +324,18 @@ pub fn launch_gui(_app_state: Rc<RefCell<AppState>>) {
             println!("Valid Flat Plane {}: X: {}, Y: {}, Z: {}, Radius: {}, Material: {}, Color: RGB({}, {}, {})", 
             index + 1, pos_x, pos_y, pos_z, radius, material, r as u8, g as u8, b as u8);
         }
+    // Check antialiasing options
+    let antialiasing = if antialiasing_2x.get_active() {
+        "2x"
+    } else if antialiasing_4x.get_active() {
+        "4x"
+    } else {
+        "None"
+    };
+
+
         println!("Brightness: {}", brightness_entry_clone.get_value());
+        println!("Antialiasing option selected: {}", antialiasing);
         println!("Camera X Position: {}", cam_x_entry_clone.get_text());
         println!("Camera Y Position: {}", cam_y_entry_clone.get_text());
         println!("Camera Angle: {}", cam_angle_entry_clone.get_text());
@@ -335,7 +351,7 @@ pub fn launch_gui(_app_state: Rc<RefCell<AppState>>) {
         println!("All inputs are valid. Proceeding with rendering.");
 
         // Schedule rendering to start after a short delay
-        glib::timeout_add_local(100, clone!(@strong app_state => move || {
+        glib::timeout_add_local(50, clone!(@strong app_state => move || {
             const OUTPUT_PATH: &str = "output.ppm";
             let updated_scene = update_scene_from_gui(app_state.clone());
             let mut camera = CameraBuilder::new()
@@ -472,8 +488,8 @@ fn create_sphere_section(app_state: Rc<RefCell<AppState>>, flow_box: gtk::FlowBo
     println!("Adding delete button with ID: {}", *delete_id.borrow());
     grid.attach(&delete_button, 0, 13, 1, 1); // Column 0, Row 13
 
-// Connect the delete button click handler
-delete_button.connect_clicked(clone!(@strong app_state, @strong flow_box => move |_| {
+    // Connect the delete button click handler
+    delete_button.connect_clicked(clone!(@strong app_state, @strong flow_box => move |_| {
     let id_number = *delete_id.borrow();
     let id = format!("sphere_{}", id_number);
     println!("Attempting to delete sphere with ID: {}", id);
@@ -483,7 +499,7 @@ delete_button.connect_clicked(clone!(@strong app_state, @strong flow_box => move
     for sphere in app_state.borrow().spheres.iter() {
         println!("Sphere ID: {}", *sphere.id.borrow());
     }
-
+    #[allow(unused_assignments)]
     let mut deletion_successful = false;
     {
         let mut app_state = app_state.borrow_mut();
@@ -531,14 +547,8 @@ delete_button.connect_clicked(clone!(@strong app_state, @strong flow_box => move
     flow_box.show_all();
 }));
 
-
-
-
-
-
     app_state.borrow_mut().spheres.push(sphere_config);
 
-    // Add the grid (sphere section) to the flow_box and show all
     flow_box.add(&grid); // Directly add the grid to the flow_box
     flow_box.show_all();
 
@@ -558,11 +568,12 @@ fn create_cylinder_section(
         .expect("Failed to load CSS");
 
     let cylinder_count = app_state.borrow().cylinders.len();
-    let unique_id = format!("cylinder_{}", cylinder_count + 1); // Generate unique ID
+    let unique_id = format!("cylinder_{}", cylinder_count); // Generate unique ID
     println!("Creating cylinder section with ID: {}", unique_id); // Debug print for cylinder ID
 
     let grid = gtk::Grid::new();
     grid.set_column_spacing(5); // Adjust the spacing as needed
+    grid.set_widget_name(&unique_id); // Set the ID of the grid
 
     let label_text = format!("Cylinder {}:", cylinder_count);
     let cylinder_label = gtk::Label::new(Some(&label_text));
@@ -663,22 +674,58 @@ fn create_cylinder_section(
 
     // Connect the delete button click handler
     delete_button.connect_clicked(clone!(@strong app_state, @strong flow_box => move |_| {
-        let id = *delete_id.borrow();
-        println!("Attempting to delete cylinder with ID: {}", id); // Debug print
+        let id_number = *delete_id.borrow();
+        let id = format!("cylinder_{}", id_number);
+        println!("Attempting to delete cylinder with ID: {}", id);
 
-        let mut app_state = app_state.borrow_mut();
-        if let Some(index) = app_state.cylinders.iter().position(|c| *c.id.borrow() == id) {
-            println!("Found cylinder at index: {}", index); // Debug print
-            app_state.cylinders.remove(index);
-
-            let children = flow_box.get_children();
-            if let Some(cylinder_section) = children.get(index) {
-                flow_box.remove(cylinder_section);
+        // Debug: Print current cylinder IDs before deletion
+        println!("Current cylinder IDs before deletion:");
+        for cylinder in app_state.borrow().cylinders.iter() {
+            println!("cylinder ID: {}", *cylinder.id.borrow());
+        }
+        #[allow(unused_assignments)]
+        let mut deletion_successful = false;
+        {
+            let mut app_state = app_state.borrow_mut();
+            if let Some(index) = app_state.cylinders.iter().position(|s| format!("cylinder_{}", *s.id.borrow()) == id) {
+                app_state.cylinders.remove(index);
+                deletion_successful = true;
             } else {
-                eprintln!("Error: No cylinder section found at index {}", index); // Error message
+                eprintln!("Error: No cylinder with ID {} found in app_state", id);
+                return;
             }
+        }
+
+        // Debug: Inspect the children of flow_box before attempting deletion
+        println!("Inspecting GUI elements in flow_box before deletion:");
+        let children = flow_box.get_children();
+        for (index, child) in children.iter().enumerate() {
+            // Attempt to downcast the child to GtkFlowBoxChild
+            if let Some(flowbox_child) = child.downcast_ref::<gtk::FlowBoxChild>() {
+                if let Some(widget) = flowbox_child.get_child() {
+                    let widget_name = widget.get_widget_name().to_string(); // Get the name of the widget inside the GtkFlowBoxChild
+                    println!("Child {}: GUI element ID inside GtkFlowBoxChild: {}", index, widget_name);
+                    println!("Child {}: Type: {}", index, widget);
+
+                    if widget_name == id {
+                        flow_box.remove(child);
+                        deletion_successful = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if deletion_successful {
+            println!("Successfully deleted cylinder with ID: {}", id);
         } else {
-            eprintln!("Error: No cylinder with ID {} found", id); // Error message
+            eprintln!("Error: GUI element for cylinder with ID {} not found", id);
+        }
+
+        // Borrow app_state again for reading
+        println!("Current cylinder IDs after deletion:");
+        for cylinder in app_state.borrow().cylinders.iter() {
+            println!("cylinder ID: {}", *cylinder.id.borrow());
         }
 
         flow_box.show_all();
@@ -687,8 +734,9 @@ fn create_cylinder_section(
     // Add the configuration to the AppState
     app_state.borrow_mut().cylinders.push(cylinder_config);
 
-    flow_box.add(&grid.clone().upcast::<gtk::Widget>());
+    flow_box.add(&grid);
     flow_box.show_all();
+    print!("Added GUI element with ID: '{}'", unique_id); // Debug print for cylinder ID
     grid.upcast::<gtk::Widget>() // Return the grid as a generic widget
 }
 
@@ -700,10 +748,11 @@ fn create_cube_section(app_state: Rc<RefCell<AppState>>, flow_box: gtk::FlowBox)
         .expect("Failed to load CSS");
 
     let cube_count = app_state.borrow().cubes.len();
-    let unique_id = format!("cube_{}", cube_count + 1); // Generate unique ID
+    let unique_id = format!("cube_{}", cube_count); // Generate unique ID
 
     let grid = gtk::Grid::new();
     grid.set_column_spacing(5); // Adjust the spacing as needed
+    grid.set_widget_name(&unique_id); // Set the ID of the grid
 
     let label_text = format!("Cube {}:", cube_count);
     let cube_label = gtk::Label::new(Some(&label_text));
@@ -783,24 +832,58 @@ fn create_cube_section(app_state: Rc<RefCell<AppState>>, flow_box: gtk::FlowBox)
 
     // Connect a handler to the delete button
     delete_button.connect_clicked(clone!(@strong app_state, @strong flow_box => move |_| {
-        let id = *delete_id.borrow();
-        println!("Attempting to delete cube with ID: {}", id); // Debug print
+        let id_number = *delete_id.borrow();
+        let id = format!("cube_{}", id_number);
+        println!("Attempting to delete cube with ID: {}", id);
 
-        // Logic to find and delete the sphere with this ID
-        let mut app_state = app_state.borrow_mut();
-        if let Some(index) = app_state.cubes.iter().position(|s| *s.id.borrow() == id) {
-            println!("Found cube at index: {}", index); // Debug print
-            app_state.cubes.remove(index);
-
-            // Remove the GUI element
-            let children = flow_box.get_children();
-            if let Some(cube_section) = children.get(index) {
-                flow_box.remove(cube_section);
-            }else {
-                eprintln!("Error: No cube section found at index {}", index); // Error message
+        // Debug: Print current cube IDs before deletion
+        println!("Current cube IDs before deletion:");
+        for cube in app_state.borrow().cubes.iter() {
+            println!("cube ID: {}", *cube.id.borrow());
+        }
+        #[allow(unused_assignments)]
+        let mut deletion_successful = false;
+        {
+            let mut app_state = app_state.borrow_mut();
+            if let Some(index) = app_state.cubes.iter().position(|s| format!("cube_{}", *s.id.borrow()) == id) {
+                app_state.cubes.remove(index);
+                deletion_successful = true;
+            } else {
+                eprintln!("Error: No cube with ID {} found in app_state", id);
+                return;
             }
-        }else {
-            eprintln!("Error: No cube with ID {} found", id); // Error message
+        }
+
+        // Debug: Inspect the children of flow_box before attempting deletion
+        println!("Inspecting GUI elements in flow_box before deletion:");
+        let children = flow_box.get_children();
+        for (index, child) in children.iter().enumerate() {
+            // Attempt to downcast the child to GtkFlowBoxChild
+            if let Some(flowbox_child) = child.downcast_ref::<gtk::FlowBoxChild>() {
+                if let Some(widget) = flowbox_child.get_child() {
+                    let widget_name = widget.get_widget_name().to_string(); // Get the name of the widget inside the GtkFlowBoxChild
+                    println!("Child {}: GUI element ID inside GtkFlowBoxChild: {}", index, widget_name);
+                    println!("Child {}: Type: {}", index, widget);
+
+                    if widget_name == id {
+                        flow_box.remove(child);
+                        deletion_successful = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if deletion_successful {
+            println!("Successfully deleted cube with ID: {}", id);
+        } else {
+            eprintln!("Error: GUI element for cube with ID {} not found", id);
+        }
+
+        // Borrow app_state again for reading
+        println!("Current cube IDs after deletion:");
+        for cube in app_state.borrow().cubes.iter() {
+            println!("cube ID: {}", *cube.id.borrow());
         }
 
         flow_box.show_all();
@@ -808,8 +891,9 @@ fn create_cube_section(app_state: Rc<RefCell<AppState>>, flow_box: gtk::FlowBox)
 
     app_state.borrow_mut().cubes.push(cube_config);
 
-    flow_box.add(&grid.clone().upcast::<gtk::Widget>());
+    flow_box.add(&grid); // Directly add the grid to the flow_box
     flow_box.show_all();
+    print!("Added GUI element with ID: '{}'", unique_id); // Debug print for cube ID
     grid.upcast::<gtk::Widget>() // Return the grid as a generic widget
 }
 
@@ -822,11 +906,12 @@ fn create_flat_plane_section(
         .load_from_path("src/gui/style.css")
         .expect("Failed to load CSS");
 
-    let flat_plane_count = app_state.borrow().flat_plane.len();
-    let unique_id = format!("flat_plane_{}", flat_plane_count + 1); // Generate unique ID
+    let flat_plane_count = app_state.borrow().flat_planes.len();
+    let unique_id = format!("flat_plane_{}", flat_plane_count); // Generate unique ID
 
     let grid = gtk::Grid::new();
     grid.set_column_spacing(5); // Adjust the spacing as needed
+    grid.set_widget_name(&unique_id); // Set the ID of the grid
 
     let label_text = format!("Flat Plane {}:", flat_plane_count);
     let flat_plane_label = gtk::Label::new(Some(&label_text));
@@ -907,32 +992,63 @@ fn create_flat_plane_section(
 
     // Connect a handler to the delete button
     delete_button.connect_clicked(clone!(@strong app_state, @strong flow_box => move |_| {
-        let id = *delete_id.borrow();
-        println!("Attempting to delete flat plane with ID: {}", id); // Debug print
-
-        // Logic to find and delete the sphere with this ID
-        let mut app_state = app_state.borrow_mut();
-        if let Some(index) = app_state.flat_plane.iter().position(|s| *s.id.borrow() == id) {
-            println!("Found flat plane at index: {}", index); // Debug print
-            app_state.flat_plane.remove(index);
-
-            // Remove the GUI element
-            let children = flow_box.get_children();
-            if let Some(flat_plane_section) = children.get(index) {
-                flow_box.remove(flat_plane_section);
-            }else {
-                eprintln!("Error: No flat plane section found at index {}", index); // Error message
-            }
-        }else {
-            eprintln!("Error: No flat plane with ID {} found", id); // Error message
+        let id_number = *delete_id.borrow();
+        let id = format!("flat_plane_{}", id_number);
+        println!("Attempting to delete flat_plane with ID: {}", id);
+        // Debug: Print current flat_plane IDs before deletion
+        println!("Current flat_plane IDs before deletion:");
+        for flat_plane in app_state.borrow().flat_planes.iter() {
+            println!("flat_plane ID: {}", *flat_plane.id.borrow());
         }
+        #[allow(unused_assignments)]
+        let mut deletion_successful = false;
+        {
+            let mut app_state = app_state.borrow_mut();
+            if let Some(index) = app_state.flat_planes.iter().position(|s| format!("flat_plane_{}", *s.id.borrow()) == id) {
+                app_state.flat_planes.remove(index);
+                deletion_successful = true;
+            } else {
+                eprintln!("Error: No flat_plane with ID {} found in app_state", id);
+                return;
+            }
+        }
+        // Debug: Inspect the children of flow_box before attempting deletion
+        println!("Inspecting GUI elements in flow_box before deletion:");
+        let children = flow_box.get_children();
+        for (index, child) in children.iter().enumerate() {
+            // Attempt to downcast the child to GtkFlowBoxChild
+            if let Some(flowbox_child) = child.downcast_ref::<gtk::FlowBoxChild>() {
+                if let Some(widget) = flowbox_child.get_child() {
+                    let widget_name = widget.get_widget_name().to_string(); // Get the name of the widget inside the GtkFlowBoxChild
+                    println!("Child {}: GUI element ID inside GtkFlowBoxChild: {}", index, widget_name);
+                    println!("Child {}: Type: {}", index, widget);
 
+                    if widget_name == id {
+                        flow_box.remove(child);
+                        deletion_successful = true;
+                        break;
+                    }
+                }
+            }
+        }
+        if deletion_successful {
+            println!("Successfully deleted flat_plane with ID: {}", id);
+        } else {
+            eprintln!("Error: GUI element for flat_plane with ID {} not found", id);
+        }
+        // Borrow app_state again for reading
+        println!("Current flat_plane IDs after deletion:");
+        for flat_plane in app_state.borrow().flat_planes.iter() {
+            println!("Sphere ID: {}", *flat_plane.id.borrow());
+        }
         flow_box.show_all();
     }));
-    app_state.borrow_mut().flat_plane.push(flat_plane_config);
 
-    flow_box.add(&grid.clone().upcast::<gtk::Widget>());
+    app_state.borrow_mut().flat_planes.push(flat_plane_config);
+
+    flow_box.add(&grid); // Directly add the grid to the flow_box
     flow_box.show_all();
+    print!("Added GUI element with ID: '{}'", unique_id); // Debug print for flat_plane ID
 
     grid.upcast::<gtk::Widget>() // Return the grid as a generic widget
 }
@@ -1065,7 +1181,7 @@ pub fn update_scene_from_gui(app_state: Rc<RefCell<AppState>>) -> Scene {
 
     // Creating Flat Planes
     // Similar to spheres, create FlatPlane objects from flat_plane_config
-    for flat_plane_config in app_state_borrowed.flat_plane.iter() {
+    for flat_plane_config in app_state_borrowed.flat_planes.iter() {
         let pos_x = flat_plane_config
             .pos_x_entry
             .borrow()
