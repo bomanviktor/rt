@@ -16,7 +16,7 @@ pub struct Ray {
     pub direction: Vector3<f64>,
     pub collisions: Vec<Color>,
     pub hit_light_source: bool,
-    pub closest_intersection_distance: f64,
+    pub intersection_dist: f64,
 }
 
 impl Ray {
@@ -26,12 +26,11 @@ impl Ray {
             direction: direction.normalize(),
             collisions: Vec::new(),
             hit_light_source: false,
-            closest_intersection_distance: std::f64::MAX,
+            intersection_dist: f64::MAX,
         }
     }
 
     pub fn trace(&mut self, scene: &Scene, depth: u8) {
-        self.closest_intersection_distance = f64::INFINITY; // Initialize with infinity
         let new_rays = if depth == 0 { NUM_SECONDARY_RAYS } else { 1 };
         if depth >= MAX_DEPTH || new_rays == 0 {
             return; // Stop if maximum depth is reached
@@ -43,8 +42,8 @@ impl Ray {
         // Check for intersection with objects
         for object in &scene.objects {
             if let Some((hit_point, distance)) = object.intersection(self) {
-                if distance < self.closest_intersection_distance {
-                    self.closest_intersection_distance = distance;
+                if distance < self.intersection_dist {
+                    self.intersection_dist = distance;
                     closest_intersection = Some((hit_point, distance));
                     closest_object = Some(object.clone());
                 }
@@ -114,7 +113,7 @@ impl Ray {
                 direction: new_direction,
                 collisions: self.collisions.clone(),
                 hit_light_source: false,
-                closest_intersection_distance: -1.0,
+                intersection_dist: f64::MAX,
             };
 
             // Recursively trace the secondary ray

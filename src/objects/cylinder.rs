@@ -41,7 +41,6 @@ impl Cylinder {
 impl Object for Cylinder {
     fn intersection(&self, ray: &Ray) -> Intersection {
         let bottom = self.bottom.center;
-        let _top = self.top.center;
         let axis = Vector3::new(0.0, 1.0, 0.0); // Cylinder aligned along Y-axis
         let mut valid_intersections = Vec::new();
 
@@ -57,20 +56,19 @@ impl Object for Cylinder {
 
         if let Some(discriminant) = discriminant(a, b, c) {
             let sqrt_discriminant = discriminant.sqrt();
-            let t1 = (-b - sqrt_discriminant) / (2.0 * a);
-            let t2 = (-b + sqrt_discriminant) / (2.0 * a);
+            let dist_1 = (-b - sqrt_discriminant) / (2.0 * a);
+            let dist_2 = (-b + sqrt_discriminant) / (2.0 * a);
 
-            for &t in &[t1, t2] {
-                if t > 0.0 {
-                    let point = ray.origin + ray.direction * t;
-                    let height = (point - bottom).dot(&axis);
-                    if height >= 0.0
-                        && height <= self.height
-                        && (ray.closest_intersection_distance < 0.0
-                            || t < ray.closest_intersection_distance)
-                    {
-                        valid_intersections.push((point, t));
-                    }
+            for dist in [dist_1, dist_2] {
+                if dist <= 0.0 {
+                    continue;
+                }
+
+                let point = ray.origin + ray.direction * dist;
+                let height = (point - bottom).dot(&axis);
+
+                if (0.0..=self.height).contains(&height) && dist < ray.intersection_dist {
+                    valid_intersections.push((point, dist));
                 }
             }
         }
@@ -105,7 +103,6 @@ impl Object for Cylinder {
     fn color(&self) -> Color {
         self.color
     }
-
     fn texture(&self) -> Texture {
         self.texture
     }

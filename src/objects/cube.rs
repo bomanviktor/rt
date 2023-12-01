@@ -21,23 +21,6 @@ impl Cube {
             texture,
         }
     }
-
-    fn _check_plane_intersection(
-        &self,
-        ray: &Ray,
-        plane_center: Point,
-        normal: Vector3<f64>,
-    ) -> Intersection {
-        let denom = normal.dot(&ray.direction);
-        if denom.abs() > 1e-6 {
-            let v = plane_center - ray.origin;
-            let distance = v.dot(&normal) / denom;
-            if distance >= 0.0 {
-                return Some((ray.origin + ray.direction * distance, distance));
-            }
-        }
-        None
-    }
 }
 
 impl Object for Cube {
@@ -53,26 +36,28 @@ impl Object for Cube {
                 let face_center = self.center + half_size * normal;
 
                 let denom = normal.dot(&ray.direction);
-                if denom.abs() > 1e-6 {
-                    let v = face_center - ray.origin;
-                    let distance = v.dot(&normal) / denom;
-                    if distance >= 0.0 {
-                        let point = ray.origin + distance * ray.direction;
-                        let local_point = point - self.center;
+                if denom.abs() <= 1e-6 {
+                    continue;
+                }
+                let v = face_center - ray.origin;
+                let distance = v.dot(&normal) / denom;
 
-                        // Check if point is within cube bounds
-                        if local_point
-                            .iter()
-                            .all(|&coord| coord.abs() <= half_size * 1.0001 * 1.0001)
-                        {
-                            // Update closest intersection
-                            if closest_intersection.is_none()
-                                || closest_intersection.unwrap().1 > distance
-                            {
-                                closest_intersection = Some((point, distance));
-                            }
-                        }
-                    }
+                if distance < 0.0 || distance > ray.intersection_dist {
+                    continue;
+                }
+
+                let point = ray.origin + distance * ray.direction;
+                let local_point = point - self.center;
+
+                // Check if point is within cube bounds
+                if local_point
+                    .iter()
+                    .all(|&coord| coord.abs() <= half_size * 1.0001 * 1.0001)
+                    && (closest_intersection.is_none()
+                        || closest_intersection.unwrap().1 > distance)
+                {
+                    // Update closest intersection
+                    closest_intersection = Some((point, distance));
                 }
             }
         }
@@ -100,7 +85,6 @@ impl Object for Cube {
     fn color(&self) -> Color {
         self.color
     }
-
     fn texture(&self) -> Texture {
         self.texture
     }

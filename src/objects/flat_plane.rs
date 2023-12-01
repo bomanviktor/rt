@@ -32,10 +32,7 @@ impl Object for FlatPlane {
 
         if denom.abs() > 1e-6 {
             let t = (self.center - ray.origin).dot(&plane_normal) / denom;
-            if t > 0.0
-                && (ray.closest_intersection_distance < 0.0
-                    || t < ray.closest_intersection_distance)
-            {
+            if t > 0.0 && t < ray.intersection_dist {
                 let hit_point = ray.origin + ray.direction * t;
                 if (hit_point - self.center).norm() <= self.radius {
                     return Some((hit_point, t));
@@ -45,7 +42,7 @@ impl Object for FlatPlane {
         None
     }
 
-    fn normal_at(&self, ray: &Ray, _point: Vector3<f64>) -> Vector3<f64> {
+    fn normal_at(&self, ray: &Ray, _point: Point) -> Vector3<f64> {
         if ray.origin.y <= self.center.y {
             Vector3::new(0.0, -1.0, 0.0)
         } else {

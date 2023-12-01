@@ -8,7 +8,7 @@ use std::io::Write;
 use std::sync::Arc;
 
 const DEFAULT_CAMERA_POSITION: Point = Point::new(1.0, 0.5, 0.0);
-const DEFAULT_SAMPLE_SIZE: u16 = 1;
+const DEFAULT_SAMPLE_SIZE: u16 = 50;
 const DEFAULT_FOCAL_LENGTH: f64 = 0.5;
 const DEFAULT_SENSOR_WIDTH: f64 = 1.0;
 
@@ -37,7 +37,9 @@ impl Camera {
 
         for y in 0..h {
             for x in 0..w {
-                let mut color = Vector3::new(0.0, 0.0, 0.0); // Before refactoring into the SUPREME color type.
+                // This is temporary. I have the refactored color type at the lab.
+                // No more as u8, as f64 etc.
+                let mut color = Vector3::new(0.0, 0.0, 0.0);
                 for _sample in 0..self.sample_size {
                     let dir = self.ray_direction(x, y);
                     let mut ray = Ray::new(self.position, dir);
@@ -49,7 +51,6 @@ impl Camera {
                     }
 
                     let average_color = ray.average_color();
-
                     if !ray.hit_light_source {
                         color.x += average_color.r as f64 * 0.5;
                         color.y += average_color.g as f64 * 0.5;

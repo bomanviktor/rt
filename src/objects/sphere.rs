@@ -46,10 +46,7 @@ impl Object for Sphere {
                 return None;
             };
 
-            if t > 0.0
-                && (ray.closest_intersection_distance < 0.0
-                    || t < ray.closest_intersection_distance)
-            {
+            if t > 0.0 && (ray.intersection_dist < 0.0 || t < ray.intersection_dist) {
                 let point = ray.origin + t * ray.direction;
                 return Some((point, t));
             }
