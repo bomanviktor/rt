@@ -48,12 +48,8 @@ impl Object for Cube {
                 let point = ray.origin + distance * ray.direction;
                 let local_point = point - self.center;
 
-                let float_offset = 1.0 + f64::EPSILON;
-
                 // Check if point is within cube bounds
-                if local_point
-                    .iter()
-                    .all(|&coord| coord.abs() <= half_size * float_offset)
+                if local_point.iter().all(|&coord| coord.abs() <= half_size)
                     && (closest_intersection.is_none()
                         || closest_intersection.unwrap().1 > distance)
                 {

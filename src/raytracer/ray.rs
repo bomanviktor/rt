@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use crate::color::Color;
 use crate::config::Point;
 use crate::objects::{Intersection, Object};
 use crate::objects::{Objects, Texture};
@@ -54,23 +53,27 @@ impl Ray {
         if let Some(intersection) = closest_intersection {
             if let Some(object) = closest_object {
                 // Check if the intersection is in shadow
+                /*
                 let in_shadow = Ray::in_shadow(
                     intersection.0,
                     object.normal_at(self, intersection.0),
                     &scene.objects,
                     object.center(),
                 );
-                let mut color = object.color();
+
 
                 // If in shadow, dim the color
-                if in_shadow {
-                    let dimming_factor = 0.1; // Adjust as needed
-                    color = Vector3::new(
-                        color.r() * dimming_factor,
-                        color.g() * dimming_factor,
-                        color.b() * dimming_factor,
-                    );
-                }
+                let dimming_factor = if in_shadow {
+                    0.1
+                } else {
+                    1.0
+                };
+
+                 */
+                let mut color = object.color();
+                let dimming_factor = 1.0;
+
+                color *= dimming_factor;
 
                 self.collisions.push(color);
                 match object.texture() {
@@ -107,7 +110,7 @@ impl Ray {
         for _ in 0..new_rays {
             let new_direction = self.diffuse_direction(object.normal_at(self, first_hit_point));
 
-            let float_offset = 1.0 + f64::EPSILON;
+            let float_offset = 1.0001;
             let mut secondary_ray = Ray {
                 origin: first_hit_point * float_offset,
                 direction: new_direction,
@@ -121,9 +124,9 @@ impl Ray {
             // Accumulate colors from secondary rays into the original ray's collisions
             // also set the hit_light_source to true if the secondary ray hit a light source
             if secondary_ray.hit_light_source {
-                self.collisions.extend(secondary_ray.collisions);
                 self.hit_light_source = true;
             }
+            self.collisions.extend(secondary_ray.collisions);
         }
     }
 
@@ -170,11 +173,15 @@ impl Ray {
         let mut total = primary_color;
 
         for (i, color) in secondary_colors.iter().enumerate() {
-            let mul = 1.0 - (i as f64 / 10.0) * 2.0; // Change this to be according to max depth
+            let mul = 1.0 / (i as f64 + 1.0); // Change this to be according to max depth
             total += color * mul;
         }
         let number_of_colors = self.collisions.len() as f64;
-        total / number_of_colors
+        if self.hit_light_source {
+            total / number_of_colors
+        } else {
+            (total / number_of_colors) * 0.1
+        }
     }
 
     pub fn in_shadow(

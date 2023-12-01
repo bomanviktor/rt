@@ -56,9 +56,7 @@ impl Camera {
                         continue;
                     }
 
-                    let average_color = ray.average_color();
-                    let factor = if ray.hit_light_source { 1.0 } else { 0.1 };
-                    color += average_color * factor;
+                    color += ray.average_color();
                 }
 
                 *pixel_color = color / self.sample_size as f64;
