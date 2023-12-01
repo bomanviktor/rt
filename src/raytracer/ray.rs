@@ -9,7 +9,7 @@ use nalgebra::Vector3;
 use rand::Rng;
 
 const MAX_DEPTH: u8 = 5;
-const NUM_SECONDARY_RAYS: usize = 2;
+const NUM_SECONDARY_RAYS: usize = 4;
 #[derive(Debug, Clone)]
 pub struct Ray {
     pub origin: Point,
@@ -31,7 +31,7 @@ impl Ray {
     }
 
     pub fn trace(&mut self, scene: &Scene, depth: u8) {
-        let new_rays = if depth == 0 { NUM_SECONDARY_RAYS } else { 1 };
+        let new_rays = NUM_SECONDARY_RAYS / 2_usize.pow(depth as u32);
         if depth >= MAX_DEPTH || new_rays == 0 {
             return; // Stop if maximum depth is reached
         }
@@ -54,12 +54,11 @@ impl Ray {
         if let Some(intersection) = closest_intersection {
             if let Some(object) = closest_object {
                 // Check if the intersection is in shadow
-                let in_shadow = Ray::is_in_shadow(
+                let in_shadow = Ray::in_shadow(
                     intersection.0,
                     object.normal_at(self, intersection.0),
                     &scene.objects,
-                    scene,
-                    object.color(),
+                    object.center(),
                 );
                 let mut color = object.color();
 
@@ -79,11 +78,11 @@ impl Ray {
                         self.diffuse(Some(intersection), object, new_rays, scene, depth);
                     }
                     Texture::Glossy => {
-                        // Implement glossy behavior
+                        unimplemented!()
                         // self.glossy(intersection, object, new_rays, scene, depth);
                     }
                     Texture::Reflective => {
-                        // Implement reflective behavior
+                        unimplemented!()
                         // self.reflective(intersection, object, new_rays, scene, depth);
                     }
                     Texture::Light => {
@@ -111,7 +110,7 @@ impl Ray {
             let mut secondary_ray = Ray {
                 origin: first_hit_point * (1.0 + f64::EPSILON),
                 direction: new_direction,
-                collisions: self.collisions.clone(),
+                collisions: Vec::new(),
                 hit_light_source: false,
                 intersection_dist: f64::MAX,
             };
@@ -166,59 +165,57 @@ impl Ray {
 
         let primary_color = self.collisions[0];
         let secondary_colors = &self.collisions[1..];
-        let light_source_boost = 1.0;
 
-        let primary_weight = 0.8;
-        let secondary_weight = 0.2;
+        let mut total_r = primary_color.r as f64;
+        let mut total_g = primary_color.g as f64;
+        let mut total_b = primary_color.b as f64;
 
-        let mut total_r = (primary_color.r as f64 * primary_weight) as u32;
-        let mut total_g = (primary_color.g as f64 * primary_weight) as u32;
-        let mut total_b = (primary_color.b as f64 * primary_weight) as u32;
-
-        let number_of_colors = secondary_colors.len() as f64;
-        let secondary_weight_per_color = secondary_weight / number_of_colors;
-
-        for color in secondary_colors {
-            total_r += (color.r as f64 * secondary_weight_per_color * light_source_boost) as u32;
-            total_g += (color.g as f64 * secondary_weight_per_color * light_source_boost) as u32;
-            total_b += (color.b as f64 * secondary_weight_per_color * light_source_boost) as u32;
+        for (i, color) in secondary_colors.iter().enumerate() {
+            let mul = 1.0 - (i as f64 / 10.0) * 2.0; // Change this to be according to max depth
+            total_r += color.r as f64 * mul;
+            total_g += color.g as f64 * mul;
+            total_b += color.b as f64 * mul;
         }
+        let number_of_colors = self.collisions.len() as f64;
+        total_r /= number_of_colors;
+        total_g /= number_of_colors;
+        total_b /= number_of_colors;
 
-        Color {
-            r: (total_r as f64 / (primary_weight + secondary_weight)) as u8,
-            g: (total_g as f64 / (primary_weight + secondary_weight)) as u8,
-            b: (total_b as f64 / (primary_weight + secondary_weight)) as u8,
-        }
+        Color::new(total_r as u8, total_g as u8, total_b as u8)
     }
 
-    pub fn is_in_shadow(
+    pub fn in_shadow(
         hit_point: Vector3<f64>,
         normal: Vector3<f64>,
         objects: &Objects,
-        scene: &Scene,
-        originating_object_color: Color,
+        object_center: Point,
     ) -> bool {
-        scene.light_sources.iter().any(|light_source| {
-            let light_position = light_source.position();
-            let to_light = (light_position - hit_point).normalize();
-            let shadow_ray = Ray::new(hit_point + normal * 1e-1, to_light); // Adjusted epsilon
+        // Fucked up solution for now. Will fix tomorrow.
+        let light_source = objects
+            .iter()
+            .cloned()
+            .filter(|obj| obj.is_light())
+            .collect::<Objects>()[0]
+            .clone();
 
-            objects.iter().any(|obj| {
-                if obj.texture() == Texture::Light {
-                    false
-                } else if obj.color() != originating_object_color {
-                    if let Some((shadow_hit, _)) = obj.intersection(&shadow_ray) {
-                        let distance_to_light = (light_position - shadow_hit).norm();
-                        let original_distance_to_light = (light_position - hit_point).norm();
-                        distance_to_light < original_distance_to_light
-                    } else {
-                        false
-                    }
-                } else {
-                    false
+        let light_position = light_source.center();
+        let to_light = (light_position - hit_point).normalize();
+        let shadow_ray = Ray::new(hit_point + normal * 1e-1, to_light);
+
+        for object in objects
+            .iter()
+            .filter(|&obj| !obj.is_light() && obj.center() != object_center)
+        {
+            if let Some((shadow_hit, _)) = object.intersection(&shadow_ray) {
+                let distance_to_light = (light_position - shadow_hit).norm();
+                let original_distance_to_light = (light_position - hit_point).norm();
+
+                if distance_to_light < original_distance_to_light {
+                    return true;
                 }
-            })
-        })
+            }
+        }
+        false
     }
 
     // TODO: remove the macro

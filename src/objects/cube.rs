@@ -49,10 +49,12 @@ impl Object for Cube {
                 let point = ray.origin + distance * ray.direction;
                 let local_point = point - self.center;
 
+                let float_offset = 1.0001 * 1.0001;
+
                 // Check if point is within cube bounds
                 if local_point
                     .iter()
-                    .all(|&coord| coord.abs() <= half_size * 1.0001 * 1.0001)
+                    .all(|&coord| coord.abs() <= half_size * float_offset)
                     && (closest_intersection.is_none()
                         || closest_intersection.unwrap().1 > distance)
                 {
@@ -88,7 +90,10 @@ impl Object for Cube {
     fn texture(&self) -> Texture {
         self.texture
     }
-    fn position(&self) -> Point {
+    fn center(&self) -> Point {
         self.center
+    }
+    fn is_light(&self) -> bool {
+        self.texture == Texture::Light
     }
 }

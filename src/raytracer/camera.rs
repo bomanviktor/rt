@@ -45,21 +45,15 @@ impl Camera {
                     let mut ray = Ray::new(self.position, dir);
 
                     ray.trace(&scene, 0);
-
                     if ray.collisions.is_empty() {
                         continue;
                     }
 
                     let average_color = ray.average_color();
-                    if !ray.hit_light_source {
-                        color.x += average_color.r as f64 * 0.5;
-                        color.y += average_color.g as f64 * 0.5;
-                        color.z += average_color.b as f64 * 0.5;
-                    } else {
-                        color.x += average_color.r as f64;
-                        color.y += average_color.g as f64;
-                        color.z += average_color.b as f64;
-                    }
+                    let factor = if ray.hit_light_source { 1.0 } else { 0.1 };
+                    color.x += average_color.r as f64 * factor;
+                    color.y += average_color.g as f64 * factor;
+                    color.z += average_color.b as f64 * factor;
                 }
 
                 color /= self.sample_size as f64;
@@ -82,7 +76,7 @@ impl Camera {
             .map(|row| {
                 row.iter()
                     .map(|pixel| {
-                        let corrected = pixel.apply_gamma_correction(2.2);
+                        let corrected = pixel.apply_gamma_correction(2.0);
                         format!("{} {} {}", corrected.r, corrected.g, corrected.b)
                     })
                     .collect::<Vec<String>>()

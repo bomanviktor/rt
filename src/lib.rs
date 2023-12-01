@@ -136,7 +136,8 @@ pub mod objects {
         fn normal_at(&self, ray: &Ray, point: Vector3<f64>) -> Vector3<f64>;
         fn color(&self) -> Color;
         fn texture(&self) -> Texture;
-        fn position(&self) -> Point;
+        fn center(&self) -> Point;
+        fn is_light(&self) -> bool;
     }
 
     pub type Objects = Vec<Arc<dyn Object>>;

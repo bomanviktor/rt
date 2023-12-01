@@ -1,14 +1,11 @@
-use std::sync::Arc; // Assuming you have the rand crate in your dependencies
+use std::sync::Arc;
 
 use crate::color::Color;
-use crate::config::Point;
 use crate::objects::{Cube, Cylinder, FlatPlane, Objects, Sphere, Texture::*};
 use nalgebra::Vector3;
 
 pub struct Scene {
     pub objects: Objects,
-    pub light_sources: Objects,
-    pub origo: Point,
 }
 
 impl Scene {
@@ -41,23 +38,12 @@ impl Scene {
 
         let objects: Objects = vec![
             Arc::new(sphere1),
-            // Arc::new(sphere2),
-            // Arc::new(sphere3),
-            // Arc::new(sphere4),
-            // Arc::new(sphere5),
-            // Arc::new(sphere6),
             Arc::new(cylinder),
             Arc::new(flat_plane),
             Arc::new(cube),
             Arc::new(light.clone()),
         ];
 
-        let light_sources: Objects = vec![Arc::new(light)];
-
-        Self {
-            objects,
-            light_sources,
-            origo: Point::default(),
-        }
+        Self { objects }
     }
 }
