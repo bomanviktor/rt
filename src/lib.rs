@@ -119,6 +119,12 @@ pub mod objects {
     use crate::raytracer::Ray;
     pub use sphere::*;
 
+
+    type Distance = f64;
+
+    /// Type alias for `Option<(Vector3<f64>, f64)>`
+    pub type Intersection = Option<(Point, Distance)>;
+
     /// [Discriminant equation](https://en.wikipedia.org/wiki/Discriminant)
     ///
     /// Returns `None` if `b² - 4ac < 0.0`

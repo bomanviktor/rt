@@ -32,6 +32,9 @@ impl Scene {
             Diffusive,
         );
 
+        let flat_plane = FlatPlane::new(Vector3::new(0.0, 0.0, -5.0), 5.0, Color::new(0, 0, 255));
+        let cube = Cube::new(Vector3::new(-2.0, -1.0, -5.0), 1.0, Color::new(0, 0, 255));
+
         let objects: Objects = vec![
             Arc::new(sphere1),
             Arc::new(cylinder),

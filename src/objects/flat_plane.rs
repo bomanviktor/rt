@@ -27,15 +27,15 @@ impl FlatPlane {
 
 impl Object for FlatPlane {
     fn intersection(&self, ray: &Ray) -> Intersection {
-        let plane_normal = Vector3::new(0.0, -1.0, 0.0); // Normal is always in Y-direction
+        let plane_normal = self.normal_at(ray, Vector3::default());
         let denom = ray.direction.dot(&plane_normal);
 
         if denom.abs() > 1e-6 {
-            let t = (self.center - ray.origin).dot(&plane_normal) / denom;
-            if t > 0.0 && t < ray.intersection_dist {
-                let hit_point = ray.origin + ray.direction * t;
+            let dist = (self.center - ray.origin).dot(&plane_normal) / denom;
+            if dist > 0.0 && t < ray.intersection_dist {
+                let hit_point = ray.origin + ray.direction * dist;
                 if (hit_point - self.center).norm() <= self.radius {
-                    return Some((hit_point, t));
+                    return Some((hit_point, dist));
                 }
             }
         }
@@ -47,7 +47,6 @@ impl Object for FlatPlane {
             Vector3::new(0.0, -1.0, 0.0)
         } else {
             Vector3::new(0.0, 1.0, 0.0)
-        }
     }
     fn color(&self) -> Color {
         self.color

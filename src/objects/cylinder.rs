@@ -78,7 +78,6 @@ impl Object for Cylinder {
             valid_intersections.push(bottom_intersection);
         }
         if let Some(top_intersection) = self.top.intersection(ray) {
-            valid_intersections.push(top_intersection);
         }
 
         // Find the closest valid intersection
@@ -87,7 +86,6 @@ impl Object for Cylinder {
             .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
     }
 
-    fn normal_at(&self, _ray: &Ray, point: Point) -> Vector3<f64> {
         // Determine if the point is on the top or bottom cap
         if (point - self.top.center).norm() <= self.radius {
             Vector3::new(0.0, 1.0, 0.0) // Normal for the top cap

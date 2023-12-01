@@ -27,10 +27,10 @@ impl Sphere {
 
 impl Object for Sphere {
     fn intersection(&self, ray: &Ray) -> Intersection {
-        let oc = ray.origin - self.center;
+        let origin_to_center = ray.origin - self.center;
         let a = ray.direction.dot(&ray.direction);
-        let b = 2.0 * oc.dot(&ray.direction);
-        let c = oc.dot(&oc) - self.radius * self.radius;
+        let b = 2.0 * origin_to_center.dot(&ray.direction);
+        let c = origin_to_center.dot(&oc) - self.radius * self.radius;
         let discriminant = b * b - 4.0 * a * c;
 
         if discriminant > 0.0 {
