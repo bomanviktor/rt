@@ -1,46 +1,45 @@
+use std::sync::Arc;
+
 use crate::color::Color;
-use crate::config::Point;
-use crate::objects::{Cube, Cylinder, FlatPlane, Objects, Sphere};
+use crate::objects::{Cube, Cylinder, FlatPlane, Objects, Sphere, Texture::*};
 use nalgebra::Vector3;
 
 pub struct Scene {
     pub objects: Objects,
-    pub origo: Point,
 }
 
 impl Scene {
     pub fn init(_scene_data: &str) -> Self {
-        let sphere1 = Sphere::new(Vector3::new(0.0, -1.0, -5.0), 1.0, Color::new(255, 0, 0));
-        // let sphere2 = Sphere::new(Vector3::new(2.0, 0.0, -5.0), 1.2, Color::new(255, 0, 0));
-        // let sphere3 = Sphere::new(Vector3::new(-2.0, 0.0, -5.0), 1.2, Color::new(255, 0, 0));
-        // let sphere4 = Sphere::new(Vector3::new(0.0, -2.0, -5.0), 1.0, Color::new(255, 0, 0));
-        // let sphere5 = Sphere::new(Vector3::new(0.0, -4.0, -5.0), 1.0, Color::new(255, 0, 0));
-        // let sphere6 = Sphere::new(Vector3::new(0.0, 6.0, -5.0), 1.5, Color::new(255, 0, 0));
+        let sphere1 = Sphere::new(Vector3::new(3.0, -1.0, 0.0), 1.0, Color::red(), Diffusive);
+
         let cylinder = Cylinder::new(
-            Vector3::new(2.0, -4.0, -5.0),
+            Vector3::new(0.0, -2.0, 0.0),
             1.0,
-            4.0,
-            Color::new(0, 255, 0),
+            3.0,
+            Color::green(),
+            Diffusive,
         );
 
-        let flat_plane = FlatPlane::new(Vector3::new(0.0, 0.0, -5.0), 5.0, Color::new(0, 0, 255));
-        let cube = Cube::new(Vector3::new(-2.0, -1.0, -5.0), 1.0, Color::new(0, 0, 255));
+        let flat_plane =
+            FlatPlane::new(Vector3::new(0.0, 0.0, 0.0), 10.0, Color::blue(), Diffusive);
+
+        let light = Sphere::new(Vector3::new(-5.0, -6.0, -10.0), 2.0, Color::white(), Light);
+
+        let cube = Cube::new(
+            Vector3::new(-4.0, -0.5, 0.0),
+            1.0,
+            Color::yellow(),
+            Diffusive,
+        );
 
         let objects: Objects = vec![
-            Box::new(sphere1),
-            // Box::new(sphere2),
-            // Box::new(sphere3),
-            // Box::new(sphere4),
-            // Box::new(sphere5),
-            // Box::new(sphere6),
-            Box::new(cylinder),
-            Box::new(flat_plane),
-            Box::new(cube),
+            Arc::new(sphere1),
+            Arc::new(cylinder),
+            Arc::new(flat_plane),
+            Arc::new(cube),
+            Arc::new(light),
         ];
 
-        Self {
-            objects,
-            origo: Point::default(),
-        }
+        Self { objects }
     }
 }

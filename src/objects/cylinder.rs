@@ -4,6 +4,8 @@ use crate::objects::{discriminant, FlatPlane, Intersection, Object};
 use crate::raytracer::Ray;
 use nalgebra::Vector3;
 
+use super::Texture;
+
 #[derive(Debug)]
 pub struct Cylinder {
     pub center: Point,
@@ -12,15 +14,17 @@ pub struct Cylinder {
     pub bottom: FlatPlane,
     pub top: FlatPlane,
     pub color: Color,
+    pub texture: Texture,
 }
 
 impl Cylinder {
-    pub fn new(center: Point, radius: f64, height: f64, color: Color) -> Self {
-        let bottom = FlatPlane::new(center, radius, color.clone());
+    pub fn new(center: Point, radius: f64, height: f64, color: Color, texture: Texture) -> Self {
+        let bottom = FlatPlane::new(center, radius, color, texture);
         let top = FlatPlane::new(
             Vector3::new(center.x, center.y + height, center.z),
             radius,
-            color.clone(),
+            color,
+            texture,
         );
         Self {
             center,
@@ -29,6 +33,7 @@ impl Cylinder {
             bottom,
             top,
             color,
+            texture,
         }
     }
 }
@@ -36,8 +41,8 @@ impl Cylinder {
 impl Object for Cylinder {
     fn intersection(&self, ray: &Ray) -> Intersection {
         let bottom = self.bottom.center;
-        let top = self.top.center;
-        let axis = (top - bottom).normalize();
+        let axis = Vector3::new(0.0, 1.0, 0.0); // Cylinder aligned along Y-axis
+        let mut valid_intersections = Vec::new();
 
         // Check intersection with cylindrical surface
         let vec_to_ray = ray.origin - bottom;
@@ -47,30 +52,33 @@ impl Object for Cylinder {
 
         let a = effective_direction.dot(&effective_direction);
         let b = 2.0 * effective_origin.dot(&effective_direction);
-        let c = effective_origin.dot(&effective_origin) - self.radius * self.radius;
-
-        let mut valid_intersections = Vec::new();
+        let c = effective_origin.dot(&effective_origin) - self.radius.powi(2);
 
         if let Some(discriminant) = discriminant(a, b, c) {
             let sqrt_discriminant = discriminant.sqrt();
-            let t1 = (-b - sqrt_discriminant) / (2.0 * a);
-            let t2 = (-b + sqrt_discriminant) / (2.0 * a);
+            let dist_1 = (-b - sqrt_discriminant) / (2.0 * a);
+            let dist_2 = (-b + sqrt_discriminant) / (2.0 * a);
 
-            for &t in &[t1, t2] {
-                let point = ray.origin + ray.direction * t;
+            for dist in [dist_1, dist_2] {
+                if dist <= 0.0 {
+                    continue;
+                }
+
+                let point = ray.origin + ray.direction * dist;
                 let height = (point - bottom).dot(&axis);
-                if height >= 0.0 && height <= self.height {
-                    valid_intersections.push((point, t));
+
+                if (0.0..=self.height).contains(&height) && dist < ray.intersection_dist {
+                    valid_intersections.push((point, dist));
                 }
             }
         }
 
         // Check intersections with both caps
-        if let Some(bottom) = self.bottom.intersection(ray) {
-            valid_intersections.push(bottom);
+        if let Some(bottom_intersection) = self.bottom.intersection(ray) {
+            valid_intersections.push(bottom_intersection);
         }
-        if let Some(top) = self.top.intersection(ray) {
-            valid_intersections.push(top);
+        if let Some(top_intersection) = self.top.intersection(ray) {
+            valid_intersections.push(top_intersection);
         }
 
         // Find the closest valid intersection
@@ -79,7 +87,7 @@ impl Object for Cylinder {
             .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
     }
 
-    fn normal_at(&self, point: Point) -> Vector3<f64> {
+    fn normal_at(&self, _ray: &Ray, point: Point) -> Vector3<f64> {
         // Determine if the point is on the top or bottom cap
         if (point - self.top.center).norm() <= self.radius {
             Vector3::new(0.0, 1.0, 0.0) // Normal for the top cap
@@ -87,12 +95,22 @@ impl Object for Cylinder {
             Vector3::new(0.0, -1.0, 0.0) // Normal for the bottom cap
         } else {
             // Normal for the cylindrical surface
-            let axis = Vector3::new(0.0, 1.0, 0.0);
+            let axis = Vector3::new(0.0, -1.0, 0.0);
             let projection = axis * (point - self.center).dot(&axis);
             (point - self.center - projection).normalize()
         }
     }
+
     fn color(&self) -> Color {
-        self.color.clone()
+        self.color
+    }
+    fn texture(&self) -> Texture {
+        self.texture
+    }
+    fn center(&self) -> Point {
+        self.center
+    }
+    fn is_light(&self) -> bool {
+        self.texture == Texture::Light
     }
 }

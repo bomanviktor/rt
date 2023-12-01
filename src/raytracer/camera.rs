@@ -1,12 +1,14 @@
 use crate::color::Color;
 use crate::config::{Pixels, Point};
-use crate::objects::{Object, Objects};
-use crate::raytracer::{Ray, Resolution};
+use crate::raytracer::{Ray, Resolution, Scene};
 use nalgebra::Vector3;
+use rand::Rng;
+use rayon::prelude::*;
 use std::io::Write;
+use std::sync::Arc;
 
 const DEFAULT_CAMERA_POSITION: Point = Point::new(1.0, 0.5, 0.0);
-const DEFAULT_SAMPLE_SIZE: u16 = 1;
+const DEFAULT_SAMPLE_SIZE: u16 = 50;
 const DEFAULT_FOCAL_LENGTH: f64 = 0.5;
 const DEFAULT_SENSOR_WIDTH: f64 = 1.0;
 
@@ -25,52 +27,92 @@ pub struct Camera {
     pub aspect_ratio: f64,
     pub focal_length: f64,
     pub sensor_width: f64,
-    pub rays: Vec<Vec<Ray>>,
     pub pixels: Pixels,
 }
 
 impl Camera {
-    pub fn send_rays(&mut self, objects: &Objects) {
-        for row in &self.rays {
-            let mut pixel_row = Vec::new();
-            for ray in row {
-                let mut closest_intersection: Option<(Vector3<f64>, f64)> = None;
-                let mut closest_object: Option<&Box<dyn Object>> = None;
+    pub fn send_rays(&mut self, scene: Arc<Scene>) {
+        let (w, h) = self.resolution;
+        let total_pixels = (w * h) as usize;
 
-                for object in objects {
-                    if let Some((hit_point, distance)) = object.intersection(ray) {
-                        if closest_intersection.is_none()
-                            || distance < closest_intersection.unwrap().1
-                        {
-                            closest_intersection = Some((hit_point, distance));
-                            closest_object = Some(object);
-                        }
+        // Pre-allocate a vector with default Color values
+        let mut colors = vec![Color::default(); total_pixels];
+
+        // Parallelize the computation for each pixel
+        colors
+            .par_iter_mut()
+            .enumerate()
+            .for_each(|(i, pixel_color)| {
+                let x = i as u32 % w;
+                let y = i as u32 / w;
+                let mut color = Vector3::new(0.0, 0.0, 0.0);
+
+                for _sample in 0..self.sample_size {
+                    let dir = self.ray_direction(x, y);
+                    let mut ray = Ray::new(self.position, dir);
+
+                    ray.trace(&scene, 0);
+                    if ray.collisions.is_empty() {
+                        continue;
                     }
+
+                    let average_color = ray.average_color();
+                    let factor = if ray.hit_light_source { 1.0 } else { 0.1 };
+                    color.x += average_color.r as f64 * factor;
+                    color.y += average_color.g as f64 * factor;
+                    color.z += average_color.b as f64 * factor;
                 }
 
-                if let Some(object) = closest_object {
-                    let hit_point = closest_intersection.unwrap().0;
-                    let normal = object.normal_at(hit_point);
-                    let modified_color = modify_color_based_on_normal(normal, object.color(), ray);
-                    pixel_row.push(modified_color);
-                } else {
-                    pixel_row.push(Color::default());
-                }
-            }
-            self.pixels.push(pixel_row);
-        }
+                color /= self.sample_size as f64;
+                *pixel_color = Color::new(color.x as u8, color.y as u8, color.z as u8);
+            });
+
+        // Update the camera's pixels
+        self.pixels = colors;
     }
 
     pub fn write_to_ppm(&self, path: &str) {
+        let (w, h) = self.resolution;
         let mut file = std::fs::File::create(path).unwrap();
         writeln!(file, "P3").unwrap();
-        writeln!(file, "{} {}", self.pixels[0].len(), self.pixels.len()).unwrap();
+        writeln!(file, "{w} {h}").unwrap();
         writeln!(file, "255").unwrap();
-        for row in &self.pixels {
-            for pixel in row {
-                writeln!(file, "{} {} {}", pixel.r, pixel.g, pixel.b).unwrap();
-            }
+        let pixel_data: Vec<String> = self
+            .pixels
+            .par_iter()
+            .chunks(w as usize)
+            .map(|row| {
+                row.iter()
+                    .map(|pixel| {
+                        let corrected = pixel.apply_gamma_correction(2.0);
+                        format!("{} {} {}", corrected.r, corrected.g, corrected.b)
+                    })
+                    .collect::<Vec<String>>()
+                    .join(" ")
+            })
+            .collect();
+
+        // Write the prepared pixel data to the file
+        for row in pixel_data {
+            writeln!(file, "{}", row).unwrap();
         }
+    }
+
+    fn ray_direction(&self, pixel_x: u32, pixel_y: u32) -> Vector3<f64> {
+        // Calculate the camera basis vectors
+        let view_direction = (self.position - self.look_at).normalize();
+        let right_vector = self.up_direction.cross(&view_direction).normalize();
+        let up_vector = view_direction.cross(&right_vector);
+        let (width, height) = self.resolution;
+        let mut rand = rand::thread_rng();
+
+        // Convert pixel coordinates to normalized world coordinates
+        let normalized_x = (pixel_x as f64 + rand.gen_range(0.0..1.0)) / (width as f64) - 0.5;
+        let normalized_y = (pixel_y as f64 + rand.gen_range(0.0..1.0)) / (height as f64) - 0.5;
+
+        // Compute the ray direction
+        right_vector * (normalized_x * self.aspect_ratio) + up_vector * normalized_y
+            - view_direction * self.focal_length
     }
 }
 
@@ -145,47 +187,6 @@ impl CameraBuilder {
         self
     }
 
-    fn ray_direction(&self, pixel_x: u32, pixel_y: u32) -> Vector3<f64> {
-        // Calculate the camera basis vectors
-        let view_direction = (self.position.unwrap() - self.look_at.unwrap()).normalize();
-        let right_vector = self
-            .up_direction
-            .unwrap()
-            .cross(&view_direction)
-            .normalize();
-        let up_vector = view_direction.cross(&right_vector);
-        let (width, height) = self.resolution.unwrap();
-
-        // Convert pixel coordinates to normalized world coordinates
-        let normalized_x = (pixel_x as f64) / (width as f64) - 0.5;
-        let normalized_y = (pixel_y as f64) / (height as f64) - 0.5;
-
-        let aspect_ratio = width as f64 / height as f64;
-        // Compute the ray direction
-        right_vector * (normalized_x * aspect_ratio) + up_vector * normalized_y
-            - view_direction * self.focal_length.unwrap()
-    }
-
-    pub fn map_ray_directions(&self) -> Vec<Vec<Ray>> {
-        let mut rays = Vec::new();
-        let (width, height) = self.resolution.unwrap();
-
-        for y in 0..height {
-            let mut row = Vec::new();
-            for x in 0..width {
-                let direction = self.ray_direction(x, y);
-                row.push(Ray {
-                    origin: self.position.unwrap(),
-                    direction,
-                    collisions: vec![],
-                });
-            }
-            rays.push(row);
-        }
-
-        rays
-    }
-
     pub fn build(&self) -> Camera {
         let fov = 2.0
             * ((self.sensor_width.unwrap_or(DEFAULT_SENSOR_WIDTH)
@@ -202,17 +203,7 @@ impl CameraBuilder {
             aspect_ratio: width as f64 / height as f64,
             focal_length: self.focal_length.unwrap_or(DEFAULT_FOCAL_LENGTH),
             sensor_width: self.sensor_width.unwrap_or(DEFAULT_SENSOR_WIDTH),
-            rays: self.map_ray_directions(),
             pixels: Vec::new(),
         }
     }
-}
-
-fn modify_color_based_on_normal(normal: Vector3<f64>, original_color: Color, ray: &Ray) -> Color {
-    let dot = normal.dot(&ray.direction.normalize()).abs();
-    Color::new(
-        (original_color.r as f64 * dot) as u8,
-        (original_color.g as f64 * dot) as u8,
-        (original_color.b as f64 * dot) as u8,
-    )
 }

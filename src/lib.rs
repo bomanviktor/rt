@@ -3,11 +3,11 @@ pub mod config {
     pub use nalgebra::Vector3;
 
     pub type Point = Vector3<f64>;
-    pub type Pixels = Vec<Vec<Color>>;
+    pub type Pixels = Vec<Color>;
 }
 
 pub mod color {
-    #[derive(Debug, Clone)]
+    #[derive(Debug, Clone, Copy, PartialEq)]
     pub struct Color {
         pub r: u8,
         pub g: u8,
@@ -18,15 +18,71 @@ pub mod color {
         pub fn new(r: u8, g: u8, b: u8) -> Self {
             Self { r, g, b }
         }
+        pub fn black() -> Self {
+            Self { r: 0, g: 0, b: 0 }
+        }
+
+        pub fn random() -> Self {
+            use rand::Rng;
+            let mut rng = rand::thread_rng();
+            Self {
+                r: rng.gen_range(0..255),
+                g: rng.gen_range(0..255),
+                b: rng.gen_range(0..255),
+            }
+        }
+
+        pub fn white() -> Self {
+            Self {
+                r: 255,
+                g: 255,
+                b: 255,
+            }
+        }
+
+        /// #### r: 255, g: 0, b: 0
+        pub fn red() -> Self {
+            Self { r: 255, g: 0, b: 0 }
+        }
+        /// #### r: 0, g: 255, b: 0
+        pub fn green() -> Self {
+            Self { r: 0, g: 255, b: 0 }
+        }
+        /// #### r: 0, g: 0, b: 255
+        pub fn blue() -> Self {
+            Self { r: 0, g: 0, b: 255 }
+        }
+
+        pub fn yellow() -> Self {
+            Self {
+                r: 255,
+                g: 255,
+                b: 0,
+            }
+        }
+
+        pub fn light_yellow() -> Self {
+            Self {
+                r: 255,
+                g: 255,
+                b: 224,
+            }
+        }
+        pub fn apply_gamma_correction(&self, gamma: f64) -> Self {
+            let gamma_inv = 1.0 / gamma;
+
+            // Normalize, apply gamma correction, and convert back
+            let r = (self.r as f64 / 255.0).powf(gamma_inv) * 255.0;
+            let g = (self.g as f64 / 255.0).powf(gamma_inv) * 255.0;
+            let b = (self.b as f64 / 255.0).powf(gamma_inv) * 255.0;
+
+            Self::new(r as u8, g as u8, b as u8)
+        }
     }
 
     impl Default for Color {
         fn default() -> Self {
-            Self {
-                r: 169,
-                g: 169,
-                b: 169,
-            }
+            Color::black()
         }
     }
 }
@@ -46,6 +102,8 @@ pub mod raytracer {
 pub mod objects {
     pub mod cube;
 
+    use std::sync::Arc;
+
     pub use cube::*;
     use nalgebra::Vector3;
 
@@ -61,11 +119,6 @@ pub mod objects {
     use crate::raytracer::Ray;
     pub use sphere::*;
 
-    type Distance = f64;
-
-    /// Type alias for `Option<(Vector3<f64>, f64)>`
-    pub type Intersection = Option<(Point, Distance)>;
-
     /// [Discriminant equation](https://en.wikipedia.org/wiki/Discriminant)
     ///
     /// Returns `None` if `b² - 4ac < 0.0`
@@ -78,20 +131,26 @@ pub mod objects {
         }
     }
 
-    pub trait Object {
-        fn intersection(&self, ray: &Ray) -> Option<(Vector3<f64>, f64)>;
-        fn normal_at(&self, point: Vector3<f64>) -> Vector3<f64>;
+    pub trait Object: Send + Sync {
+        fn intersection(&self, ray: &Ray) -> Intersection;
+        fn normal_at(&self, ray: &Ray, point: Vector3<f64>) -> Vector3<f64>;
         fn color(&self) -> Color;
+        fn texture(&self) -> Texture;
+        fn center(&self) -> Point;
+        fn is_light(&self) -> bool;
     }
 
-    pub type Objects = Vec<Box<dyn Object>>;
+    pub type Objects = Vec<Arc<dyn Object>>;
 
-    #[derive(Debug)]
+    pub type Distance = f64;
+    /// Type alias for `Option<(Vector3<f64>, f64)>`
+    pub type Intersection = Option<(Point, Distance)>;
+
+    #[derive(Debug, Clone, Copy, PartialEq)]
     pub enum Texture {
-        Smooth(Color),
-        Metal,
-        Wood,
-        Glass,
+        Diffusive,
         Reflective,
+        Glossy,
+        Light,
     }
 }
