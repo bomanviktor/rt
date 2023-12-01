@@ -1,3 +1,4 @@
+use gdk_pixbuf::Pixbuf;
 use glib::clone;
 use glib::signal::Inhibit;
 use gtk::prelude::*;
@@ -79,20 +80,63 @@ pub fn launch_gui(_app_state: Rc<RefCell<AppState>>) {
         .expect("Failed to load CSS");
 
     let window = Window::new(WindowType::Toplevel);
+    window.set_resizable(true); // Allows the window to be resized
+    window.set_decorated(true); // Allows the window to be decorated
     window.set_title("Ray Tracing Settings");
     window.set_default_size(800, 1200);
     window
         .get_style_context()
         .add_provider(&provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
 
-    let scrolled_window = gtk::ScrolledWindow::new(gtk::NONE_ADJUSTMENT, gtk::NONE_ADJUSTMENT);
+    let icon = Pixbuf::from_file("src/gui/RT.png").expect("Failed to load icon");
+    let scaled_icon = icon
+        .scale_simple(64, 64, gdk_pixbuf::InterpType::Bilinear)
+        .expect("Failed to scale icon");
+    window.set_icon(Some(&scaled_icon));
 
-    let vbox = GtkBox::new(Orientation::Vertical, 10);
+    let scrolled_window = gtk::ScrolledWindow::new(gtk::NONE_ADJUSTMENT, gtk::NONE_ADJUSTMENT);
+    match Pixbuf::from_file("src/gui/RT.png") {
+        Ok(icon) => window.set_icon(Some(&icon)),
+        Err(err) => eprintln!("Failed to load icon: {}", err),
+    }
+
+    // About Dialog window
+    let about_dialog = gtk::AboutDialog::new();
+    about_dialog.set_program_name("Grit:Lab Ray Tracing Project");
+    about_dialog.set_comments(Some(
+        "Completed during grit:lab full-stack development course as part of the RUST Studies.",
+    ));
+    about_dialog.set_authors(&[
+        "Viktor Boman",
+        "Johannes Eckerman",
+        "Salam Foon",
+        "Ville Patjas",
+        "André Teetor",
+    ]);
+    about_dialog.set_website_label(Some("Code Repository"));
+    about_dialog.set_website(Some("https://github.com/bomanviktor/rt"));
+    about_dialog.set_logo(Some(&scaled_icon));
+    about_dialog.set_transient_for(Some(&window));
+    about_dialog.set_modal(true);
+    about_dialog.set_destroy_with_parent(true);
+
+    let vbox = GtkBox::new(Orientation::Vertical, 0);
+    let top_vbox = GtkBox::new(Orientation::Horizontal, 10);
     vbox.set_border_width(10);
     vbox.set_spacing(10);
 
-    // let vbox_clone = vbox.clone();
+    let about_button = gtk::Button::with_label("About");
+    about_button.connect_clicked(clone!(@weak about_dialog => move |_| {
+        about_dialog.run();
+        about_dialog.hide();
+    }));
+    top_vbox.pack_start(&about_button, false, false, 0);
+    about_button.get_style_context().add_class("about-button");
+    about_button
+        .get_style_context()
+        .add_provider(&provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
 
+    vbox.pack_start(&top_vbox, false, false, 0);
     scrolled_window.add(&vbox);
     window.add(&scrolled_window);
 
@@ -115,6 +159,7 @@ pub fn launch_gui(_app_state: Rc<RefCell<AppState>>) {
 
     // Create a horizontal box for the side-by-side buttons
     let hbox = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    hbox.set_halign(gtk::Align::Center);
 
     let add_sphere_button = Button::with_label("Add Sphere");
     hbox.pack_start(&add_sphere_button, false, false, 0);
@@ -198,9 +243,13 @@ pub fn launch_gui(_app_state: Rc<RefCell<AppState>>) {
     let separator = Separator::new(Orientation::Horizontal);
     vbox.pack_start(&separator, false, false, 10);
 
+    // Brightness
+
     let brightness_label = gtk::Label::new(Some("Brightness"));
     vbox.pack_start(&brightness_label, false, false, 0);
+
     let brightness_entry = Scale::with_range(Orientation::Horizontal, 0.0, 1.0, 0.1);
+    brightness_entry.set_value(0.5); // Set a default value
     vbox.pack_start(&brightness_entry, false, false, 0);
 
     // Camera Options

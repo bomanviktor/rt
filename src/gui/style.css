@@ -59,6 +59,16 @@ comboboxtext {
     border-radius: 5px;
     padding: 5px;
 }
+.about-button { 
+    border-radius: 15px; 
+    background-image: none;
+    margin: 5px;
+    padding: 5px;
+    font-weight: bold;
+    background-color: grey;
+    border: 1px solid #000; 
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2); 
+}
 
 
 .error {
