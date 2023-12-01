@@ -1,4 +1,3 @@
-use crate::color::Color;
 use crate::config::Point;
 use crate::objects::{discriminant, FlatPlane, Intersection, Object};
 use crate::raytracer::Ray;
@@ -13,12 +12,18 @@ pub struct Cylinder {
     pub height: f64,
     pub bottom: FlatPlane,
     pub top: FlatPlane,
-    pub color: Color,
+    pub color: Vector3<f64>,
     pub texture: Texture,
 }
 
 impl Cylinder {
-    pub fn new(center: Point, radius: f64, height: f64, color: Color, texture: Texture) -> Self {
+    pub fn new(
+        center: Point,
+        radius: f64,
+        height: f64,
+        color: Vector3<f64>,
+        texture: Texture,
+    ) -> Self {
         let bottom = FlatPlane::new(center, radius, color, texture);
         let top = FlatPlane::new(
             Vector3::new(center.x, center.y + height, center.z),
@@ -101,7 +106,7 @@ impl Object for Cylinder {
         }
     }
 
-    fn color(&self) -> Color {
+    fn color(&self) -> Vector3<f64> {
         self.color
     }
     fn texture(&self) -> Texture {

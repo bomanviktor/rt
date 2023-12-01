@@ -36,7 +36,7 @@ impl Camera {
         let total_pixels = (w * h) as usize;
 
         // Pre-allocate a vector with default Color values
-        let mut colors = vec![Color::default(); total_pixels];
+        let mut colors = vec![Vector3::default(); total_pixels];
 
         // Parallelize the computation for each pixel
         colors
@@ -56,15 +56,10 @@ impl Camera {
                         continue;
                     }
 
-                    let average_color = ray.average_color();
-                    let factor = if ray.hit_light_source { 1.0 } else { 0.1 };
-                    color.x += average_color.r as f64 * factor;
-                    color.y += average_color.g as f64 * factor;
-                    color.z += average_color.b as f64 * factor;
+                    color += ray.average_color();
                 }
 
-                color /= self.sample_size as f64;
-                *pixel_color = Color::new(color.x as u8, color.y as u8, color.z as u8);
+                *pixel_color = color / self.sample_size as f64;
             });
 
         // Update the camera's pixels
@@ -84,8 +79,8 @@ impl Camera {
             .map(|row| {
                 row.iter()
                     .map(|pixel| {
-                        let corrected = pixel.apply_gamma_correction(2.0);
-                        format!("{} {} {}", corrected.r, corrected.g, corrected.b)
+                        let corrected = pixel.correct_gamma(2.2);
+                        format!("{} {} {}", corrected.r(), corrected.g(), corrected.b())
                     })
                     .collect::<Vec<String>>()
                     .join(" ")

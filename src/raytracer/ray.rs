@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use crate::color::Color;
 use crate::config::Point;
 use crate::objects::{Intersection, Object};
 use crate::objects::{Objects, Texture};
@@ -9,12 +8,12 @@ use nalgebra::Vector3;
 use rand::Rng;
 
 const MAX_DEPTH: u8 = 5;
-const NUM_SECONDARY_RAYS: usize = 5;
+const NUM_SECONDARY_RAYS: usize = 4;
 #[derive(Debug, Clone)]
 pub struct Ray {
     pub origin: Point,
     pub direction: Vector3<f64>,
-    pub collisions: Vec<Color>,
+    pub collisions: Vec<Vector3<f64>>,
     pub hit_light_source: bool,
     pub intersection_dist: f64,
 }
@@ -54,25 +53,17 @@ impl Ray {
         if let Some(intersection) = closest_intersection {
             if let Some(object) = closest_object {
                 // Check if the intersection is in shadow
+                // Take this out for now, will implement in next PR for normal shading.
+                /*
                 let in_shadow = Ray::in_shadow(
                     intersection.0,
                     object.normal_at(self, intersection.0),
                     &scene.objects,
                     object.center(),
                 );
-                let mut color = object.color();
+                 */
 
-                // If in shadow, dim the color
-                if in_shadow {
-                    let dimming_factor = 0.1; // Adjust as needed
-                    color = Color::new(
-                        (color.r as f64 * dimming_factor) as u8,
-                        (color.g as f64 * dimming_factor) as u8,
-                        (color.b as f64 * dimming_factor) as u8,
-                    );
-                }
-
-                self.collisions.push(color);
+                self.collisions.push(object.color());
                 match object.texture() {
                     Texture::Diffusive => {
                         self.diffuse(Some(intersection), object, new_rays, scene, depth);
@@ -108,9 +99,9 @@ impl Ray {
             let new_direction = self.diffuse_direction(object.normal_at(self, first_hit_point));
 
             let mut secondary_ray = Ray {
-                origin: first_hit_point * (1.0 + f64::EPSILON),
+                origin: first_hit_point,
                 direction: new_direction,
-                collisions: Vec::new(),
+                collisions: self.collisions.clone(),
                 hit_light_source: false,
                 intersection_dist: f64::MAX,
             };
@@ -120,9 +111,9 @@ impl Ray {
             // Accumulate colors from secondary rays into the original ray's collisions
             // also set the hit_light_source to true if the secondary ray hit a light source
             if secondary_ray.hit_light_source {
-                self.collisions.extend(secondary_ray.collisions);
                 self.hit_light_source = true;
             }
+            self.collisions.extend(secondary_ray.collisions);
         }
     }
 
@@ -158,7 +149,7 @@ impl Ray {
         self.direction - 2.0 * self.direction.dot(&normal) * normal
     }
 
-    pub fn average_color(&self) -> Color {
+    pub fn average_color(&self) -> Vector3<f64> {
         if self.collisions.len() == 1 {
             return self.collisions[0];
         }
@@ -166,22 +157,18 @@ impl Ray {
         let primary_color = self.collisions[0];
         let secondary_colors = &self.collisions[1..];
 
-        let mut total_r = primary_color.r as f64;
-        let mut total_g = primary_color.g as f64;
-        let mut total_b = primary_color.b as f64;
+        let mut total = primary_color;
 
         for (i, color) in secondary_colors.iter().enumerate() {
-            let mul = 1.0 - (i as f64 / 10.0) * 2.0; // Change this to be according to max depth
-            total_r += color.r as f64 * mul;
-            total_g += color.g as f64 * mul;
-            total_b += color.b as f64 * mul;
+            let mul = 1.0 / (i as f64 + 1.0); // Change this to be according to max depth
+            total += color * mul;
         }
         let number_of_colors = self.collisions.len() as f64;
-        total_r /= number_of_colors;
-        total_g /= number_of_colors;
-        total_b /= number_of_colors;
-
-        Color::new(total_r as u8, total_g as u8, total_b as u8)
+        if self.hit_light_source {
+            (total / number_of_colors) * 5.0
+        } else {
+            (total / number_of_colors) * 0.2
+        }
     }
 
     pub fn in_shadow(
@@ -214,12 +201,12 @@ impl Ray {
 
     // TODO: remove the macro
     #[allow(dead_code)]
-    fn modify_color_based_on_normal(&self, normal: Vector3<f64>, original_color: Color) -> Color {
+    fn modify_color_based_on_normal(
+        &self,
+        normal: Vector3<f64>,
+        original_color: Vector3<f64>,
+    ) -> Vector3<f64> {
         let dot = normal.dot(&self.direction.normalize()).abs();
-        Color::new(
-            (original_color.r as f64 * dot) as u8,
-            (original_color.g as f64 * dot) as u8,
-            (original_color.b as f64 * dot) as u8,
-        )
+        original_color * dot
     }
 }
