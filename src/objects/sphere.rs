@@ -30,7 +30,7 @@ impl Object for Sphere {
         let origin_to_center = ray.origin - self.center;
         let a = ray.direction.dot(&ray.direction);
         let b = 2.0 * origin_to_center.dot(&ray.direction);
-        let c = origin_to_center.dot(&oc) - self.radius * self.radius;
+        let c = origin_to_center.dot(&origin_to_center) - self.radius * self.radius;
         let discriminant = b * b - 4.0 * a * c;
 
         if discriminant > 0.0 {

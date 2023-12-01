@@ -10,10 +10,10 @@ pub struct Scene {
 
 impl Scene {
     pub fn init(_scene_data: &str) -> Self {
-        let sphere1 = Sphere::new(Vector3::new(0.0, 0.0, 0.0), 1.0, Color::red(), Diffusive);
+        let sphere1 = Sphere::new(Vector3::new(3.0, -1.0, 0.0), 1.0, Color::red(), Diffusive);
 
         let cylinder = Cylinder::new(
-            Vector3::new(2.0, -2.0, 0.0),
+            Vector3::new(0.0, -2.0, 0.0),
             1.0,
             3.0,
             Color::green(),
@@ -21,26 +21,23 @@ impl Scene {
         );
 
         let flat_plane =
-            FlatPlane::new(Vector3::new(0.0, 1.0, -3.0), 5.0, Color::blue(), Diffusive);
+            FlatPlane::new(Vector3::new(0.0, 0.0, 0.0), 10.0, Color::blue(), Diffusive);
 
         let light = Sphere::new(Vector3::new(-5.0, -6.0, -10.0), 2.0, Color::white(), Light);
 
         let cube = Cube::new(
-            Vector3::new(-2.0, 0.0, 0.0),
-            2.0,
+            Vector3::new(-4.0, -0.5, 0.0),
+            1.0,
             Color::yellow(),
             Diffusive,
         );
-
-        let flat_plane = FlatPlane::new(Vector3::new(0.0, 0.0, -5.0), 5.0, Color::new(0, 0, 255));
-        let cube = Cube::new(Vector3::new(-2.0, -1.0, -5.0), 1.0, Color::new(0, 0, 255));
 
         let objects: Objects = vec![
             Arc::new(sphere1),
             Arc::new(cylinder),
             Arc::new(flat_plane),
             Arc::new(cube),
-            Arc::new(light.clone()),
+            Arc::new(light),
         ];
 
         Self { objects }
