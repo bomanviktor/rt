@@ -9,7 +9,7 @@ use nalgebra::Vector3;
 use rand::Rng;
 
 const MAX_DEPTH: u8 = 5;
-const NUM_SECONDARY_RAYS: usize = 4;
+const NUM_SECONDARY_RAYS: usize = 5;
 #[derive(Debug, Clone)]
 pub struct Ray {
     pub origin: Point,
@@ -190,15 +190,9 @@ impl Ray {
         objects: &Objects,
         object_center: Point,
     ) -> bool {
-        // Fucked up solution for now. Will fix tomorrow.
-        let light_source = objects
-            .iter()
-            .cloned()
-            .filter(|obj| obj.is_light())
-            .collect::<Objects>()[0]
-            .clone();
-
+        let light_source = objects.iter().find(|obj| obj.is_light()).cloned().unwrap();
         let light_position = light_source.center();
+
         let to_light = (light_position - hit_point).normalize();
         let shadow_ray = Ray::new(hit_point + normal * 1e-1, to_light);
 
