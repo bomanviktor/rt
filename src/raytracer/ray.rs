@@ -53,6 +53,7 @@ impl Ray {
         if let Some(intersection) = closest_intersection {
             if let Some(object) = closest_object {
                 // Check if the intersection is in shadow
+                // Take this out for now, will implement in next PR for normal shading.
                 /*
                 let in_shadow = Ray::in_shadow(
                     intersection.0,
@@ -60,22 +61,9 @@ impl Ray {
                     &scene.objects,
                     object.center(),
                 );
-
-
-                // If in shadow, dim the color
-                let dimming_factor = if in_shadow {
-                    0.1
-                } else {
-                    1.0
-                };
-
                  */
-                let mut color = object.color();
-                let dimming_factor = 1.0;
 
-                color *= dimming_factor;
-
-                self.collisions.push(color);
+                self.collisions.push(object.color());
                 match object.texture() {
                     Texture::Diffusive => {
                         self.diffuse(Some(intersection), object, new_rays, scene, depth);

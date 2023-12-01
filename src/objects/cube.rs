@@ -26,12 +26,14 @@ impl Object for Cube {
     fn intersection(&self, ray: &Ray) -> Intersection {
         let mut closest_intersection: Intersection = None;
         let half_size = self.size / 2.0;
+        let (x, y, z) = (0, 1, 2);
+        let (pos, neg) = (1.0, -1.0);
 
         // Check intersections with each face of the cube
-        for axis in 0..3 {
-            for sign in [-1.0, 1.0].iter() {
+        for axis in [x, y, z] {
+            for sign in [pos, neg] {
                 let mut normal = Vector3::zeros();
-                normal[axis] = *sign;
+                normal[axis] = sign;
                 let face_center = self.center + half_size * normal;
 
                 let denom = normal.dot(&ray.direction);
@@ -41,14 +43,14 @@ impl Object for Cube {
                 let face_center_to_origin = face_center - ray.origin;
                 let distance = face_center_to_origin.dot(&normal) / denom;
 
-                if !(0.0..=ray.intersection_dist).contains(&distance) {
+                if !(denom.abs()..ray.intersection_dist).contains(&distance) {
                     continue;
                 }
 
                 let point = ray.origin + distance * ray.direction;
                 let local_point = point - self.center;
 
-                let float_offset = 1.0001;
+                let float_offset = 1.00001;
                 // Check if point is within cube bounds
                 if local_point
                     .iter()
@@ -65,9 +67,8 @@ impl Object for Cube {
     }
 
     fn normal_at(&self, _ray: &Ray, point: Point) -> Vector3<f64> {
-        let local_point = (point - self.center) * 1.0001; // Convert the point to the cube's local space
-
-        // Determine which face the point is on by finding the largest component of the local point
+        let local_point = point - self.center; // Convert the point to the cube's local space
+                                               // Determine which face the point is on by finding the largest component of the local point
         let max = local_point
             .iter()
             .map(|v| v.abs())

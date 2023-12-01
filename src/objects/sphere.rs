@@ -32,24 +32,25 @@ impl Object for Sphere {
         let c = origin_to_center.dot(&origin_to_center) - self.radius * self.radius;
         let discriminant = b * b - 4.0 * a * c;
 
-        if discriminant > 0.0 {
-            let sqrt_discriminant = discriminant.sqrt();
-            let t1 = (-b - sqrt_discriminant) / (2.0 * a);
-            let t2 = (-b + sqrt_discriminant) / (2.0 * a);
-
-            let t = if t1 > 0.0 && (t1 < t2 || t2 < 0.0) {
-                t1
-            } else if t2 > 0.0 {
-                t2
-            } else {
-                return None;
-            };
-
-            if t > 0.0 && (ray.intersection_dist < 0.0 || t < ray.intersection_dist) {
-                let point = ray.origin + t * ray.direction;
-                return Some((point, t));
-            }
+        if discriminant <= 0.0 {
+            return None;
         }
+
+        let sqrt_discriminant = discriminant.sqrt();
+        let dist_1 = (-b - sqrt_discriminant) / (2.0 * a);
+        let dist_2 = (-b + sqrt_discriminant) / (2.0 * a);
+
+        let dist = if (0.0..dist_2).contains(&dist_1) {
+            dist_1 // dist 1 is closer
+        } else {
+            dist_2 // dist 2 is closer
+        };
+
+        if dist > 0.0 && dist < ray.intersection_dist {
+            let point = ray.origin + dist * ray.direction;
+            return Some((point, dist));
+        }
+
         None
     }
 

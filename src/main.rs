@@ -8,7 +8,7 @@ const OUTPUT_PATH: &str = "output.ppm";
 
 fn main() {
     let mut camera = CameraBuilder::new()
-        .sample_size(50)
+        .sample_size(10)
         .position_by_coordinates(Vector3::new(-3.0, -4.0, 5.0))
         .look_at(Vector3::new(0.0, 0.0, 0.0))
         .up_direction_by_coordinates(Vector3::new(0.0, 1.0, 0.0))
@@ -23,6 +23,7 @@ fn main() {
 
     // Perform ray tracing
     camera.send_rays(scene.clone());
+
     camera.write_to_ppm(OUTPUT_PATH);
 
     let duration = start.elapsed();
