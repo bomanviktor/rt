@@ -1,8 +1,20 @@
-pub mod config {
+/// `type_aliases` is for differentiating the different `Vector3` types
+pub mod type_aliases {
     pub use nalgebra::Vector3;
 
+    /// `Point` represents a point in euclidean space
     pub type Point = Vector3<f64>;
-    pub type Pixels = Vec<Vector3<f64>>;
+
+    /// `Normal` represents the normal vector on any surface
+    pub type Normal = Vector3<f64>;
+
+    /// `Direction` represents the normalized directional vector
+    pub type Direction = Vector3<f64>;
+
+    /// `Color` represents the RGB values of a color. It is later calculated down to the u8 type
+    pub type Color = Vector3<f64>;
+    /// `Pixels` represents the rendered pixels in the image. It is a Vector of `Color`
+    pub type Pixels = Vec<Color>;
 }
 
 pub mod color {
@@ -117,8 +129,8 @@ pub mod objects {
     pub use flat_plane::*;
 
     pub mod sphere;
-    use crate::config::Point;
     use crate::raytracer::Ray;
+    use crate::type_aliases::Point;
     pub use sphere::*;
 
     /// [Discriminant equation](https://en.wikipedia.org/wiki/Discriminant)
@@ -145,6 +157,15 @@ pub mod objects {
     pub type Objects = Vec<Arc<dyn Object>>;
 
     pub type Distance = f64;
+
+    /*
+    pub struct Intersection {
+        pub hit_point: Point,
+        pub normal: Normal,
+        pub distance: Distance,
+        pub texture: Texture
+    }
+     */
     /// Type alias for `Option<(Vector3<f64>, f64)>`
     pub type Intersection = Option<(Point, Distance)>;
 

@@ -1,6 +1,6 @@
-use crate::config::Point;
 use crate::objects::{Intersection, Object};
 use crate::raytracer::Ray;
+use crate::type_aliases::{Color, Normal, Point};
 use nalgebra::Vector3;
 
 use super::Texture;
@@ -9,12 +9,12 @@ use super::Texture;
 pub struct FlatPlane {
     pub center: Point,
     pub radius: f64,
-    pub color: Vector3<f64>,
+    pub color: Color,
     pub texture: Texture,
 }
 
 impl FlatPlane {
-    pub fn new(center: Point, radius: f64, color: Vector3<f64>, texture: Texture) -> Self {
+    pub fn new(center: Point, radius: f64, color: Color, texture: Texture) -> Self {
         Self {
             center,
             radius,
@@ -42,14 +42,14 @@ impl Object for FlatPlane {
         None
     }
 
-    fn normal_at(&self, ray: &Ray, _point: Point) -> Vector3<f64> {
+    fn normal_at(&self, ray: &Ray, _point: Point) -> Normal {
         if ray.origin.y <= self.center.y {
             Vector3::new(0.0, -1.0, 0.0)
         } else {
             Vector3::new(0.0, 1.0, 0.0)
         }
     }
-    fn color(&self) -> Vector3<f64> {
+    fn color(&self) -> Color {
         self.color
     }
     fn texture(&self) -> Texture {

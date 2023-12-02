@@ -1,6 +1,6 @@
 use crate::color::Color;
-use crate::config::{Pixels, Point};
 use crate::raytracer::{Ray, Resolution, Scene};
+use crate::type_aliases::{Pixels, Point};
 use nalgebra::Vector3;
 use rand::Rng;
 use rayon::prelude::*;
@@ -49,9 +49,9 @@ impl Camera {
 
                 for _sample in 0..self.sample_size {
                     let dir = self.ray_direction(x, y);
-                    let mut ray = Ray::new(self.position, dir);
+                    let mut ray = Ray::new(self.position, dir, 0);
 
-                    ray.trace(&scene, 0);
+                    ray.trace(&scene);
                     if ray.collisions.is_empty() {
                         continue;
                     }
@@ -79,7 +79,7 @@ impl Camera {
             .map(|row| {
                 row.iter()
                     .map(|pixel| {
-                        let corrected = pixel.correct_gamma(2.2);
+                        let corrected = pixel.correct_gamma(2.0);
                         format!("{} {} {}", corrected.r(), corrected.g(), corrected.b())
                     })
                     .collect::<Vec<String>>()

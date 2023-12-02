@@ -1,18 +1,18 @@
-use crate::config::Point;
 use crate::objects::{Intersection, Object, Texture};
 use crate::raytracer::Ray;
+use crate::type_aliases::{Color, Normal, Point};
 use nalgebra::Vector3;
 
 #[derive(Debug)]
 pub struct Cube {
     pub center: Point,
     pub size: f64,
-    pub color: Vector3<f64>,
+    pub color: Color,
     pub texture: Texture,
 }
 
 impl Cube {
-    pub fn new(center: Point, size: f64, color: Vector3<f64>, texture: Texture) -> Self {
+    pub fn new(center: Point, size: f64, color: Color, texture: Texture) -> Self {
         Self {
             center,
             size,
@@ -66,7 +66,7 @@ impl Object for Cube {
         closest_intersection
     }
 
-    fn normal_at(&self, _ray: &Ray, point: Point) -> Vector3<f64> {
+    fn normal_at(&self, _ray: &Ray, point: Point) -> Normal {
         let local_point = point - self.center; // Convert the point to the cube's local space
                                                // Determine which face the point is on by finding the largest component of the local point
         let max = local_point
@@ -82,7 +82,7 @@ impl Object for Cube {
         normal
     }
 
-    fn color(&self) -> Vector3<f64> {
+    fn color(&self) -> Color {
         self.color
     }
     fn texture(&self) -> Texture {

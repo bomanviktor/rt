@@ -1,6 +1,6 @@
-use crate::config::Point;
 use crate::objects::{discriminant, FlatPlane, Intersection, Object};
 use crate::raytracer::Ray;
+use crate::type_aliases::{Color, Normal, Point};
 use nalgebra::Vector3;
 
 use super::Texture;
@@ -12,7 +12,7 @@ pub struct Cylinder {
     pub height: f64,
     pub bottom: FlatPlane,
     pub top: FlatPlane,
-    pub color: Vector3<f64>,
+    pub color: Color,
     pub texture: Texture,
 }
 
@@ -92,7 +92,7 @@ impl Object for Cylinder {
             .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
     }
 
-    fn normal_at(&self, _ray: &Ray, point: Point) -> Vector3<f64> {
+    fn normal_at(&self, _ray: &Ray, point: Point) -> Normal {
         // Determine if the point is on the top or bottom cap
         if (point - self.top.center).norm() <= self.radius {
             Vector3::new(0.0, 1.0, 0.0) // Normal for the top cap
@@ -106,7 +106,7 @@ impl Object for Cylinder {
         }
     }
 
-    fn color(&self) -> Vector3<f64> {
+    fn color(&self) -> Color {
         self.color
     }
     fn texture(&self) -> Texture {

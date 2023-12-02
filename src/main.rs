@@ -1,17 +1,16 @@
+use rt::raytracer::{CameraBuilder, Scene};
+use rt::type_aliases::{Direction, Point};
 use std::sync::Arc;
 use std::time::Instant;
-
-use nalgebra::Vector3;
-use rt::raytracer::{CameraBuilder, Scene};
 
 const OUTPUT_PATH: &str = "output.ppm";
 
 fn main() {
     let mut camera = CameraBuilder::new()
-        .sample_size(10)
-        .position_by_coordinates(Vector3::new(-3.0, -4.0, 5.0))
-        .look_at(Vector3::new(0.0, 0.0, 0.0))
-        .up_direction_by_coordinates(Vector3::new(0.0, 1.0, 0.0))
+        .sample_size(5)
+        .position_by_coordinates(Point::new(-3.0, -4.0, 5.0))
+        .look_at(Point::new(0.0, 0.0, 0.0))
+        .up_direction_by_coordinates(Direction::new(0.0, 1.0, 0.0))
         .focal_length(0.5)
         .sensor_width(1.0)
         .build();

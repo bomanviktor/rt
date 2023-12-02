@@ -1,7 +1,6 @@
-use crate::config::Point;
 use crate::objects::{Intersection, Object};
 use crate::raytracer::Ray;
-use nalgebra::Vector3;
+use crate::type_aliases::{Color, Normal, Point};
 
 use super::Texture;
 
@@ -9,12 +8,12 @@ use super::Texture;
 pub struct Sphere {
     pub center: Point,
     pub radius: f64,
-    pub color: Vector3<f64>,
+    pub color: Color,
     pub texture: Texture,
 }
 
 impl Sphere {
-    pub fn new(center: Point, radius: f64, color: Vector3<f64>, texture: Texture) -> Self {
+    pub fn new(center: Point, radius: f64, color: Color, texture: Texture) -> Self {
         Self {
             center,
             radius,
@@ -54,11 +53,11 @@ impl Object for Sphere {
         None
     }
 
-    fn normal_at(&self, _ray: &Ray, point: Vector3<f64>) -> Vector3<f64> {
+    fn normal_at(&self, _ray: &Ray, point: Point) -> Normal {
         (point - self.center).normalize()
     }
 
-    fn color(&self) -> Vector3<f64> {
+    fn color(&self) -> Color {
         self.color
     }
 
