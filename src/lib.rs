@@ -142,7 +142,7 @@ pub mod objects {
     }
 
     pub trait Object: Send + Sync {
-        fn intersection(&self, ray: &Ray) -> Intersection;
+        fn intersection(&self, ray: &Ray) -> Option<Intersection>;
         fn texture(&self) -> Texture;
         fn center(&self) -> Point;
         fn is_light(&self) -> bool;
@@ -152,30 +152,22 @@ pub mod objects {
 
     pub type Distance = f64;
 
-
     pub struct Intersection {
         pub hit_point: Point,
         pub normal: Normal,
         pub distance: Distance,
-        pub texture: Texture
+        pub texture: Texture,
     }
 
     impl Intersection {
         pub fn new(hit_point: Point, normal: Normal, distance: Distance, texture: Texture) -> Self {
             Self {
-                hit_point, normal, distance, texture
+                hit_point,
+                normal,
+                distance,
+                texture,
             }
         }
-
-        pub fn color(&self) -> Color {
-            match self.texture {
-                Texture::Light(c) => c,
-                Texture::Diffusive(c) => c,
-                Texture::Glossy(c) => c,
-                Texture::Reflective => Color::default(),
-            }
-        }
-
     }
 
     #[derive(Debug, Clone, Copy, PartialEq)]

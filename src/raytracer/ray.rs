@@ -1,14 +1,11 @@
-use std::sync::Arc;
-
-use crate::objects::{Intersection, Object};
-use crate::objects::{Objects, Texture};
+use crate::objects::{Intersection, Texture};
 use crate::raytracer::Scene;
 use crate::type_aliases::{Color, Direction, Normal, Point};
 use nalgebra::Vector3;
 use rand::Rng;
 
 const MAX_DEPTH: u8 = 50;
-const NUM_SECONDARY_RAYS: usize = 2;
+const NUM_SECONDARY_RAYS: usize = 8;
 #[derive(Debug, Clone)]
 pub struct Ray {
     pub origin: Point,
@@ -36,78 +33,60 @@ impl Ray {
             return;
         }
 
-        let mut closest_intersection: Intersection = None;
-        let mut closest_object: Option<Arc<dyn Object>> = None; // To keep track of the object with the closest intersection
-
+        let mut closest_intersection: Option<Intersection> = None;
+        let mut distance = f64::MAX;
         // Check for intersection with objects
         for object in &scene.objects {
-            if let Some((hit_point, distance)) = object.intersection(self) {
-                if distance < self.intersection_dist {
-                    self.intersection_dist = distance;
-                    closest_intersection = Some((hit_point, distance));
-                    closest_object = Some(object.clone());
+            if let Some(intersection) = object.intersection(self) {
+                if intersection.distance < distance {
+                    distance = intersection.distance;
+                    closest_intersection = Some(intersection);
                 }
             }
         }
 
         // Process the closest intersection
         if let Some(intersection) = closest_intersection {
-            if let Some(object) = closest_object {
-                // Check if the intersection is in shadow
-                // Take this out for now, will implement in next PR for normal shading.
-                /*
-                let in_shadow = Ray::in_shadow(
-                    intersection.0,
-                    object.normal_at(self, intersection.0),
-                    &scene.objects,
-                    object.center(),
-                );
-                 */
+            let origin = intersection.hit_point;
+            let normal = intersection.normal;
 
-                self.collisions.push(object.color());
-                match object.texture() {
-                    Texture::Diffusive => {
-                        self.diffuse(Some(intersection), object, scene);
-                    }
-                    Texture::Glossy => {
-                        unimplemented!()
-                        // self.glossy(intersection, object, new_rays, scene, depth);
-                    }
-                    Texture::Reflective => {
-                        unimplemented!()
-                        // self.reflective(intersection, object, new_rays, scene, depth);
-                    }
-                    Texture::Light => {
-                        self.hit_light_source = true;
-                    }
+            match intersection.texture {
+                Texture::Diffusive(color) => {
+                    let direction = self.diffuse(normal);
+                    self.collisions.push(color);
+                    self.diffusive(origin, direction, scene);
+                }
+                Texture::Glossy(color) => {
+                    let reflective_direction = self.reflect(normal);
+                    let diffusive_direction = self.diffuse(normal);
+                    let glossy_direction =
+                        reflective_direction.dot(&diffusive_direction) * diffusive_direction;
+                    self.collisions.push(color);
+                    self.diffusive(origin, glossy_direction, scene);
+                }
+                Texture::Reflective => {
+                    let direction = self.reflect(normal);
+                    self.reflective(origin, direction, scene);
+                }
+                Texture::Light(color) => {
+                    self.collisions.push(color);
+                    self.hit_light_source = true;
                 }
             }
         }
     }
 
-    #[allow(dead_code)]
-    fn reflect(
-        &mut self,
-        _intersection: Intersection,
-        _object: Arc<dyn Object>,
-        _new_rays: usize,
-        _scene: &Scene,
-        _depth: u8,
-    ) {
-    }
-
-    fn diffuse(&mut self, intersection: Intersection, object: Arc<dyn Object>, scene: &Scene) {
-        let first_hit_point = intersection.unwrap().0;
-        let new_rays = if self.depth == 0 {
-            NUM_SECONDARY_RAYS
-        } else {
-            1
+    fn diffusive(&mut self, origin: Point, direction: Direction, scene: &Scene) {
+        let new_rays = match self.depth {
+            0 => NUM_SECONDARY_RAYS,
+            1 => NUM_SECONDARY_RAYS / 2,
+            2 => NUM_SECONDARY_RAYS / 4,
+            _ => 1,
         };
+
         // Iterate over secondary rays
         for _ in 0..new_rays {
-            let new_direction = self.diffuse_direction(object.normal_at(self, first_hit_point));
-
-            let mut secondary_ray = Ray::new(first_hit_point, new_direction, self.depth + 1);
+            let mut secondary_ray = Ray::new(origin, direction, self.depth + 1);
 
             // Recursively trace the secondary ray
             secondary_ray.trace(scene);
@@ -120,7 +99,7 @@ impl Ray {
         }
     }
 
-    fn diffuse_direction(&self, normal: Vector3<f64>) -> Vector3<f64> {
+    fn diffuse(&self, normal: Normal) -> Direction {
         let mut rng = rand::thread_rng();
 
         // Create a coordinate system around the normal
@@ -147,13 +126,19 @@ impl Ray {
     }
 
     // TODO: remove the macro
-    #[allow(dead_code)]
-    fn reflect2(&self, normal: Normal) -> Normal {
+    fn reflect(&self, normal: Normal) -> Normal {
         self.direction - 2.0 * self.direction.dot(&normal) * normal
     }
 
-    #[allow(dead_code)]
-    fn reflective(&self, _normal: Normal) {}
+    fn reflective(&mut self, origin: Point, direction: Direction, scene: &Scene) {
+        let mut secondary_ray = Ray::new(origin, direction, self.depth + 1);
+        secondary_ray.trace(scene);
+
+        if secondary_ray.hit_light_source {
+            self.hit_light_source = true;
+        }
+        self.collisions.extend(secondary_ray.collisions);
+    }
 
     pub fn average_color(&self) -> Color {
         if self.collisions.len() == 1 {
@@ -171,39 +156,40 @@ impl Ray {
         }
         let number_of_colors = self.collisions.len() as f64;
         if self.hit_light_source {
-            (total / number_of_colors) * 2.0
+            (total / number_of_colors) * 3.0
         } else {
-            (total / number_of_colors) * 0.1
+            (total / number_of_colors) * 0.01
         }
     }
+    /*
+       pub fn in_shadow(
+           hit_point: Vector3<f64>,
+           normal: Vector3<f64>,
+           objects: &Objects,
+           object_center: Point,
+       ) -> bool {
+           let light_source = objects.iter().find(|obj| obj.is_light()).cloned().unwrap();
+           let light_position = light_source.center();
 
-    pub fn in_shadow(
-        hit_point: Vector3<f64>,
-        normal: Vector3<f64>,
-        objects: &Objects,
-        object_center: Point,
-    ) -> bool {
-        let light_source = objects.iter().find(|obj| obj.is_light()).cloned().unwrap();
-        let light_position = light_source.center();
+           let to_light = (light_position - hit_point).normalize();
+           let shadow_ray = Ray::new(hit_point + normal * 1e-1, to_light, 1);
 
-        let to_light = (light_position - hit_point).normalize();
-        let shadow_ray = Ray::new(hit_point + normal * 1e-1, to_light, 1);
+           for object in objects
+               .iter()
+               .filter(|&obj| !obj.is_light() && obj.center() != object_center)
+           {
+               if let Some((shadow_hit, _)) = object.intersection(&shadow_ray) {
+                   let distance_to_light = (light_position - shadow_hit).norm();
+                   let original_distance_to_light = (light_position - hit_point).norm();
 
-        for object in objects
-            .iter()
-            .filter(|&obj| !obj.is_light() && obj.center() != object_center)
-        {
-            if let Some((shadow_hit, _)) = object.intersection(&shadow_ray) {
-                let distance_to_light = (light_position - shadow_hit).norm();
-                let original_distance_to_light = (light_position - hit_point).norm();
-
-                if distance_to_light < original_distance_to_light {
-                    return true;
-                }
-            }
-        }
-        false
-    }
+                   if distance_to_light < original_distance_to_light {
+                       return true;
+                   }
+               }
+           }
+           false
+       }
+    */
 
     // TODO: remove the macro
     #[allow(dead_code)]
