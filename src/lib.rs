@@ -115,13 +115,9 @@ pub mod raytracer {
 }
 
 pub mod objects {
-    pub mod cube;
-
     use std::sync::Arc;
-
+    pub mod cube;
     pub use cube::*;
-    use nalgebra::Vector3;
-
     pub mod cylinder;
     pub use cylinder::*;
 
@@ -130,7 +126,7 @@ pub mod objects {
 
     pub mod sphere;
     use crate::raytracer::Ray;
-    use crate::type_aliases::Point;
+    use crate::type_aliases::{Color, Normal, Point};
     pub use sphere::*;
 
     /// [Discriminant equation](https://en.wikipedia.org/wiki/Discriminant)
@@ -147,8 +143,8 @@ pub mod objects {
 
     pub trait Object: Send + Sync {
         fn intersection(&self, ray: &Ray) -> Intersection;
-        fn normal_at(&self, ray: &Ray, point: Vector3<f64>) -> Vector3<f64>;
-        fn color(&self) -> Vector3<f64>;
+        fn normal_at(&self, ray: &Ray, point: Point) -> Normal;
+        fn color(&self) -> Color;
         fn texture(&self) -> Texture;
         fn center(&self) -> Point;
         fn is_light(&self) -> bool;
@@ -158,22 +154,40 @@ pub mod objects {
 
     pub type Distance = f64;
 
-    /*
+
     pub struct Intersection {
         pub hit_point: Point,
         pub normal: Normal,
         pub distance: Distance,
         pub texture: Texture
     }
-     */
+
+    impl Intersection {
+        pub fn new(hit_point: Point, normal: Normal, distance: Distance, texture: Texture) -> Self {
+            Self {
+                hit_point, normal, distance, texture
+            }
+        }
+
+        pub fn color(&self) -> Color {
+            match self.texture {
+                Texture::Light(c) => c,
+                Texture::Diffusive(c) => c,
+                Texture::Glossy(c) => c,
+                Texture::Reflective => Color::default(),
+            }
+        }
+
+    }
+
     /// Type alias for `Option<(Vector3<f64>, f64)>`
-    pub type Intersection = Option<(Point, Distance)>;
+
 
     #[derive(Debug, Clone, Copy, PartialEq)]
     pub enum Texture {
-        Diffusive,
+        Light(Color),
+        Diffusive(Color),
+        Glossy(Color),
         Reflective,
-        Glossy,
-        Light,
     }
 }
