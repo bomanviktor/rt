@@ -39,9 +39,10 @@ impl Camera {
         let total_pixels = (w * h) as usize;
         let mut colors = vec![Vector3::new(0.0, 0.0, 0.0); total_pixels];
 
-        colors.par_iter_mut().enumerate().for_each_init(
-            thread_rng,
-            |rng, (i, pixel_color)| {
+        colors
+            .par_iter_mut()
+            .enumerate()
+            .for_each_init(thread_rng, |rng, (i, pixel_color)| {
                 let x = i as u32 % w;
                 let y = i as u32 / w;
                 let mut color = Vector3::new(0.0, 0.0, 0.0);
@@ -59,8 +60,7 @@ impl Camera {
                 }
 
                 *pixel_color = color / self.sample_size as f64;
-            },
-        );
+            });
 
         self.pixels = colors;
     }
@@ -78,7 +78,7 @@ impl Camera {
             .map(|row| {
                 row.iter()
                     .map(|pixel| {
-                        let corrected = pixel.apply_gamma_correction(2.2);
+                        let corrected = pixel.apply_gamma_correction(1.8);
                         format!("{} {} {}", corrected.x, corrected.y, corrected.z)
                     })
                     .collect::<Vec<String>>()

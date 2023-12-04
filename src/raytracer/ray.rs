@@ -30,10 +30,11 @@ impl Ray {
     }
 
     pub fn trace(&mut self, scene: &Scene, depth: u8, rng: &mut impl Rng) {
-        let new_rays = NUM_SECONDARY_RAYS / 2_usize.pow(depth as u32);
-        if depth >= MAX_DEPTH || new_rays == 0 {
-            return; // Stop if maximum depth is reached
+        if depth >= MAX_DEPTH {
+            return;
         }
+
+        let new_rays = if depth == 0 { NUM_SECONDARY_RAYS } else { 1 };
 
         let mut closest_intersection: Intersection = None;
         let mut closest_object: Option<Arc<dyn Object>> = None; // To keep track of the object with the closest intersection

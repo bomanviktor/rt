@@ -1,8 +1,9 @@
-use std::sync::Arc;
-
 use crate::color::Color;
 use crate::objects::{Cube, Cylinder, FlatPlane, Objects, Sphere, Texture::*};
 use nalgebra::Vector3;
+use rand::distributions::{Distribution, Uniform};
+use rand::{thread_rng, Rng};
+use std::sync::Arc;
 
 pub struct Scene {
     pub objects: Objects,
@@ -10,35 +11,51 @@ pub struct Scene {
 
 impl Scene {
     pub fn init(_scene_data: &str) -> Self {
-        let sphere1 = Sphere::new(Vector3::new(3.0, -1.0, 0.0), 1.0, Color::red(), Diffusive);
+        let mut objects: Objects = Vec::new();
 
-        let cylinder = Cylinder::new(
-            Vector3::new(0.0, -2.0, 0.0),
-            1.0,
-            3.0,
-            Color::green(),
-            Diffusive,
-        );
+        // Create a flat plane
+        let flat_plane = FlatPlane::new(Vector3::new(0.0, 1.0, 0.0), 5.0, Color::blue(), Diffusive);
+        objects.push(Arc::new(flat_plane));
 
-        let flat_plane =
-            FlatPlane::new(Vector3::new(0.0, 0.0, 0.0), 10.0, Color::blue(), Diffusive);
+        // Random object generation
+        for _ in 0..6 {
+            let mut rng = thread_rng();
+            let choose_obj = rng.gen_range(0..3); // Randomly choose the object type
+            let size = rng.gen_range(0.2..=0.8);
+            let pos_range = Uniform::new(-1.0, 1.0);
+            let position = Vector3::new(
+                pos_range.sample(&mut rng),
+                rng.gen_range(-1.5..=-0.5),
+                pos_range.sample(&mut rng),
+            );
 
+            match choose_obj {
+                0 => objects.push(Arc::new(Sphere::new(
+                    position,
+                    size,
+                    Color::random(),
+                    Diffusive,
+                ))),
+                1 => objects.push(Arc::new(Cube::new(
+                    position,
+                    size,
+                    Color::random(),
+                    Diffusive,
+                ))),
+                2 => objects.push(Arc::new(Cylinder::new(
+                    position,
+                    size,
+                    rng.gen_range(1.0..3.0),
+                    Color::random(),
+                    Diffusive,
+                ))),
+                _ => unreachable!(),
+            }
+        }
+
+        // Light source
         let light = Sphere::new(Vector3::new(-5.0, -6.0, -10.0), 2.0, Color::white(), Light);
-
-        let cube = Cube::new(
-            Vector3::new(-4.0, -0.5, 0.0),
-            1.0,
-            Color::yellow(),
-            Diffusive,
-        );
-
-        let objects: Objects = vec![
-            Arc::new(sphere1),
-            Arc::new(cylinder),
-            Arc::new(flat_plane),
-            Arc::new(cube),
-            Arc::new(light),
-        ];
+        objects.push(Arc::new(light));
 
         Self { objects }
     }
