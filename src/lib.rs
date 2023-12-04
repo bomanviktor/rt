@@ -143,8 +143,6 @@ pub mod objects {
 
     pub trait Object: Send + Sync {
         fn intersection(&self, ray: &Ray) -> Intersection;
-        fn normal_at(&self, ray: &Ray, point: Point) -> Normal;
-        fn color(&self) -> Color;
         fn texture(&self) -> Texture;
         fn center(&self) -> Point;
         fn is_light(&self) -> bool;
@@ -179,9 +177,6 @@ pub mod objects {
         }
 
     }
-
-    /// Type alias for `Option<(Vector3<f64>, f64)>`
-
 
     #[derive(Debug, Clone, Copy, PartialEq)]
     pub enum Texture {
