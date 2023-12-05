@@ -2,7 +2,7 @@
 use gdk_pixbuf::Pixbuf;
 use glib::clone;
 use glib::signal::Inhibit;
-use gtk::prelude::*;
+use gtk::{prelude::*, Image};
 use gtk::{
     Box as GtkBox, Button, ComboBoxText, CssProvider, Entry, Orientation, Scale, Separator, Window,
     WindowType,
@@ -171,6 +171,9 @@ pub fn launch_gui(_app_state: Rc<RefCell<AppState>>) {
     message_label.set_text("Ready"); // Default text
     vbox.pack_start(&message_label, false, false, 10); // Adjust packing as needed
 
+    let show_image_button = Button::with_label("Show Image");
+    vbox.pack_start(&show_image_button, false, false, 0);
+
     // Create a horizontal box for the side-by-side buttons
     let hbox = gtk::Box::new(gtk::Orientation::Horizontal, 0);
     hbox.set_halign(gtk::Align::Center);
@@ -238,7 +241,7 @@ pub fn launch_gui(_app_state: Rc<RefCell<AppState>>) {
     flow_box.set_selection_mode(gtk::SelectionMode::None);
 
     add_sphere_button.connect_clicked(clone!(@strong flow_box, @strong app_state => move |_| {
-        create_sphere_section(app_state.clone(), flow_box.clone()); // Pass only app_state and flow_box
+        create_sphere_section(app_state.clone(), flow_box.clone());
     }));
 
     add_cylinder_button.connect_clicked(clone!(@strong flow_box, @strong app_state => move |_| {
@@ -258,11 +261,18 @@ pub fn launch_gui(_app_state: Rc<RefCell<AppState>>) {
     vbox.pack_start(&separator, false, false, 10);
 
     // Brightness
-
+    let adjustment = gtk::Adjustment::new(
+        0.5, // initial value
+        0.0, // minimum value
+        1.0, // maximum value
+        0.1, // step increment
+        0.1, // page increment
+        0.0, // page size
+    );
     let brightness_label = gtk::Label::new(Some("Brightness"));
     vbox.pack_start(&brightness_label, false, false, 0);
 
-    let brightness_entry = Scale::with_range(Orientation::Horizontal, 0.0, 1.0, 0.1);
+    let brightness_entry = Scale::new(Orientation::Horizontal, Some(&adjustment));
     brightness_entry.set_value(0.5); // Set a default value
     vbox.pack_start(&brightness_entry, false, false, 0);
 
@@ -308,6 +318,17 @@ pub fn launch_gui(_app_state: Rc<RefCell<AppState>>) {
     let cam_angle_entry_clone = cam_angle_entry.clone();
     let width_entry_clone = width_entry.clone();
     let height_entry_clone = height_entry.clone();
+
+    show_image_button.connect_clicked(move |_| {
+        let image_window = Window::new(WindowType::Toplevel);
+        image_window.set_title("Rendered Image");
+        image_window.set_default_size(400, 400); // Set to your desired size
+
+        let image = Image::from_file("output.ppm"); // Load the image
+        image_window.add(&image);
+
+        image_window.show_all();
+    });
 
     // Render Button
     render_button.connect_clicked(clone!(@strong app_state, @strong message_label => move |_| {
@@ -447,20 +468,19 @@ pub fn launch_gui(_app_state: Rc<RefCell<AppState>>) {
             println!("All inputs are valid. Proceeding with rendering.");
             message_label.set_markup(green_style);
 
-
-            // Schedule rendering to start after a short delay, so we can update the message label
+            // Schedule rendering to start after a short delay
             glib::timeout_add_local(50, clone!(@strong app_state => move || {
                 const OUTPUT_PATH: &str = "output.ppm";
                 let updated_scene = update_scene_from_gui(app_state.clone());
                 let mut camera = CameraBuilder::new()
-                    .sample_size(1)
-                    .position_by_coordinates(Vector3::new(cam_x, cam_y, cam_angle))
-                    .look_at(Vector3::new(0.0, 0.0, 0.0))
-                    .up_direction_by_coordinates(Vector3::new(0.0, 1.0, 0.0))
-                    .focal_length(0.5)
-                    .resolution((width, height))
-                    .sensor_width(1.0)
-                    .build();
+                .sample_size(1)
+                .position_by_coordinates(Vector3::new(cam_x, cam_y, cam_angle))
+                .look_at(Vector3::new(0.0, 0.0, 0.0))
+                .up_direction_by_coordinates(Vector3::new(0.0, 1.0, 0.0))
+                .focal_length(0.5)
+                .resolution((width, height))
+                .sensor_width(1.0)
+                .build();
 
                 camera.send_rays(&updated_scene.objects);
                 camera.write_to_ppm(OUTPUT_PATH);
