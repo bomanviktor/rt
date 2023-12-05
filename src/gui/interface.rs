@@ -9,6 +9,7 @@ use gtk::{
 use nalgebra::Vector3;
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::raytracer::CameraBuilder;
 use crate::gui::sections::{
@@ -459,7 +460,8 @@ pub fn launch_gui(_app_state: Rc<RefCell<AppState>>) {
             // Schedule rendering to start after a short delay
             glib::timeout_add_local(50, clone!(@strong app_state => move || {
                 const OUTPUT_PATH: &str = "output.ppm";
-                let updated_scene = update_scene_from_gui(app_state.clone());
+                let updated_scene = Arc::new(update_scene_from_gui(app_state.clone()));
+
                 let mut camera = CameraBuilder::new()
                 .sample_size(1)
                 .position_by_coordinates(Vector3::new(cam_x, cam_y, cam_angle))
@@ -470,7 +472,7 @@ pub fn launch_gui(_app_state: Rc<RefCell<AppState>>) {
                 .sensor_width(1.0)
                 .build();
 
-                camera.send_rays(&updated_scene.objects);
+                camera.send_rays(updated_scene);
                 camera.write_to_ppm(OUTPUT_PATH);
 
                 glib::Continue(false)
