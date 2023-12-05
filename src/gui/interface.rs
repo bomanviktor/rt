@@ -65,7 +65,7 @@ pub struct FlatPlaneConfig {
     pub color_button: Rc<RefCell<gtk::ColorButton>>,
 }
 
-pub fn launch_gui(_app_state: Rc<RefCell<AppState>>) {
+pub fn launch_gui() {
     let app_state = Rc::new(RefCell::new(AppState {
         spheres: Vec::new(),
         cylinders: Vec::new(),
@@ -463,7 +463,7 @@ pub fn launch_gui(_app_state: Rc<RefCell<AppState>>) {
                 let updated_scene = Arc::new(update_scene_from_gui(app_state.clone()));
 
                 let mut camera = CameraBuilder::new()
-                .sample_size(1)
+                .sample_size(20)
                 .position_by_coordinates(Vector3::new(cam_x, cam_y, cam_angle))
                 .look_at(Vector3::new(0.0, 0.0, 0.0))
                 .up_direction_by_coordinates(Vector3::new(0.0, 1.0, 0.0))

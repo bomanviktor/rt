@@ -1,4 +1,6 @@
+use crate::color::Color;
 use crate::gui::AppState;
+use crate::objects::Texture::Light;
 use crate::objects::{Cube, Cylinder, FlatPlane, Objects, Sphere, Texture};
 use crate::raytracer::Scene;
 use gtk::{ColorChooserExt, EntryExt};
@@ -22,6 +24,10 @@ pub fn is_valid_float(input: &str) -> bool {
 pub fn update_scene_from_gui(app_state: Rc<RefCell<AppState>>) -> Scene {
     let app_state_borrowed = app_state.borrow();
     let mut objects: Objects = Vec::new();
+
+    let light = Sphere::new(Vector3::new(-5.0, -6.0, -10.0), 2.0, Light(Color::white()));
+
+    objects.push(Arc::new(light));
 
     // Creating Spheres
     for sphere_config in app_state_borrowed.spheres.iter() {
@@ -174,8 +180,11 @@ pub fn update_scene_from_gui(app_state: Rc<RefCell<AppState>>) -> Scene {
 
         let flat_plane_texture = Texture::Diffusive(flat_plane_color);
 
-        let flat_plane =
-            FlatPlane::new(Vector3::new(pos_x, pos_y, pos_z), radius, flat_plane_texture);
+        let flat_plane = FlatPlane::new(
+            Vector3::new(pos_x, pos_y, pos_z),
+            radius,
+            flat_plane_texture,
+        );
         objects.push(Arc::new(flat_plane));
     }
 
