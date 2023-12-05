@@ -312,9 +312,7 @@ pub mod gui {
     pub use helper::*;
 }
 
-
 pub mod raytracer {
-
 
     pub mod camera;
     pub use camera::*;

@@ -1,14 +1,15 @@
+use crate::gui::interface::{AppState, CubeConfig, CylinderConfig, SphereConfig};
+use crate::gui::FlatPlaneConfig;
+use glib::clone;
+use gtk::{prelude::*, Button, ComboBoxText, CssProvider, Entry};
+use rand::Rng;
 use std::cell::RefCell;
 use std::rc::Rc;
-use glib::clone;
-use gtk::{
-    prelude::*, Button, ComboBoxText, CssProvider, Entry
-};
-use rand::Rng;
-use crate::gui::interface::{CubeConfig, CylinderConfig, SphereConfig, AppState};
-use crate::gui::FlatPlaneConfig;
 
-pub fn create_sphere_section(app_state: Rc<RefCell<AppState>>, flow_box: gtk::FlowBox) -> gtk::Widget {
+pub fn create_sphere_section(
+    app_state: Rc<RefCell<AppState>>,
+    flow_box: gtk::FlowBox,
+) -> gtk::Widget {
     let provider = CssProvider::new();
     provider
         .load_from_path("src/gui/style.css")
@@ -402,7 +403,10 @@ pub fn create_cylinder_section(
 }
 
 //Todo: refine this function
-pub fn create_cube_section(app_state: Rc<RefCell<AppState>>, flow_box: gtk::FlowBox) -> gtk::Widget {
+pub fn create_cube_section(
+    app_state: Rc<RefCell<AppState>>,
+    flow_box: gtk::FlowBox,
+) -> gtk::Widget {
     let provider = CssProvider::new();
     provider
         .load_from_path("src/gui/style.css")

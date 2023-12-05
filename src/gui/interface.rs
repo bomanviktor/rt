@@ -11,11 +11,11 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::Arc;
 
-use crate::raytracer::CameraBuilder;
+use crate::gui::helper::{is_valid_float, update_scene_from_gui};
 use crate::gui::sections::{
     create_cube_section, create_cylinder_section, create_flat_plane_section, create_sphere_section,
 };
-use crate::gui::helper::{is_valid_float, update_scene_from_gui};
+use crate::raytracer::CameraBuilder;
 
 pub struct AppState {
     pub spheres: Vec<SphereConfig>,
@@ -51,7 +51,7 @@ pub struct CubeConfig {
     pub pos_y_entry: Rc<RefCell<Entry>>,
     pub pos_z_entry: Rc<RefCell<Entry>>,
     pub radius_entry: Rc<RefCell<Entry>>,
-    pub  material_selector: Rc<RefCell<ComboBoxText>>,
+    pub material_selector: Rc<RefCell<ComboBoxText>>,
     pub color_button: Rc<RefCell<gtk::ColorButton>>,
 }
 
@@ -85,7 +85,7 @@ pub fn launch_gui(_app_state: Rc<RefCell<AppState>>) {
     window.set_resizable(true); // Allows the window to be resized
     window.set_decorated(true); // Allows the window to be decorated
     window.set_title("Ray Tracing Settings");
-    window.set_default_size(800, 1200);
+    window.set_default_size(800, 1000);
     window
         .get_style_context()
         .add_provider(&provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);

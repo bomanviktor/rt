@@ -1,12 +1,11 @@
+use crate::gui::AppState;
+use crate::objects::{Cube, Cylinder, FlatPlane, Objects, Sphere, Texture};
+use crate::raytracer::Scene;
+use gtk::{ColorChooserExt, EntryExt};
+use nalgebra::Vector3;
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::Arc;
-use gtk::{ColorChooserExt, EntryExt};
-use nalgebra::Vector3;
-use crate::gui::AppState;
-use crate::objects::{Cube, Cylinder, FlatPlane, Objects, Sphere};
-use crate::raytracer::Scene;
-use crate::color::Color;
 
 // Function to validate position entries
 pub fn is_valid_float(input: &str) -> bool {
@@ -51,13 +50,12 @@ pub fn update_scene_from_gui(app_state: Rc<RefCell<AppState>>) -> Scene {
             .parse::<f64>()
             .unwrap_or(1.0);
         let color = sphere_config.color_button.borrow().get_rgba();
-        let sphere_color = Color::new(
-            color.r(),
-            color.g(),
-            color.b(),
-        );
 
-        let sphere = Sphere::new(Vector3::new(pos_x, pos_y, pos_z), radius, sphere_color);
+        let sphere_color = Vector3::new(color.red, color.green, color.blue);
+
+        let sphere_texture = Texture::Diffusive(sphere_color);
+
+        let sphere = Sphere::new(Vector3::new(pos_x, pos_y, pos_z), radius, sphere_texture);
         objects.push(Arc::new(sphere));
     }
 
@@ -94,17 +92,16 @@ pub fn update_scene_from_gui(app_state: Rc<RefCell<AppState>>) -> Scene {
             .parse::<f64>()
             .unwrap_or(1.0);
         let color = cylinder_config.color_button.borrow().get_rgba();
-        let cylinder_color = Color::new(
-            color.r(),
-            color.g(),
-            color.b(),
-        );
+
+        let cylinder_color = Vector3::new(color.red, color.green, color.blue);
+
+        let cylinder_texture = Texture::Diffusive(cylinder_color);
 
         let cylinder = Cylinder::new(
             Vector3::new(pos_x, pos_y, pos_z),
             radius,
             height,
-            cylinder_color,
+            cylinder_texture,
         );
         objects.push(Arc::new(cylinder));
     }
@@ -136,13 +133,12 @@ pub fn update_scene_from_gui(app_state: Rc<RefCell<AppState>>) -> Scene {
             .parse::<f64>()
             .unwrap_or(1.0);
         let color = cube_config.color_button.borrow().get_rgba();
-        let cube_color = Color::new(
-            color.r(),
-            color.g(),
-            color.b(),
-        );
 
-        let cube = Cube::new(Vector3::new(pos_x, pos_y, pos_z), radius, cube_color);
+        let cube_color = Vector3::new(color.red, color.green, color.blue);
+
+        let cube_texture = Texture::Diffusive(cube_color);
+
+        let cube = Cube::new(Vector3::new(pos_x, pos_y, pos_z), radius, cube_texture);
         objects.push(Arc::new(cube));
     }
 
@@ -173,18 +169,15 @@ pub fn update_scene_from_gui(app_state: Rc<RefCell<AppState>>) -> Scene {
             .parse::<f64>()
             .unwrap_or(1.0);
         let color = flat_plane_config.color_button.borrow().get_rgba();
-        let flat_plane_color = Color::new(
-            color.r(),
-            color.g(),
-            color.b(),
-        );
+
+        let flat_plane_color = Vector3::new(color.red, color.green, color.blue);
+
+        let flat_plane_texture = Texture::Diffusive(flat_plane_color);
 
         let flat_plane =
-            FlatPlane::new(Vector3::new(pos_x, pos_y, pos_z), radius, flat_plane_color);
+            FlatPlane::new(Vector3::new(pos_x, pos_y, pos_z), radius, flat_plane_texture);
         objects.push(Arc::new(flat_plane));
     }
 
-    Scene {
-        objects,
-    }
+    Scene { objects }
 }
