@@ -23,6 +23,17 @@ pub struct AppState {
     pub cubes: Vec<CubeConfig>,
     pub flat_planes: Vec<FlatPlaneConfig>,
 }
+#[allow(dead_code)]
+pub struct ObjectConfig {
+    brightness_entry: Rc<RefCell<Entry>>,
+    anti_aliasing_2x: Rc<RefCell<Entry>>,
+    anti_aliasing_4x: Rc<RefCell<Entry>>,
+    cam_x_entry: Rc<RefCell<Entry>>,
+    cam_y_entry: Rc<RefCell<Entry>>,
+    cam_angle_entry: Rc<RefCell<Entry>>,
+    width_entry: Rc<RefCell<Entry>>,
+    height_entry: Rc<RefCell<Entry>>,
+}
 
 pub struct SphereConfig {
     id: Rc<RefCell<u32>>,
@@ -406,38 +417,60 @@ pub fn launch_gui(_app_state: Rc<RefCell<AppState>>) {
         println!("Camera Angle: {}", cam_angle_entry_clone.get_text());
         println!("Resolution Width: {}", width_entry_clone.get_text());
         println!("Resolution Height: {}", height_entry_clone.get_text());
+        
+        let mut cam_x = 0.0;
+        let mut cam_y = 0.0;
+        let mut cam_angle = 0.0;
+        let mut width = 0;
+        let mut height = 0;
+        // let mut Brightness = 0.0;
 
-
-    if !all_inputs_valid {
-        message_label.set_markup(red_style);
-        println!("Invalid input detected. Please enter numbers in 0.0 format");
-    } else {
-        message_label.set_markup(green_style);
-        println!("All inputs are valid. Proceeding with rendering.");
-
-        // Schedule rendering to start after a short delay
-        glib::timeout_add_local(50, clone!(@strong app_state => move || {
-            const OUTPUT_PATH: &str = "output.ppm";
-            let updated_scene = update_scene_from_gui(app_state.clone());
-            let mut camera = CameraBuilder::new()
-            .sample_size(1)
-            .position_by_coordinates(Vector3::new(-3.0, -4.0, 5.0))
-            .look_at(Vector3::new(0.0, 0.0, 0.0))
-            .up_direction_by_coordinates(Vector3::new(0.0, 1.0, 0.0))
-            .focal_length(0.5)
-            .resolution((1600, 900))
-            .sensor_width(1.0)
-            .build();
-
-            camera.send_rays(&updated_scene.objects);
-            camera.write_to_ppm(OUTPUT_PATH);
-
-            glib::Continue(false)
-        }));
-    }
-
-
-
+        if let (Ok(x), Ok(y), Ok(angle), Ok(w), Ok(h)) = (
+            cam_x_entry_clone.get_text().parse::<f64>(),
+            cam_y_entry_clone.get_text().parse::<f64>(),
+            cam_angle_entry_clone.get_text().parse::<f64>(),
+            width_entry_clone.get_text().parse::<u32>(),
+            height_entry_clone.get_text().parse::<u32>(),
+            // let mut Brightness = brightness_entry_clone.get_value(),
+        ) {
+            cam_x = x;
+            cam_y = y;
+            cam_angle = angle;
+            width = w;
+            height = h;
+            // brightness = Brightness;
+        } else {
+            all_inputs_valid = false;
+        }
+    
+        if all_inputs_valid {
+            println!("All inputs are valid. Proceeding with rendering.");
+            message_label.set_markup(green_style);
+    
+    
+            // Schedule rendering to start after a short delay
+            glib::timeout_add_local(50, clone!(@strong app_state => move || {
+                const OUTPUT_PATH: &str = "output.ppm";
+                let updated_scene = update_scene_from_gui(app_state.clone());
+                let mut camera = CameraBuilder::new()
+                    .sample_size(1)
+                    .position_by_coordinates(Vector3::new(cam_x, cam_y, cam_angle))
+                    .look_at(Vector3::new(0.0, 0.0, 0.0))
+                    .up_direction_by_coordinates(Vector3::new(0.0, 1.0, 0.0))
+                    .focal_length(0.5)
+                    .resolution((width, height))
+                    .sensor_width(1.0)
+                    .build();
+    
+                camera.send_rays(&updated_scene.objects);
+                camera.write_to_ppm(OUTPUT_PATH);
+    
+                glib::Continue(false)
+            }));
+        } else {
+            println!("Invalid input detected. Please enter numbers in 0.0 format");
+            message_label.set_markup(red_style);
+        }
     }));
 
     window.connect_delete_event(|_, _| {
@@ -1317,7 +1350,6 @@ pub fn update_scene_from_gui(app_state: Rc<RefCell<AppState>>) -> Scene {
     }
 
     // Creating Flat Planes
-    // Similar to spheres, create FlatPlane objects from flat_plane_config
     for flat_plane_config in app_state_borrowed.flat_planes.iter() {
         let pos_x = flat_plane_config
             .pos_x_entry
