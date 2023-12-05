@@ -1,0 +1,79 @@
+/* Main window */
+window {
+    background-color: rgb(245, 231, 198); /* Creamy color */
+    color: #333; /* Dark text for contrast */
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 10px;
+    margin: 10px;
+}
+
+/* Generic buttons */
+button {
+    border-radius: 5px;
+    background-image: none;
+    background-color: #8f7a66; /* Earthy, muted tone */
+    color: whitesmoke; /* Dark text for contrast */
+    padding: 10px 20px;
+    font-size: 16px;
+    margin: 4px 2px;
+    transition: background-color 0.3s; /* Quicker transition for hover effect */
+}
+
+button:hover {
+    background-image: none;
+    background-color: #a6927f; /* Slightly lighter shade for hover */
+}
+
+/* Style for object sections */
+label {
+    color: #333;
+    font-weight: bold;
+}
+
+entry {
+    background-color: white; /* Light background for entries */
+    color: #333; /* Dark text for entries */
+    padding: 5px;
+    margin: 2px;
+    border: 1px solid #ccc;
+    /* border-radius: 4px; */
+}
+
+comboboxtext {
+    background-color: white; /* Light background for combo boxes */
+    color: #333; /* Dark text for combo boxes */
+    padding: 5px;
+    margin: 2px;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+}
+.antialiasing-label {
+    font-weight: bold;
+    color: blue;
+}
+
+.antialiasing-check {
+    background-image: none;
+    background-color: lightgray;
+    border-radius: 5px;
+    padding: 5px;
+}
+.about-button { 
+    border-radius: 15px; 
+    background-image: none;
+    margin: 5px;
+    padding: 5px;
+    font-weight: bold;
+    background-color: grey;
+    border: 1px solid #000; 
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2); 
+}
+
+
+.error {
+    color: red;
+}
+.success {
+    color: green;
+}

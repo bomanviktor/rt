@@ -302,7 +302,20 @@ pub mod color {
     }
 }
 
+pub mod gui {
+    pub mod interface;
+    pub use interface::*;
+    pub mod sections;
+    pub use sections::*;
+
+    pub mod helper;
+    pub use helper::*;
+}
+
+
 pub mod raytracer {
+
+
     pub mod camera;
     pub use camera::*;
     pub mod ray;
