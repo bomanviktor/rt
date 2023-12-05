@@ -18,11 +18,11 @@ impl Scene {
         objects.push(Arc::new(flat_plane));
 
         // Random object generation
-        for _ in 0..6 {
+        for _ in 0..4 {
             let mut rng = thread_rng();
             let choose_obj = rng.gen_range(0..3); // Randomly choose the object type
-            let size = rng.gen_range(0.2..=0.8);
-            let pos_range = Uniform::new(-1.0, 1.0);
+            let size = rng.gen_range(0.4..=1.0);
+            let pos_range = Uniform::new(-2.0, 2.0);
             let position = Vector3::new(
                 pos_range.sample(&mut rng),
                 rng.gen_range(-1.5..=-0.5),
@@ -34,7 +34,7 @@ impl Scene {
                     position,
                     size,
                     Color::random(),
-                    Diffusive,
+                    Reflective,
                 ))),
                 1 => objects.push(Arc::new(Cube::new(
                     position,

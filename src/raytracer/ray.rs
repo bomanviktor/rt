@@ -74,8 +74,18 @@ impl Ray {
                         // self.glossy(intersection, object, new_rays, scene, depth);
                     }
                     Texture::Reflective => {
-                        unimplemented!()
-                        // self.reflective(intersection, object, new_rays, scene, depth);
+                        let hit_point = intersection.0;
+                        let normal = object.normal_at(self, hit_point);
+                        let reflection_direction = self.reflect(normal);
+                        let mut reflection_ray = Ray {
+                            origin: hit_point + normal * 1e-3, // Adjust the origin slightly along the surface normal
+                            direction: reflection_direction,
+                            collisions: self.collisions.clone(),
+                            hit_light_source: false,
+                            intersection_dist: f64::MAX,
+                        };
+                        reflection_ray.trace(scene, depth + 1, rng);
+                        self.collisions.extend(reflection_ray.collisions);
                     }
                     Texture::Light => {
                         self.hit_light_source = true;
