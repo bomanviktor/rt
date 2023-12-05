@@ -72,6 +72,7 @@ pub mod type_aliases {
 }
 
 pub mod color {
+    use crate::raytracer::Scene;
     use nalgebra::Vector3;
 
     /// `Color` is a utility-trait for the `Vector3` type.
@@ -90,10 +91,32 @@ pub mod color {
         fn red() -> Self;
         fn green() -> Self;
         fn blue() -> Self;
+        fn light_blue() -> Self;
+        fn indigo() -> Self;
         fn yellow() -> Self;
         fn light_yellow() -> Self;
         fn grey() -> Self;
         fn pink() -> Self;
+        fn cyan() -> Self;
+        fn orange() -> Self;
+        fn brown() -> Self;
+        fn purple() -> Self;
+        fn lavender() -> Self;
+        fn magenta() -> Self;
+        fn violet() -> Self;
+        fn maroon() -> Self;
+        fn olive() -> Self;
+        fn navy() -> Self;
+        fn teal() -> Self;
+        fn peach() -> Self;
+        fn gold() -> Self;
+        fn silver() -> Self;
+        fn beige() -> Self;
+        fn turquoise() -> Self;
+        fn coral() -> Self;
+        fn mint_green() -> Self;
+        fn sky_blue() -> Self;
+
         fn correct_gamma(&self, gamma: f64) -> Self;
     }
 
@@ -139,6 +162,12 @@ pub mod color {
         fn blue() -> Self {
             Self::new(0., 0., 255.)
         }
+        fn light_blue() -> Self {
+            Self::new(135., 206., 250.)
+        }
+        fn indigo() -> Self {
+            Self::new(75., 0., 130.)
+        }
 
         fn yellow() -> Self {
             Self::new(255., 255., 0.)
@@ -153,6 +182,78 @@ pub mod color {
         }
         fn pink() -> Self {
             Self::new(255., 20., 147.)
+        }
+        fn cyan() -> Self {
+            Self::new(0., 255., 255.)
+        }
+        fn orange() -> Self {
+            Self::new(255., 165., 0.)
+        }
+        fn brown() -> Self {
+            Self::new(165., 42., 42.)
+        }
+        fn purple() -> Self {
+            Self::new(128., 0., 128.)
+        }
+
+        fn lavender() -> Self {
+            Self::new(230., 230., 250.)
+        }
+
+        fn magenta() -> Self {
+            Self::new(255., 0., 255.)
+        }
+
+        fn violet() -> Self {
+            Self::new(238., 130., 238.)
+        }
+
+        fn maroon() -> Self {
+            Self::new(128., 0., 0.)
+        }
+
+        fn olive() -> Self {
+            Self::new(128., 128., 0.)
+        }
+
+        fn navy() -> Self {
+            Self::new(0., 0., 128.)
+        }
+
+        fn teal() -> Self {
+            Self::new(0., 128., 128.)
+        }
+
+        fn peach() -> Self {
+            Self::new(255., 218., 185.)
+        }
+
+        fn gold() -> Self {
+            Self::new(255., 215., 0.)
+        }
+
+        fn silver() -> Self {
+            Self::new(192., 192., 192.)
+        }
+
+        fn beige() -> Self {
+            Self::new(245., 245., 220.)
+        }
+
+        fn turquoise() -> Self {
+            Self::new(64., 224., 208.)
+        }
+
+        fn coral() -> Self {
+            Self::new(255., 127., 80.)
+        }
+
+        fn mint_green() -> Self {
+            Self::new(152., 251., 152.)
+        }
+
+        fn sky_blue() -> Self {
+            Self::new(135., 206., 235.)
         }
 
         fn correct_gamma(&self, gamma: f64) -> Vector3<f64> {
@@ -169,7 +270,7 @@ pub mod color {
         /// Calculates the average color of the pixel using following calculation:
         ///
         /// 1. Assign the light source that the ray hit as the  
-        pub fn average_color(&mut self, brightness: f64) -> crate::type_aliases::Color {
+        pub fn average_color(&mut self, scene: &Scene) -> crate::type_aliases::Color {
             if self.collisions.len() == 1 {
                 return self.collisions[0];
             }
@@ -177,13 +278,10 @@ pub mod color {
             let mut total = if self.hit_light_source {
                 self.collisions.pop().unwrap() * 10.0
             } else {
-                let rgb = 255. * brightness;
-                Vector3::new(rgb, rgb, rgb) * 10.0
+                scene.background() * 10.0
             };
 
-            self.collisions.reverse();
-
-            self.collisions.iter().for_each(|color| {
+            self.collisions.iter().rev().for_each(|color| {
                 let normalized = color.normalize();
                 total.x *= normalized.x;
                 total.y *= normalized.y;

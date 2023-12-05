@@ -32,10 +32,16 @@ impl Cylinder {
     }
 
     fn normal(&self, point: Point) -> Normal {
-        // Normal for the cylindrical surface
-        let axis = Direction::up();
-        let projection = axis * (point - self.center).dot(&axis);
-        (point - self.center - projection).normalize()
+        if (point - self.top.center).norm() <= self.radius {
+            Normal::down()
+        } else if (point - self.bottom.center).norm() <= self.radius {
+            Normal::up()
+        } else {
+            // Normal for the cylindrical surface
+            let axis = Direction::up();
+            let projection = axis * (point - self.center).dot(&axis);
+            (point - self.center - projection).normalize()
+        }
     }
 }
 

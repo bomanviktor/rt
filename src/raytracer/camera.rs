@@ -1,4 +1,5 @@
 use crate::config::camera::*;
+use crate::type_aliases::Color;
 
 #[derive(Debug)]
 pub struct Camera {
@@ -29,7 +30,7 @@ impl Camera {
             .for_each(|(pixel, pixel_color)| {
                 let column = pixel as u32 % width;
                 let row = pixel as u32 / width;
-                let mut total_color = Vector3::zeros();
+                let mut total_color = Color::black();
 
                 for _sample in 0..self.sample_size {
                     let direction = self.ray_direction(column, row);
@@ -45,14 +46,9 @@ impl Camera {
                     }
 
                     if ray.hit_light_source {
-                        total_color += ray.average_color(scene.brightness);
+                        total_color += ray.average_color(&scene);
                     } else {
-                        total_color += ray.average_color(scene.brightness)
-                            * if scene.brightness <= 0.1 {
-                                0.1
-                            } else {
-                                scene.brightness
-                            };
+                        total_color += ray.average_color(&scene) * scene.brightness
                     }
                 }
 

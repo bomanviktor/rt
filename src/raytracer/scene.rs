@@ -3,6 +3,7 @@ use std::sync::Arc;
 use crate::color::RGB;
 use crate::objects::{Cube, Cylinder, FlatPlane, Objects, Sphere};
 use crate::textures::Texture::*;
+use crate::type_aliases::Color;
 use nalgebra::Vector3;
 
 pub struct Scene {
@@ -11,15 +12,19 @@ pub struct Scene {
 }
 
 impl Scene {
-    pub fn init(_scene_data: &str) -> Self {
+    pub fn init(_scene_data: &str, brightness: f64) -> Self {
         let sphere1 = Sphere::new(Vector3::new(3.0, -1.0, 0.0), 1.0, Reflective);
         let sphere2 = Sphere::new(Vector3::new(3.0, -0.5, 2.0), 0.5, Glossy(RGB::pink()));
 
         let cylinder = Cylinder::new(Vector3::new(0.0, -3.0, 0.0), 1.0, 3.0, Glossy(RGB::green()));
 
-        let flat_plane = FlatPlane::new(Vector3::new(0.0, 0.0, 0.0), 10.0, Diffusive(RGB::blue()));
+        let flat_plane = FlatPlane::new(Vector3::new(0.0, 0.0, 0.0), 10.0, Glossy(RGB::blue()));
 
-        let light = Sphere::new(Vector3::new(-5.0, -6.0, -10.0), 2.0, Light(RGB::white()));
+        let light = Sphere::new(
+            Vector3::new(-5.0, -6.0, -10.0),
+            2.0,
+            Light(RGB::light_yellow()),
+        );
 
         let cube = Cube::new(Vector3::new(-2.0, -0.5, 0.0), 1.0, Glossy(RGB::yellow()));
 
@@ -34,7 +39,15 @@ impl Scene {
 
         Self {
             objects,
-            brightness: 0.0,
+            brightness: if brightness >= 0.0 {
+                brightness
+            } else {
+                0.0001
+            },
         }
+    }
+
+    pub fn background(&self) -> Color {
+        Color::white() * self.brightness
     }
 }
