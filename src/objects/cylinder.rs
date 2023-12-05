@@ -1,9 +1,7 @@
+use super::Texture;
 use crate::objects::{discriminant, FlatPlane, Intersection, Object};
 use crate::raytracer::Ray;
-use crate::type_aliases::{Normal, Point};
-use nalgebra::Vector3;
-
-use super::Texture;
+use crate::type_aliases::{Direction, Directions, Normal, Point};
 
 #[derive(Debug)]
 pub struct Cylinder {
@@ -19,7 +17,7 @@ impl Cylinder {
     pub fn new(center: Point, radius: f64, height: f64, texture: Texture) -> Self {
         let bottom = FlatPlane::new(center, radius, texture);
         let top = FlatPlane::new(
-            Vector3::new(center.x, center.y + height, center.z),
+            Point::new(center.x, center.y + height, center.z),
             radius,
             texture,
         );
@@ -34,24 +32,17 @@ impl Cylinder {
     }
 
     fn normal(&self, point: Point) -> Normal {
-        // Determine if the point is on the top or bottom cap
-        if (point - self.top.center).norm() <= self.radius {
-            Vector3::new(0.0, 1.0, 0.0) // Normal for the top cap
-        } else if (point - self.bottom.center).norm() <= self.radius {
-            Vector3::new(0.0, -1.0, 0.0) // Normal for the bottom cap
-        } else {
-            // Normal for the cylindrical surface
-            let axis = Vector3::new(0.0, -1.0, 0.0);
-            let projection = axis * (point - self.center).dot(&axis);
-            (point - self.center - projection).normalize()
-        }
+        // Normal for the cylindrical surface
+        let axis = Direction::up();
+        let projection = axis * (point - self.center).dot(&axis);
+        (point - self.center - projection).normalize()
     }
 }
 
 impl Object for Cylinder {
     fn intersection(&self, ray: &Ray) -> Option<Intersection> {
         let bottom = self.bottom.center;
-        let axis = Vector3::new(0.0, 1.0, 0.0); // Cylinder aligned along Y-axis
+        let axis = Direction::new(0.0, 1.0, 0.0); // Cylinder aligned along Y-axis
         let mut intersections = Vec::new();
 
         // Check intersection with cylindrical surface

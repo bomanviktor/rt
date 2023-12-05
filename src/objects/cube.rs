@@ -1,7 +1,6 @@
 use crate::objects::{Intersection, Object, Texture};
 use crate::raytracer::Ray;
 use crate::type_aliases::{Normal, Point};
-use nalgebra::Vector3;
 
 #[derive(Debug)]
 pub struct Cube {
@@ -30,7 +29,7 @@ impl Cube {
             .unwrap()
             .0;
 
-        let mut normal = Vector3::zeros();
+        let mut normal = Normal::default();
         normal[max] = local_point[max].signum(); // Set the correct component of the normal
         normal
     }
@@ -48,7 +47,7 @@ impl Object for Cube {
         // Check intersections with each face of the cube
         for axis in [x, y, z] {
             for sign in [pos, neg] {
-                let mut normal = Vector3::zeros();
+                let mut normal = Normal::default();
                 normal[axis] = sign;
                 let face_center = self.center + half_size * normal;
 

@@ -1,11 +1,5 @@
-use crate::objects::{Intersection, Texture};
-use crate::raytracer::Scene;
-use crate::type_aliases::{Color, Direction, Normal, Point};
-use nalgebra::Vector3;
-use rand::Rng;
+use crate::{config::rays::*, textures::Texture, type_aliases::Color};
 
-const MAX_DEPTH: u8 = 50;
-const NUM_SECONDARY_RAYS: usize = 8;
 #[derive(Debug, Clone)]
 pub struct Ray {
     pub origin: Point,
@@ -33,40 +27,43 @@ impl Ray {
             return;
         }
 
-        let mut closest_intersection: Option<Intersection> = None;
-        let mut distance = f64::MAX;
-        // Check for intersection with objects
-        for object in &scene.objects {
-            if let Some(intersection) = object.intersection(self) {
-                if intersection.distance < distance {
-                    distance = intersection.distance;
-                    closest_intersection = Some(intersection);
-                }
-            }
-        }
-
         // Process the closest intersection
-        if let Some(intersection) = closest_intersection {
+        if let Some(intersection) = self.closest_intersection(scene) {
             let origin = intersection.hit_point;
             let normal = intersection.normal;
 
+            // Reflect based on object texture
             match intersection.texture {
                 Texture::Diffusive(color) => {
-                    let direction = self.diffuse(normal);
                     self.collisions.push(color);
-                    self.diffusive(origin, direction, scene);
+                    let direction = self.diffuse_reflection_direction(normal);
+                    if !super::near_zero(direction) {
+                        self.diffusive(origin, direction, scene);
+                    } else {
+                        self.diffusive(origin, normal, scene);
+                    }
                 }
                 Texture::Glossy(color) => {
-                    let reflective_direction = self.reflect(normal);
-                    let diffusive_direction = self.diffuse(normal);
-                    let glossy_direction =
-                        reflective_direction.dot(&diffusive_direction) * diffusive_direction;
                     self.collisions.push(color);
-                    self.diffusive(origin, glossy_direction, scene);
+
+                    let reflective_direction = self.reflective_direction(normal);
+                    let diffusive_direction = self.diffuse_reflection_direction(normal);
+                    let direction =
+                        reflective_direction.dot(&diffusive_direction) * diffusive_direction;
+
+                    if !super::near_zero(direction) {
+                        self.diffusive(origin, direction, scene);
+                    } else {
+                        self.diffusive(origin, normal, scene);
+                    }
                 }
                 Texture::Reflective => {
-                    let direction = self.reflect(normal);
-                    self.reflective(origin, direction, scene);
+                    let direction = self.reflective_direction(normal);
+                    if !super::near_zero(direction) {
+                        self.reflective(origin, direction, scene);
+                    } else {
+                        self.reflective(origin, normal, scene);
+                    }
                 }
                 Texture::Light(color) => {
                     self.collisions.push(color);
@@ -76,130 +73,47 @@ impl Ray {
         }
     }
 
-    fn diffusive(&mut self, origin: Point, direction: Direction, scene: &Scene) {
-        let new_rays = match self.depth {
-            0 => NUM_SECONDARY_RAYS,
-            1 => NUM_SECONDARY_RAYS / 2,
-            2 => NUM_SECONDARY_RAYS / 4,
-            _ => 1,
-        };
-
-        // Iterate over secondary rays
-        for _ in 0..new_rays {
-            let mut secondary_ray = Ray::new(origin, direction, self.depth + 1);
-
-            // Recursively trace the secondary ray
-            secondary_ray.trace(scene);
-            // Accumulate colors from secondary rays into the original ray's collisions
-            // also set the hit_light_source to true if the secondary ray hit a light source
-            if secondary_ray.hit_light_source {
-                self.hit_light_source = true;
+    fn closest_intersection(&mut self, scene: &Scene) -> Option<Intersection> {
+        let mut closest_intersection: Option<Intersection> = None;
+        for object in &scene.objects {
+            if let Some(intersection) = object.intersection(self) {
+                if intersection.distance < self.intersection_dist {
+                    self.intersection_dist = intersection.distance;
+                    closest_intersection = Some(intersection);
+                }
             }
-            self.collisions.extend(secondary_ray.collisions);
         }
+        closest_intersection
     }
 
-    fn diffuse(&self, normal: Normal) -> Direction {
+    fn diffuse_reflection_direction(&self, normal: Normal) -> Direction {
         let mut rng = rand::thread_rng();
 
-        // Create a coordinate system around the normal
-        let w = normal.normalize();
-        let a = if w.x.abs() > 0.9 {
+        // Create a local coordinate system around the normal
+        let incident_ray = normal.normalize();
+        let tangent_a = if incident_ray.x.abs() > 0.9 {
             Vector3::new(0.0, -1.0, 0.0)
         } else {
             Vector3::new(-1.0, 0.0, 0.0)
         };
-        let v = w.cross(&a).normalize();
-        let u = w.cross(&v);
+        let tangent_v = incident_ray.cross(&tangent_a).normalize();
+        let tangent_u = incident_ray.cross(&tangent_v);
 
         // Generate random points on a hemisphere
-        let r1: f64 = rng.gen();
-        let r2: f64 = rng.gen();
-        let sin_theta = (1.0 - r2 * r2).sqrt();
-        let phi = 2.0 * std::f64::consts::PI * r1;
-        let x = phi.cos() * sin_theta;
-        let y = phi.sin() * sin_theta;
-        let z = r2.sqrt();
+        let rand_1: f64 = rng.gen();
+        let rand_2: f64 = rng.gen();
+        let sin_theta = (1.0 - rand_2 * rand_2).sqrt();
+        let phi = 2.0 * std::f64::consts::PI * rand_1;
+        let local_x = phi.cos() * sin_theta;
+        let local_y = phi.sin() * sin_theta;
+        let local_z = rand_2.sqrt();
 
         // Convert to world coordinates
-        u * x + v * y + w * z
+        tangent_u * local_x + tangent_v * local_y + incident_ray * local_z
     }
 
-    // TODO: remove the macro
-    fn reflect(&self, normal: Normal) -> Normal {
+    fn reflective_direction(&self, normal: Normal) -> Direction {
         self.direction - 2.0 * self.direction.dot(&normal) * normal
-    }
-
-    fn reflective(&mut self, origin: Point, direction: Direction, scene: &Scene) {
-        let mut secondary_ray = Ray::new(origin, direction, self.depth + 1);
-        secondary_ray.trace(scene);
-
-        if secondary_ray.hit_light_source {
-            self.hit_light_source = true;
-        }
-        self.collisions.extend(secondary_ray.collisions);
-    }
-
-    pub fn average_color(&self) -> Color {
-        if self.collisions.len() == 1 {
-            return self.collisions[0];
-        }
-
-        let primary_color = self.collisions[0];
-        let secondary_colors = &self.collisions[1..];
-
-        let mut total = primary_color;
-
-        for (i, color) in secondary_colors.iter().enumerate() {
-            let mul = 1.0 / (i as f64 + 1.0); // Change this to be according to max depth
-            total += color * mul;
-        }
-        let number_of_colors = self.collisions.len() as f64;
-        if self.hit_light_source {
-            (total / number_of_colors) * 3.0
-        } else {
-            (total / number_of_colors) * 0.01
-        }
-    }
-    /*
-       pub fn in_shadow(
-           hit_point: Vector3<f64>,
-           normal: Vector3<f64>,
-           objects: &Objects,
-           object_center: Point,
-       ) -> bool {
-           let light_source = objects.iter().find(|obj| obj.is_light()).cloned().unwrap();
-           let light_position = light_source.center();
-
-           let to_light = (light_position - hit_point).normalize();
-           let shadow_ray = Ray::new(hit_point + normal * 1e-1, to_light, 1);
-
-           for object in objects
-               .iter()
-               .filter(|&obj| !obj.is_light() && obj.center() != object_center)
-           {
-               if let Some((shadow_hit, _)) = object.intersection(&shadow_ray) {
-                   let distance_to_light = (light_position - shadow_hit).norm();
-                   let original_distance_to_light = (light_position - hit_point).norm();
-
-                   if distance_to_light < original_distance_to_light {
-                       return true;
-                   }
-               }
-           }
-           false
-       }
-    */
-
-    // TODO: remove the macro
-    #[allow(dead_code)]
-    fn modify_color_based_on_normal(
-        &self,
-        normal: Vector3<f64>,
-        original_color: Vector3<f64>,
-    ) -> Vector3<f64> {
-        let dot = normal.dot(&self.direction.normalize()).abs();
-        original_color * dot
     }
 
     fn reached_max_depth(&self) -> bool {

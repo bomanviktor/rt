@@ -1,7 +1,6 @@
 use crate::objects::{Intersection, Object};
 use crate::raytracer::Ray;
-use crate::type_aliases::{Normal, Point};
-use nalgebra::Vector3;
+use crate::type_aliases::{Directions, Normal, Point};
 
 use super::Texture;
 
@@ -22,9 +21,9 @@ impl FlatPlane {
     }
     fn normal(&self, ray: &Ray) -> Normal {
         if ray.origin.y <= self.center.y {
-            Vector3::new(0.0, -1.0, 0.0)
+            Normal::up()
         } else {
-            Vector3::new(0.0, 1.0, 0.0)
+            Normal::down()
         }
     }
 }
@@ -45,12 +44,7 @@ impl Object for FlatPlane {
         let hit_point = ray.origin + ray.direction * dist;
 
         if (hit_point - self.center).norm() <= self.radius {
-            return Some(Intersection::new(
-                hit_point * 1.0001,
-                normal,
-                dist,
-                self.texture(),
-            ));
+            return Some(Intersection::new(hit_point, normal, dist, self.texture()));
         }
 
         None

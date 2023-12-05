@@ -1,20 +1,4 @@
-use crate::color::Color;
-use crate::raytracer::{Ray, Resolution, Scene};
-use crate::type_aliases::{Pixels, Point};
-use nalgebra::Vector3;
-use rand::Rng;
-use rayon::prelude::*;
-use std::io::Write;
-use std::sync::Arc;
-
-const DEFAULT_CAMERA_POSITION: Point = Point::new(1.0, 0.5, 0.0);
-const DEFAULT_SAMPLE_SIZE: u16 = 50;
-const DEFAULT_FOCAL_LENGTH: f64 = 0.5;
-const DEFAULT_SENSOR_WIDTH: f64 = 1.0;
-
-const DEFAULT_UP_DIRECTION: Point = Point::new(0.0, 1.0, 0.0);
-
-const DEFAULT_RESOLUTION: Resolution = (1600, 900);
+use crate::config::camera::*;
 
 #[derive(Debug)]
 pub struct Camera {
@@ -32,8 +16,8 @@ pub struct Camera {
 
 impl Camera {
     pub fn send_rays(&mut self, scene: Arc<Scene>) {
-        let (w, h) = self.resolution;
-        let total_pixels = (w * h) as usize;
+        let (width, height) = self.resolution;
+        let total_pixels = (width * height) as usize;
 
         // Pre-allocate a vector with default Color values
         let mut colors = vec![Vector3::default(); total_pixels];
@@ -42,24 +26,38 @@ impl Camera {
         colors
             .par_iter_mut()
             .enumerate()
-            .for_each(|(i, pixel_color)| {
-                let x = i as u32 % w;
-                let y = i as u32 / w;
-                let mut color = Vector3::new(0.0, 0.0, 0.0);
+            .for_each(|(pixel, pixel_color)| {
+                let column = pixel as u32 % width;
+                let row = pixel as u32 / width;
+                let mut total_color = Vector3::zeros();
 
                 for _sample in 0..self.sample_size {
-                    let dir = self.ray_direction(x, y);
-                    let mut ray = Ray::new(self.position, dir, 0);
+                    let direction = self.ray_direction(column, row);
+                    let mut ray = Ray::new(self.position, direction, 0);
 
-                    ray.trace(&scene);
+                    ray.trace(&scene); // Recursive ray tracing with default 50 depth.
+
                     if ray.collisions.is_empty() {
+                        let rgb = 255. * scene.brightness;
+                        let background_color = Vector3::new(rgb, rgb, rgb);
+                        total_color += background_color; // No collision, add void color.
                         continue;
                     }
 
-                    color += ray.average_color();
+                    if ray.hit_light_source {
+                        total_color += ray.average_color(scene.brightness);
+                    } else {
+                        total_color += ray.average_color(scene.brightness)
+                            * if scene.brightness <= 0.1 {
+                                0.1
+                            } else {
+                                scene.brightness
+                            };
+                    }
                 }
 
-                *pixel_color = color / self.sample_size as f64;
+                // Set the current pixel to the average color of the samples.
+                *pixel_color = total_color / self.sample_size as f64;
             });
 
         // Update the camera's pixels
@@ -167,8 +165,8 @@ impl CameraBuilder {
         self
     }
 
-    pub fn resolution(&mut self, resolution: Resolution) -> &mut Self {
-        self.resolution = Some(resolution);
+    pub fn resolution(&mut self, w: u32, h: u32) -> &mut Self {
+        self.resolution = Some((w, h) as Resolution);
         self
     }
 
