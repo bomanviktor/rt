@@ -417,7 +417,7 @@ pub fn launch_gui(_app_state: Rc<RefCell<AppState>>) {
         println!("Camera Angle: {}", cam_angle_entry_clone.get_text());
         println!("Resolution Width: {}", width_entry_clone.get_text());
         println!("Resolution Height: {}", height_entry_clone.get_text());
-        
+
         let mut cam_x = 0.0;
         let mut cam_y = 0.0;
         let mut cam_angle = 0.0;
@@ -442,13 +442,13 @@ pub fn launch_gui(_app_state: Rc<RefCell<AppState>>) {
         } else {
             all_inputs_valid = false;
         }
-    
+
         if all_inputs_valid {
             println!("All inputs are valid. Proceeding with rendering.");
             message_label.set_markup(green_style);
-    
-    
-            // Schedule rendering to start after a short delay
+
+
+            // Schedule rendering to start after a short delay, so we can update the message label
             glib::timeout_add_local(50, clone!(@strong app_state => move || {
                 const OUTPUT_PATH: &str = "output.ppm";
                 let updated_scene = update_scene_from_gui(app_state.clone());
@@ -461,10 +461,10 @@ pub fn launch_gui(_app_state: Rc<RefCell<AppState>>) {
                     .resolution((width, height))
                     .sensor_width(1.0)
                     .build();
-    
+
                 camera.send_rays(&updated_scene.objects);
                 camera.write_to_ppm(OUTPUT_PATH);
-    
+
                 glib::Continue(false)
             }));
         } else {
