@@ -191,35 +191,18 @@ pub fn launch_gui() {
         .get_style_context()
         .add_provider(&provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
 
-    // two checkboxes for choosing if the user wants 2x or 4x antialiasing
-    let antialiasing_label = gtk::Label::new(Some("Antialiasing"));
-    antialiasing_label
+    let sample_size_label = gtk::Label::new(Some("Sample Size"));
+    sample_size_label
         .get_style_context()
-        .add_class("antialiasing-label");
-    vbox.pack_start(&antialiasing_label, false, false, 0);
+        .add_class("sample-size-label");
+    vbox.pack_start(&sample_size_label, false, false, 0);
 
-    let antialiasing_2x = gtk::CheckButton::with_label("2x");
-    antialiasing_2x
-        .get_style_context()
-        .add_class("antialiasing-check");
-    antialiasing_2x.set_halign(gtk::Align::Center);
-    vbox.pack_start(&antialiasing_2x, false, false, 0);
-
-    let antialiasing_4x = gtk::CheckButton::with_label("4x");
-    antialiasing_4x
-        .get_style_context()
-        .add_class("antialiasing-check");
-    antialiasing_4x.set_halign(gtk::Align::Center);
-    vbox.pack_start(&antialiasing_4x, false, false, 0);
-
-    //if one of the checkboxes is clicked, the other one is unchecked
-    antialiasing_2x.connect_clicked(clone!(@strong antialiasing_4x => move |_| {
-        antialiasing_4x.set_active(false);
-    }));
-
-    antialiasing_4x.connect_clicked(clone!(@strong antialiasing_2x => move |_| {
-        antialiasing_2x.set_active(false);
-    }));
+    let adjustment = gtk::Adjustment::new(1.0, 1.0, 10000.0, 1.0, 10.0, 0.0);
+    let sample_size_scale = gtk::Scale::new(gtk::Orientation::Horizontal, Some(&adjustment));
+    sample_size_scale.set_digits(0); // No decimal places
+    sample_size_scale.set_hexpand(true);
+    sample_size_scale.set_valign(gtk::Align::Start);
+    vbox.pack_start(&sample_size_scale, false, true, 0);
 
     // Add the horizontal box to the vertical box
     vbox.pack_start(&hbox, false, false, 0);
@@ -298,7 +281,7 @@ pub fn launch_gui() {
     resolution_hbox.set_halign(gtk::Align::Center);
 
     let width_entry = Entry::new();
-    width_entry.set_placeholder_text(Some("Width Default: 900"));
+    width_entry.set_placeholder_text(Some("Width Default: 800"));
     resolution_hbox.pack_start(&width_entry, false, false, 0);
 
     let resolution_separator = gtk::Label::new(Some("x"));
@@ -311,6 +294,7 @@ pub fn launch_gui() {
     vbox.pack_start(&flow_box, false, false, 0);
 
     let brightness_entry_clone = brightness_entry.clone();
+    let sample_size_scale_clone = sample_size_scale.clone();
     let cam_x_entry_clone = cam_x_entry.clone();
     let cam_y_entry_clone = cam_y_entry.clone();
     let cam_z_entry_clone = cam_z_entry.clone();
@@ -419,18 +403,10 @@ pub fn launch_gui() {
             println!("Valid Flat Plane {}: X: {}, Y: {}, Z: {}, Radius: {}, Material: {}, Color: RGB({}, {}, {})", 
             index + 1, pos_x, pos_y, pos_z, radius, material, r as u8, g as u8, b as u8);
         }
-    // Check antialiasing options
-    let antialiasing = if antialiasing_2x.get_active() {
-        "2x"
-    } else if antialiasing_4x.get_active() {
-        "4x"
-    } else {
-        "None"
-    };
 
 
         println!("Brightness: {}", brightness_entry_clone.get_value());
-        println!("Antialiasing option selected: {}", antialiasing);
+        println!("Sample size: {}", sample_size_scale_clone.get_value());
         println!("Camera X Position: {}", cam_x_entry_clone.get_text());
         println!("Camera Y Position: {}", cam_y_entry_clone.get_text());
         println!("Camera Angle: {}", cam_z_entry_clone.get_text());
@@ -439,12 +415,14 @@ pub fn launch_gui() {
 
         let mut cam_x = 0.0;
         let mut cam_y = 0.0;
-        let mut cam_angle = 0.0;
+        let mut cam_z = 0.0;
         let mut width = 0;
         let mut height = 0;
         // let mut Brightness = 0.0;
 
-        if let (Ok(x), Ok(y), Ok(angle), Ok(w), Ok(h)) = (
+        let sample_size = sample_size_scale_clone.get_value() as u16;
+
+        if let (Ok(x), Ok(y), Ok(z), Ok(w), Ok(h)) = (
             cam_x_entry_clone.get_text().parse::<f64>(),
             cam_y_entry_clone.get_text().parse::<f64>(),
             cam_z_entry_clone.get_text().parse::<f64>(),
@@ -454,7 +432,7 @@ pub fn launch_gui() {
         ) {
             cam_x = x;
             cam_y = y;
-            cam_angle = angle;
+            cam_z = z;
             width = w;
             height = h;
             // brightness = Brightness;
@@ -472,8 +450,8 @@ pub fn launch_gui() {
                 let updated_scene = Arc::new(update_scene_from_gui(app_state.clone()));
 
                 let mut camera = CameraBuilder::new()
-                .sample_size(100)
-                .position_by_coordinates(Vector3::new(cam_x, cam_y, cam_angle))
+                .sample_size(sample_size)
+                .position_by_coordinates(Vector3::new(cam_x, cam_y, cam_z))
                 .look_at(Vector3::new(0.0, 0.0, 0.0))
                 .up_direction_by_coordinates(Vector3::new(0.0, 1.0, 0.0))
                 .focal_length(0.5)
