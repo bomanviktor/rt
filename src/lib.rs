@@ -275,17 +275,18 @@ pub mod color {
                 return self.collisions[0];
             }
 
+            let light_boost = 10.0;
+            let ambient_light_boost = light_boost / 2.0;
             let mut total = if self.hit_light_source {
-                self.collisions.pop().unwrap() * 10.0
+                self.collisions.pop().unwrap() * light_boost
             } else {
-                scene.background() * 10.0
+                scene.background() * ambient_light_boost
             };
 
             self.collisions.iter().rev().for_each(|color| {
-                let normalized = color.normalize();
-                total.x *= normalized.x;
-                total.y *= normalized.y;
-                total.z *= normalized.z;
+                total.x *= color.x / 255.;
+                total.y *= color.y / 255.;
+                total.z *= color.z / 255.;
             });
 
             total
