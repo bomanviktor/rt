@@ -313,7 +313,7 @@ pub fn launch_gui() {
     let brightness_entry_clone = brightness_entry.clone();
     let cam_x_entry_clone = cam_x_entry.clone();
     let cam_y_entry_clone = cam_y_entry.clone();
-    let cam_z_entry_clone = cam_x_entry_clone.clone();
+    let cam_z_entry_clone = cam_z_entry.clone();
     let width_entry_clone = width_entry.clone();
     let height_entry_clone = height_entry.clone();
 
