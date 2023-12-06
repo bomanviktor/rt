@@ -54,7 +54,7 @@ pub fn create_sphere_section(
     grid.attach(&radius_label, 0, 7, 1, 1); // Column 0, Row 7
 
     let radius_entry = Entry::new();
-    radius_entry.set_text("0.0"); // Set default text
+    radius_entry.set_text("1.0"); // Set default text
     grid.attach(&radius_entry, 0, 8, 1, 1); // Column 0, Row 8
 
     // Material Selector Label and ComboBox
@@ -242,13 +242,13 @@ pub fn create_cylinder_section(
     grid.attach(&radius_label, 0, 7, 1, 1); // Column 0, Row 7
 
     let radius_entry = Entry::new();
-    radius_entry.set_text("0.0"); // Set default text
+    radius_entry.set_text("1.0"); // Set default text
     grid.attach(&radius_entry, 0, 8, 1, 1); // Column 0, Row 8
 
     let height_label = gtk::Label::new(Some("Height"));
     grid.attach(&height_label, 0, 9, 1, 1); // Column 0, Row 9
     let height_entry = Entry::new();
-    height_entry.set_text("0.0"); // Set default text
+    height_entry.set_text("2.0"); // Set default text
     height_entry.set_placeholder_text(Some("Height"));
     grid.attach(&height_entry, 0, 10, 1, 1); // Column 0, Row 10
 
@@ -445,11 +445,11 @@ pub fn create_cube_section(
     grid.attach(&pos_z_entry, 0, 6, 1, 1); // Column 0, Row 6
 
     // Radius Label and Entry
-    let radius_label = gtk::Label::new(Some("Radius"));
+    let radius_label = gtk::Label::new(Some("Size"));
     grid.attach(&radius_label, 0, 7, 1, 1); // Column 0, Row 7
 
     let radius_entry = Entry::new();
-    radius_entry.set_text("0.0"); // Set default text
+    radius_entry.set_text("1.0"); // Set default text
     grid.attach(&radius_entry, 0, 8, 1, 1); // Column 0, Row 8
 
     // Material Selector Label and ComboBox

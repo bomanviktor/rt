@@ -266,20 +266,29 @@ pub fn launch_gui() {
     vbox.pack_start(&brightness_entry, false, false, 0);
 
     // Camera Options
-    let camera_label = gtk::Label::new(Some("Camera Options"));
+    let camera_label = gtk::Label::new(Some("Camera Position:"));
     vbox.pack_start(&camera_label, false, false, 0);
 
+    let x_coord = gtk::Label::new(Some("-- X-Coordinate --"));
+    vbox.pack_start(&x_coord, false, false, 0);
+
     let cam_x_entry = Entry::new();
-    cam_x_entry.set_placeholder_text(Some("Camera X Position"));
+    cam_x_entry.set_placeholder_text(Some("Default: 0"));
     vbox.pack_start(&cam_x_entry, false, false, 0);
 
+    let y_coord = gtk::Label::new(Some("-- Y-Coordinate --"));
+    vbox.pack_start(&y_coord, false, false, 0);
+
     let cam_y_entry = Entry::new();
-    cam_y_entry.set_placeholder_text(Some("Camera Y Position"));
+    cam_y_entry.set_placeholder_text(Some("Default: 1"));
     vbox.pack_start(&cam_y_entry, false, false, 0);
 
-    let cam_angle_entry = Entry::new();
-    cam_angle_entry.set_placeholder_text(Some("Camera Angle"));
-    vbox.pack_start(&cam_angle_entry, false, false, 0);
+    let z_coord = gtk::Label::new(Some("-- Z-Coordinate --"));
+    vbox.pack_start(&z_coord, false, false, 0);
+
+    let cam_z_entry = Entry::new();
+    cam_z_entry.set_placeholder_text(Some("Default: 3"));
+    vbox.pack_start(&cam_z_entry, false, false, 0);
 
     // Resolution Selection
     let resolution_label = gtk::Label::new(Some("Resolution"));
@@ -289,14 +298,14 @@ pub fn launch_gui() {
     resolution_hbox.set_halign(gtk::Align::Center);
 
     let width_entry = Entry::new();
-    width_entry.set_placeholder_text(Some("Width"));
+    width_entry.set_placeholder_text(Some("Width Default: 900"));
     resolution_hbox.pack_start(&width_entry, false, false, 0);
 
     let resolution_separator = gtk::Label::new(Some("x"));
     resolution_hbox.pack_start(&resolution_separator, false, false, 0);
 
     let height_entry = Entry::new();
-    height_entry.set_placeholder_text(Some("Height"));
+    height_entry.set_placeholder_text(Some("Height Default: 600"));
     resolution_hbox.pack_start(&height_entry, false, false, 0);
     vbox.pack_start(&resolution_hbox, false, false, 0);
     vbox.pack_start(&flow_box, false, false, 0);
@@ -304,7 +313,7 @@ pub fn launch_gui() {
     let brightness_entry_clone = brightness_entry.clone();
     let cam_x_entry_clone = cam_x_entry.clone();
     let cam_y_entry_clone = cam_y_entry.clone();
-    let cam_angle_entry_clone = cam_angle_entry.clone();
+    let cam_z_entry_clone = cam_x_entry_clone.clone();
     let width_entry_clone = width_entry.clone();
     let height_entry_clone = height_entry.clone();
 
@@ -424,7 +433,7 @@ pub fn launch_gui() {
         println!("Antialiasing option selected: {}", antialiasing);
         println!("Camera X Position: {}", cam_x_entry_clone.get_text());
         println!("Camera Y Position: {}", cam_y_entry_clone.get_text());
-        println!("Camera Angle: {}", cam_angle_entry_clone.get_text());
+        println!("Camera Angle: {}", cam_z_entry_clone.get_text());
         println!("Resolution Width: {}", width_entry_clone.get_text());
         println!("Resolution Height: {}", height_entry_clone.get_text());
 
@@ -438,7 +447,7 @@ pub fn launch_gui() {
         if let (Ok(x), Ok(y), Ok(angle), Ok(w), Ok(h)) = (
             cam_x_entry_clone.get_text().parse::<f64>(),
             cam_y_entry_clone.get_text().parse::<f64>(),
-            cam_angle_entry_clone.get_text().parse::<f64>(),
+            cam_z_entry_clone.get_text().parse::<f64>(),
             width_entry_clone.get_text().parse::<u32>(),
             height_entry_clone.get_text().parse::<u32>(),
             // let mut Brightness = brightness_entry_clone.get_value(),
