@@ -15,11 +15,7 @@ pub struct Cylinder {
 
 impl Cylinder {
     pub fn new(center: Point, radius: f64, height: f64, texture: Texture) -> Self {
-        let bottom = FlatPlane::new(
-            center,
-            radius,
-            texture,
-        );
+        let bottom = FlatPlane::new(center, radius, texture);
         let top = FlatPlane::new(
             Point::new(center.x, center.y + height, center.z),
             radius,
@@ -38,7 +34,7 @@ impl Cylinder {
     fn normal(&self, point: Point) -> Normal {
         // Determine if the point is on the top or bottom cap
         if (point - self.top.center).norm() <= self.radius {
-            Normal::up()// Normal for the top cap
+            Normal::up() // Normal for the top cap
         } else if (point - self.bottom.center).norm() <= self.radius {
             Normal::down() // Normal for the bottom cap
         } else {
@@ -47,7 +43,6 @@ impl Cylinder {
             let projection = axis * (point - self.center).dot(&axis);
             (point - self.center - projection).normalize()
         }
-
     }
 }
 
@@ -87,7 +82,12 @@ impl Object for Cylinder {
                     } else {
                         1.0
                     };
-                    valid_intersections.push(Intersection::new(point * offset, normal, dist, self.texture));
+                    valid_intersections.push(Intersection::new(
+                        point * offset,
+                        normal,
+                        dist,
+                        self.texture,
+                    ));
                 }
             }
         }

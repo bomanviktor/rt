@@ -67,7 +67,7 @@ impl Object for Cube {
 
                 // Check if point is within cube bounds
                 let small_offset = if matches!(self.texture, Texture::Reflective) {
-                    1.0 + 1e-6
+                    1.0 + 1e-8
                 } else {
                     1.0 + f64::EPSILON
                 };

@@ -50,6 +50,8 @@ pub mod type_aliases {
     pub trait Directions {
         fn up() -> Normal;
         fn down() -> Normal;
+
+        fn near_zero(&self) -> bool;
     }
 
     impl Directions for Vector3<f64> {
@@ -59,6 +61,12 @@ pub mod type_aliases {
 
         fn down() -> Normal {
             Normal::new(0.0, -1.0, 0.0)
+        }
+
+        /// Catch degenerate directions
+        fn near_zero(&self) -> bool {
+            let s = 1e-8;
+            self.x.abs() < s && self.y.abs() < s && self.z.abs() < s
         }
     }
 
@@ -301,12 +309,6 @@ pub mod raytracer {
     pub use ray::*;
     pub mod scene;
     pub use scene::*;
-
-    /// Catch degenerate directions
-    pub fn near_zero(direction: crate::config::rays::Direction) -> bool {
-        let s = 1e-8;
-        direction.x.abs() < s && direction.y.abs() < s && direction.z.abs() < s
-    }
 }
 
 pub mod objects {
