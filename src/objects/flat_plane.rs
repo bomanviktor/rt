@@ -20,7 +20,7 @@ impl FlatPlane {
         }
     }
     fn normal(&self, ray: &Ray) -> Normal {
-        if ray.origin.y <= self.center.y {
+        if ray.origin.y > self.center.y {
             Normal::up()
         } else {
             Normal::down()
@@ -37,7 +37,7 @@ impl Object for FlatPlane {
         }
 
         let dist = (self.center - ray.origin).dot(&normal) / denom;
-        if !(denom.abs()..=ray.intersection_dist).contains(&dist) {
+        if !(1e-6..ray.intersection_dist).contains(&dist) {
             return None;
         }
 
@@ -49,7 +49,6 @@ impl Object for FlatPlane {
 
         None
     }
-
     fn texture(&self) -> Texture {
         self.texture
     }

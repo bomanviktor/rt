@@ -13,20 +13,20 @@ pub struct Scene {
 
 impl Scene {
     pub fn init(_scene_data: &str, brightness: f64) -> Self {
-        let sphere1 = Sphere::new(Vector3::new(3.0, -1.0, 0.0), 1.0, Reflective);
-        let sphere2 = Sphere::new(Vector3::new(3.0, -0.5, 2.0), 0.5, Glossy(RGB::pink()));
-
-        let cylinder = Cylinder::new(Vector3::new(0.0, -3.0, 0.0), 1.0, 3.0, Glossy(RGB::green()));
+        let sphere1 = Sphere::new(Vector3::new(3.0, 1.0, 0.0), 1.0, Glossy(RGB::red()));
+        let sphere2 = Sphere::new(Vector3::new(-2.0, 0.2, 1.0), 0.2, Glossy(RGB::pink()));
 
         let flat_plane = FlatPlane::new(Vector3::new(0.0, 0.0, 0.0), 10.0, Glossy(RGB::blue()));
 
         let light = Sphere::new(
-            Vector3::new(-5.0, -6.0, -10.0),
+            Vector3::new(5.0, 6.0, 10.0),
             2.0,
             Light(RGB::light_yellow()),
         );
-
-        let cube = Cube::new(Vector3::new(-2.0, -0.5, 0.0), 1.0, Glossy(RGB::yellow()));
+        //let cylinder = Cylinder::new(Vector3::new(-2.0, 0.0, -1.0), 1.0, 3.0, Glossy(RGB::green()));
+        let cylinder = Cylinder::new(Vector3::new(0.0, 0.0, 0.0), 1.0, 3.0, Glossy(RGB::green()));
+        let cube = Cube::new(Vector3::new(-2.0, 0.5, 0.0), 1.0, Reflective);
+        // let cube = Cube::new(Vector3::new(0.0, 0.5, 0.0), 1.0, Reflective);
 
         let objects: Objects = vec![
             Arc::new(sphere1),
@@ -37,12 +37,15 @@ impl Scene {
             Arc::new(light),
         ];
 
+        // Adjust invalid value in brightness
+        let brightness = if brightness > 1.0 { 1.0 } else { brightness };
+
         Self {
             objects,
-            brightness: if brightness >= 0.0 {
-                brightness
-            } else {
+            brightness: if brightness <= 0.0 {
                 0.0001
+            } else {
+                brightness
             },
         }
     }

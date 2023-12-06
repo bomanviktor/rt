@@ -48,7 +48,7 @@ impl Cylinder {
 impl Object for Cylinder {
     fn intersection(&self, ray: &Ray) -> Option<Intersection> {
         let bottom = self.bottom.center;
-        let axis = Direction::new(0.0, 1.0, 0.0); // Cylinder aligned along Y-axis
+        let axis = Direction::up(); // Cylinder aligned along Y-axis
         let mut intersections = Vec::new();
 
         // Check intersection with cylindrical surface
@@ -67,12 +67,12 @@ impl Object for Cylinder {
             let dist_2 = (-b + sqrt_discriminant) / (2.0 * a);
 
             for dist in [dist_1, dist_2] {
-                if dist <= 0.0 {
+                if dist <= 1e-4 {
                     continue;
                 }
 
                 let point = ray.origin + ray.direction * dist;
-                let height = (point - bottom).dot(&axis);
+                let height = (point + bottom).dot(&axis);
 
                 if (0.0..=self.height).contains(&height) && dist < ray.intersection_dist {
                     let normal = self.normal(point);

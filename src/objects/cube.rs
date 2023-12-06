@@ -58,24 +58,26 @@ impl Object for Cube {
                 let face_center_to_origin = face_center - ray.origin;
                 let distance = face_center_to_origin.dot(&normal) / denom;
 
-                if !(denom.abs()..=ray.intersection_dist).contains(&distance) {
+                if !(1e-6..ray.intersection_dist).contains(&distance) {
                     continue;
                 }
 
                 let point = ray.origin + distance * ray.direction;
                 let local_point = point - self.center;
 
-                let float_offset = 1.00001;
                 // Check if point is within cube bounds
+                let small_offset = if matches!(self.texture, Texture::Reflective) {
+                    1.0
+                } else {
+                    1.0 + 1e-6
+                };
 
-                if local_point
-                    .iter()
-                    .all(|&coord| coord.abs() <= half_size * float_offset)
+                if local_point.iter().all(|&coord| coord.abs() <= half_size)
                     && distance < closest_distance
                 {
                     // Update closest intersection
                     closest_distance = distance;
-                    hit_point = point * float_offset;
+                    hit_point = point * small_offset;
                 }
             }
         }

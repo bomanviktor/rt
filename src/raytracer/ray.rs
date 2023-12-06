@@ -36,6 +36,7 @@ impl Ray {
             match intersection.texture {
                 Texture::Diffusive(color) => {
                     self.collisions.push(color);
+
                     let direction = self.diffuse_reflection_direction(normal);
                     if !super::near_zero(direction) {
                         self.diffusive(origin, direction, scene);
@@ -92,9 +93,9 @@ impl Ray {
         // Create a local coordinate system around the normal
         let incident_ray = normal.normalize();
         let tangent_a = if incident_ray.x.abs() > 0.9 {
-            Vector3::new(0.0, -1.0, 0.0)
+            Vector3::new(0.0, 1.0, 0.0)
         } else {
-            Vector3::new(-1.0, 0.0, 0.0)
+            Vector3::new(1.0, 0.0, 0.0)
         };
         let tangent_v = incident_ray.cross(&tangent_a).normalize();
         let tangent_u = incident_ray.cross(&tangent_v);

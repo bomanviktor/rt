@@ -54,11 +54,11 @@ pub mod type_aliases {
 
     impl Directions for Vector3<f64> {
         fn up() -> Normal {
-            Normal::new(0.0, -1.0, 0.0)
+            Normal::new(0.0, 1.0, 0.0)
         }
 
         fn down() -> Normal {
-            Normal::new(0.0, 1.0, 0.0)
+            Normal::new(0.0, -1.0, 0.0)
         }
     }
 
@@ -407,13 +407,8 @@ pub mod textures {
             }
         }
         pub fn reflective(&mut self, origin: Point, direction: Direction, scene: &Scene) {
-            let offset = if self.depth % 2 == 0 {
-                1.0 - f64::EPSILON
-            } else {
-                1.0 + f64::EPSILON
-            };
-
-            let mut secondary_ray = Ray::new(origin, direction * offset, self.depth + 1);
+            let small_offset = 1.0 + 1e-6;
+            let mut secondary_ray = Ray::new(origin * small_offset, direction, self.depth + 1);
 
             secondary_ray.trace(scene);
 
