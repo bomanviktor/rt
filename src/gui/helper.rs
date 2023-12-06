@@ -1,8 +1,9 @@
-use crate::color::Color;
+use crate::color::RGB;
 use crate::gui::AppState;
-use crate::objects::Texture::Light;
-use crate::objects::{Cube, Cylinder, FlatPlane, Objects, Sphere, Texture};
+use crate::objects::{Cube, Cylinder, FlatPlane, Objects, Sphere};
 use crate::raytracer::Scene;
+use crate::textures::Texture::*;
+use crate::type_aliases::Color;
 use gtk::{ColorChooserExt, ComboBoxTextExt, EntryExt};
 use nalgebra::Vector3;
 use std::cell::RefCell;
@@ -66,9 +67,11 @@ pub fn update_scene_from_gui(app_state: Rc<RefCell<AppState>>) -> Scene {
         let sphere_color = Color::new(color.red * 255., color.green * 255., color.blue * 255.);
 
         let sphere_texture = match material.as_str() {
-            "Diffusive" => Texture::Diffusive(sphere_color),
+            "Diffusive" => Diffusive(sphere_color),
+            "Reflective" => Reflective,
+            "Glossy" => Glossy(sphere_color),
             // Add other cases as needed
-            _ => Texture::Diffusive(sphere_color), // Default case
+            _ => Diffusive(sphere_color), // Default case
         };
 
         let sphere = Sphere::new(Vector3::new(pos_x, pos_y, pos_z), radius, sphere_texture);
@@ -117,9 +120,11 @@ pub fn update_scene_from_gui(app_state: Rc<RefCell<AppState>>) -> Scene {
         let cylinder_color = Color::new(color.red * 255., color.green * 255., color.blue * 255.);
 
         let cylinder_texture = match material.as_str() {
-            "Diffusive" => Texture::Diffusive(cylinder_color),
+            "Diffusive" => Diffusive(cylinder_color),
+            "Reflective" => Reflective,
+            "Glossy" => Glossy(cylinder_color),
             // Add other cases as needed
-            _ => Texture::Diffusive(cylinder_color), // Default case
+            _ => Diffusive(cylinder_color), // Default case
         };
 
         let cylinder = Cylinder::new(
@@ -167,9 +172,11 @@ pub fn update_scene_from_gui(app_state: Rc<RefCell<AppState>>) -> Scene {
         let cube_color = Color::new(color.red * 255., color.green * 255., color.blue * 255.);
 
         let cube_texture = match material.as_str() {
-            "Diffusive" => Texture::Diffusive(cube_color),
+            "Diffusive" => Diffusive(cube_color),
+            "Reflective" => Reflective,
+            "Glossy" => Glossy(cube_color),
             // Add other cases as needed
-            _ => Texture::Diffusive(cube_color), // Default case
+            _ => Diffusive(cube_color), // Default case
         };
 
         let cube = Cube::new(Vector3::new(pos_x, pos_y, pos_z), radius, cube_texture);
@@ -212,9 +219,11 @@ pub fn update_scene_from_gui(app_state: Rc<RefCell<AppState>>) -> Scene {
         let flat_plane_color = Color::new(color.red * 255., color.green * 255., color.blue * 255.);
 
         let flat_plane_texture = match material.as_str() {
-            "Diffusive" => Texture::Diffusive(flat_plane_color),
+            "Diffusive" => Diffusive(flat_plane_color),
+            "Reflective" => Reflective,
+            "Glossy" => Glossy(flat_plane_color),
             // Add other cases as needed
-            _ => Texture::Diffusive(flat_plane_color), // Default case
+            _ => Diffusive(flat_plane_color), // Default case
         };
 
         let flat_plane = FlatPlane::new(
@@ -225,5 +234,8 @@ pub fn update_scene_from_gui(app_state: Rc<RefCell<AppState>>) -> Scene {
         objects.push(Arc::new(flat_plane));
     }
 
-    Scene { objects }
+    Scene {
+        objects,
+        brightness: app_state_borrowed.brightness,
+    }
 }

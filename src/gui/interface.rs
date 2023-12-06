@@ -22,6 +22,7 @@ pub struct AppState {
     pub cylinders: Vec<CylinderConfig>,
     pub cubes: Vec<CubeConfig>,
     pub flat_planes: Vec<FlatPlaneConfig>,
+    pub brightness: f64,
 }
 
 pub struct SphereConfig {
@@ -71,6 +72,7 @@ pub fn launch_gui() {
         cylinders: Vec::new(),
         cubes: Vec::new(),
         flat_planes: Vec::new(),
+        brightness: 0.5,
     }));
 
     gtk::init().expect("Failed to initialize GTK.");
@@ -420,7 +422,10 @@ pub fn launch_gui() {
         let mut width = 0;
         let mut height = 0;
 
-        let _brightness = brightness_entry_clone.get_value();
+
+        // Assign brightness to app_state
+        app_state.borrow_mut().brightness = brightness_entry_clone.get_value();
+
         let sample_size = sample_size_scale_clone.get_value() as u16;
 
         if let (Ok(x), Ok(y), Ok(z), Ok(w), Ok(h)) = (
@@ -454,7 +459,7 @@ pub fn launch_gui() {
                 .look_at(Vector3::new(0.0, 0.0, 0.0))
                 .up_direction_by_coordinates(Vector3::new(0.0, 1.0, 0.0))
                 .focal_length(0.5)
-                .resolution((width, height))
+                .resolution(width, height)
                 .sensor_width(1.0)
                 .build();
 
