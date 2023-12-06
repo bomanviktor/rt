@@ -191,19 +191,6 @@ pub fn launch_gui() {
         .get_style_context()
         .add_provider(&provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
 
-    let sample_size_label = gtk::Label::new(Some("Sample Size"));
-    sample_size_label
-        .get_style_context()
-        .add_class("sample-size-label");
-    vbox.pack_start(&sample_size_label, false, false, 0);
-
-    let adjustment = gtk::Adjustment::new(1.0, 1.0, 10000.0, 1.0, 10.0, 0.0);
-    let sample_size_scale = gtk::Scale::new(gtk::Orientation::Horizontal, Some(&adjustment));
-    sample_size_scale.set_digits(0); // No decimal places
-    sample_size_scale.set_hexpand(true);
-    sample_size_scale.set_valign(gtk::Align::Start);
-    vbox.pack_start(&sample_size_scale, false, true, 0);
-
     // Add the horizontal box to the vertical box
     vbox.pack_start(&hbox, false, false, 0);
 
@@ -231,6 +218,20 @@ pub fn launch_gui() {
     // Separator
     let separator = Separator::new(Orientation::Horizontal);
     vbox.pack_start(&separator, false, false, 10);
+
+    // Sample Size
+    let sample_size_label = gtk::Label::new(Some("Sample Size"));
+    sample_size_label
+        .get_style_context()
+        .add_class("sample-size-label");
+    vbox.pack_start(&sample_size_label, false, false, 0);
+
+    let adjustment = gtk::Adjustment::new(1.0, 1.0, 10000.0, 1.0, 10.0, 0.0);
+    let sample_size_scale = gtk::Scale::new(gtk::Orientation::Horizontal, Some(&adjustment));
+    sample_size_scale.set_digits(0); // No decimal places
+    sample_size_scale.set_hexpand(true);
+    sample_size_scale.set_valign(gtk::Align::Start);
+    vbox.pack_start(&sample_size_scale, false, true, 0);
 
     // Brightness
     let adjustment = gtk::Adjustment::new(
@@ -418,8 +419,8 @@ pub fn launch_gui() {
         let mut cam_z = 0.0;
         let mut width = 0;
         let mut height = 0;
-        // let mut Brightness = 0.0;
 
+        let _brightness = brightness_entry_clone.get_value();
         let sample_size = sample_size_scale_clone.get_value() as u16;
 
         if let (Ok(x), Ok(y), Ok(z), Ok(w), Ok(h)) = (
@@ -428,14 +429,12 @@ pub fn launch_gui() {
             cam_z_entry_clone.get_text().parse::<f64>(),
             width_entry_clone.get_text().parse::<u32>(),
             height_entry_clone.get_text().parse::<u32>(),
-            // let mut Brightness = brightness_entry_clone.get_value(),
         ) {
             cam_x = x;
             cam_y = y;
             cam_z = z;
             width = w;
             height = h;
-            // brightness = Brightness;
         } else {
             all_inputs_valid = false;
         }
