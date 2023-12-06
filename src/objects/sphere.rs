@@ -40,13 +40,13 @@ impl Object for Sphere {
         let dist_1 = (-b - sqrt_discriminant) / (2.0 * a);
         let dist_2 = (-b + sqrt_discriminant) / (2.0 * a);
 
-        let dist = if (0.0..dist_2).contains(&dist_1) {
+        let dist = if (1e-6..dist_2).contains(&dist_1) {
             dist_1 // dist 1 is closer
         } else {
             dist_2 // dist 2 is closer
         };
 
-        if (0.0..ray.intersection_dist).contains(&dist) {
+        if (1e-6..ray.intersection_dist).contains(&dist) {
             let hit_point = ray.origin + dist * ray.direction;
             let normal = self.normal(hit_point);
             return Some(Intersection::new(hit_point, normal, dist, self.texture()));

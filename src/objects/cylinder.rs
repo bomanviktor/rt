@@ -15,7 +15,11 @@ pub struct Cylinder {
 
 impl Cylinder {
     pub fn new(center: Point, radius: f64, height: f64, texture: Texture) -> Self {
-        let bottom = FlatPlane::new(center, radius, texture);
+        let bottom = FlatPlane::new(
+            center,
+            radius,
+            texture,
+        );
         let top = FlatPlane::new(
             Point::new(center.x, center.y + height, center.z),
             radius,
@@ -32,16 +36,20 @@ impl Cylinder {
     }
 
     fn normal(&self, point: Point) -> Normal {
+        // Determine if the point is on the top or bottom cap
+        /*
         if (point - self.top.center).norm() <= self.radius {
-            Normal::down()
+            Normal::new(0.0, 1.0, 0.0) // Normal for the top cap
         } else if (point - self.bottom.center).norm() <= self.radius {
-            Normal::up()
+            Normal::new(0.0, -1.0, 0.0) // Normal for the bottom cap
         } else {
+            */
             // Normal for the cylindrical surface
-            let axis = Direction::up();
+            let axis = Normal::new(0.0, 1.0, 0.0);
             let projection = axis * (point - self.center).dot(&axis);
             (point - self.center - projection).normalize()
-        }
+        //}
+
     }
 }
 
@@ -67,7 +75,7 @@ impl Object for Cylinder {
             let dist_2 = (-b + sqrt_discriminant) / (2.0 * a);
 
             for dist in [dist_1, dist_2] {
-                if dist <= 1e-4 {
+                if dist <= 1e-7 {
                     continue;
                 }
 

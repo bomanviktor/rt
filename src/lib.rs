@@ -407,8 +407,7 @@ pub mod textures {
             }
         }
         pub fn reflective(&mut self, origin: Point, direction: Direction, scene: &Scene) {
-            let small_offset = 1.0 + 1e-6;
-            let mut secondary_ray = Ray::new(origin * small_offset, direction, self.depth + 1);
+            let mut secondary_ray = Ray::new(origin, direction, self.depth + 1);
 
             secondary_ray.trace(scene);
 

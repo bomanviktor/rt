@@ -20,10 +20,10 @@ impl FlatPlane {
         }
     }
     fn normal(&self, ray: &Ray) -> Normal {
-        if ray.origin.y > self.center.y {
-            Normal::up()
-        } else {
+        if ray.origin.y < self.center.y {
             Normal::down()
+        } else {
+            Normal::up()
         }
     }
 }
