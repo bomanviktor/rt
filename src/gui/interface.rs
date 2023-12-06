@@ -463,7 +463,7 @@ pub fn launch_gui() {
                 let updated_scene = Arc::new(update_scene_from_gui(app_state.clone()));
 
                 let mut camera = CameraBuilder::new()
-                .sample_size(20)
+                .sample_size(100)
                 .position_by_coordinates(Vector3::new(cam_x, cam_y, cam_angle))
                 .look_at(Vector3::new(0.0, 0.0, 0.0))
                 .up_direction_by_coordinates(Vector3::new(0.0, 1.0, 0.0))

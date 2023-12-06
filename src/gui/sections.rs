@@ -62,9 +62,9 @@ pub fn create_sphere_section(
     grid.attach(&material_label, 0, 9, 1, 1); // Column 0, Row 9
 
     let material_selector = ComboBoxText::new();
-    material_selector.append_text("Lambertian");
-    material_selector.append_text("Metal");
-    material_selector.append_text("Dielectric");
+    material_selector.append_text("Diffusive");
+    material_selector.append_text("Glossy");
+    material_selector.append_text("Reflective");
     material_selector.set_active(Some(0));
     grid.attach(&material_selector, 0, 10, 1, 1); // Column 0, Row 10
 
@@ -270,9 +270,9 @@ pub fn create_cylinder_section(
     grid.attach(&material_label, 0, 11, 1, 1); // Column 0, Row 11
 
     let material_selector = ComboBoxText::new();
-    material_selector.append_text("Lambertian");
-    material_selector.append_text("Metal");
-    material_selector.append_text("Dielectric");
+    material_selector.append_text("Diffusive");
+    material_selector.append_text("Glossy");
+    material_selector.append_text("Reflective");
     material_selector.set_active(Some(0));
     grid.attach(&material_selector, 0, 12, 1, 1); // Column 0, Row 12
 
@@ -457,9 +457,9 @@ pub fn create_cube_section(
     grid.attach(&material_label, 0, 9, 1, 1); // Column 0, Row 9
 
     let material_selector = ComboBoxText::new();
-    material_selector.append_text("Lambertian");
-    material_selector.append_text("Metal");
-    material_selector.append_text("Dielectric");
+    material_selector.append_text("Diffusive");
+    material_selector.append_text("Glossy");
+    material_selector.append_text("Reflective");
     material_selector.set_active(Some(0));
     grid.attach(&material_selector, 0, 10, 1, 1); // Column 0, Row 10
 
@@ -639,9 +639,9 @@ pub fn create_flat_plane_section(
     grid.attach(&material_label, 0, 9, 1, 1); // Column 0, Row 9
 
     let material_selector = ComboBoxText::new();
-    material_selector.append_text("Lambertian");
-    material_selector.append_text("Metal");
-    material_selector.append_text("Dielectric");
+    material_selector.append_text("Diffusive");
+    material_selector.append_text("Glossy");
+    material_selector.append_text("Reflective");
     material_selector.set_active(Some(0));
     grid.attach(&material_selector, 0, 10, 1, 1); // Column 0, Row 10
 

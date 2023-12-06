@@ -3,7 +3,7 @@ use crate::gui::AppState;
 use crate::objects::Texture::Light;
 use crate::objects::{Cube, Cylinder, FlatPlane, Objects, Sphere, Texture};
 use crate::raytracer::Scene;
-use gtk::{ColorChooserExt, EntryExt};
+use gtk::{ColorChooserExt, ComboBoxTextExt, EntryExt};
 use nalgebra::Vector3;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -55,11 +55,21 @@ pub fn update_scene_from_gui(app_state: Rc<RefCell<AppState>>) -> Scene {
             .get_text()
             .parse::<f64>()
             .unwrap_or(1.0);
+        let material = sphere_config
+            .material_selector
+            .borrow()
+            .get_active_text()
+            .unwrap_or_else(|| "DefaultMaterial".into());
+
         let color = sphere_config.color_button.borrow().get_rgba();
 
-        let sphere_color = Vector3::new(color.red, color.green, color.blue);
+        let sphere_color = Color::new(color.red * 255., color.green * 255., color.blue * 255.);
 
-        let sphere_texture = Texture::Diffusive(sphere_color);
+        let sphere_texture = match material.as_str() {
+            "Diffusive" => Texture::Diffusive(sphere_color),
+            // Add other cases as needed
+            _ => Texture::Diffusive(sphere_color), // Default case
+        };
 
         let sphere = Sphere::new(Vector3::new(pos_x, pos_y, pos_z), radius, sphere_texture);
         objects.push(Arc::new(sphere));
@@ -98,10 +108,19 @@ pub fn update_scene_from_gui(app_state: Rc<RefCell<AppState>>) -> Scene {
             .parse::<f64>()
             .unwrap_or(1.0);
         let color = cylinder_config.color_button.borrow().get_rgba();
+        let material = cylinder_config
+            .material_selector
+            .borrow()
+            .get_active_text()
+            .unwrap_or_else(|| "DefaultMaterial".into());
 
-        let cylinder_color = Vector3::new(color.red, color.green, color.blue);
+        let cylinder_color = Color::new(color.red * 255., color.green * 255., color.blue * 255.);
 
-        let cylinder_texture = Texture::Diffusive(cylinder_color);
+        let cylinder_texture = match material.as_str() {
+            "Diffusive" => Texture::Diffusive(cylinder_color),
+            // Add other cases as needed
+            _ => Texture::Diffusive(cylinder_color), // Default case
+        };
 
         let cylinder = Cylinder::new(
             Vector3::new(pos_x, pos_y, pos_z),
@@ -139,10 +158,19 @@ pub fn update_scene_from_gui(app_state: Rc<RefCell<AppState>>) -> Scene {
             .parse::<f64>()
             .unwrap_or(1.0);
         let color = cube_config.color_button.borrow().get_rgba();
+        let material = cube_config
+            .material_selector
+            .borrow()
+            .get_active_text()
+            .unwrap_or_else(|| "DefaultMaterial".into());
 
-        let cube_color = Vector3::new(color.red, color.green, color.blue);
+        let cube_color = Color::new(color.red * 255., color.green * 255., color.blue * 255.);
 
-        let cube_texture = Texture::Diffusive(cube_color);
+        let cube_texture = match material.as_str() {
+            "Diffusive" => Texture::Diffusive(cube_color),
+            // Add other cases as needed
+            _ => Texture::Diffusive(cube_color), // Default case
+        };
 
         let cube = Cube::new(Vector3::new(pos_x, pos_y, pos_z), radius, cube_texture);
         objects.push(Arc::new(cube));
@@ -175,10 +203,19 @@ pub fn update_scene_from_gui(app_state: Rc<RefCell<AppState>>) -> Scene {
             .parse::<f64>()
             .unwrap_or(1.0);
         let color = flat_plane_config.color_button.borrow().get_rgba();
+        let material = flat_plane_config
+            .material_selector
+            .borrow()
+            .get_active_text()
+            .unwrap_or_else(|| "DefaultMaterial".into());
 
-        let flat_plane_color = Vector3::new(color.red, color.green, color.blue);
+        let flat_plane_color = Color::new(color.red * 255., color.green * 255., color.blue * 255.);
 
-        let flat_plane_texture = Texture::Diffusive(flat_plane_color);
+        let flat_plane_texture = match material.as_str() {
+            "Diffusive" => Texture::Diffusive(flat_plane_color),
+            // Add other cases as needed
+            _ => Texture::Diffusive(flat_plane_color), // Default case
+        };
 
         let flat_plane = FlatPlane::new(
             Vector3::new(pos_x, pos_y, pos_z),
