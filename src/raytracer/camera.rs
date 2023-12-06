@@ -1,5 +1,5 @@
 use crate::config::camera::*;
-use crate::type_aliases::Color;
+use crate::type_aliases::{Color, Direction};
 
 #[derive(Debug)]
 pub struct Camera {
@@ -129,6 +129,56 @@ impl CameraBuilder {
         }
     }
 
+    pub fn build(&self) -> Camera {
+        let fov = 2.0
+            * ((self.sensor_width.unwrap_or(DEFAULT_SENSOR_WIDTH)
+                / (2.0 * self.focal_length.unwrap_or(DEFAULT_FOCAL_LENGTH)))
+            .atan());
+
+        let (width, height) = self.resolution.unwrap_or(DEFAULT_RESOLUTION);
+
+        Camera {
+            sample_size: self.sample_size.unwrap_or(DEFAULT_SAMPLE_SIZE),
+            position: self.position.unwrap_or(DEFAULT_CAMERA_POSITION),
+            look_at: self.look_at.unwrap_or_default(), // 0,0,0 is the default
+            up_direction: self.adjusted_up_direction(),
+            fov,
+            resolution: self.resolution.unwrap_or(DEFAULT_RESOLUTION),
+            aspect_ratio: width as f64 / height as f64,
+            focal_length: self.focal_length.unwrap_or(DEFAULT_FOCAL_LENGTH),
+            sensor_width: self.sensor_width.unwrap_or(DEFAULT_SENSOR_WIDTH),
+            pixels: Vec::new(),
+        }
+    }
+
+    fn adjusted_up_direction(&self) -> Direction {
+        let mut camera_position = self.position.unwrap_or(DEFAULT_CAMERA_POSITION);
+
+        if camera_position.x == 0.0 && camera_position.z == 0.0 {
+            camera_position.z = 0.1;
+        }
+
+        let look_at_position = self.look_at.unwrap_or_default();
+
+        // Step 1: Compute Look Direction
+        let look_direction = look_at_position - camera_position;
+
+        // Step 2: Normalize the Look Direction
+        let normalized_look_direction = look_direction.normalize();
+
+        // Step 3: Define Up Direction (Positive Y)
+        let up_direction = -Vector3::y().normalize();
+
+        // Step 4: Compute Right Direction
+        let right_direction = normalized_look_direction.cross(&up_direction);
+
+        // Step 5: Normalize the Right Direction
+        let normalized_right_direction = right_direction.normalize();
+
+        // Step 6: Compute Final Up Direction
+        normalized_look_direction.cross(&normalized_right_direction)
+    }
+
     pub fn sample_size(&mut self, sample_size: u16) -> &mut Self {
         self.sample_size = Some(sample_size);
         self
@@ -139,25 +189,12 @@ impl CameraBuilder {
         self
     }
 
-    pub fn position_by_degrees(
-        &mut self,
-        _horizontal_degrees: f64,
-        _vertical_degrees: f64,
-    ) -> &mut Self {
-        self.look_at = None; // This is to trigger the default option in the builder
-        self
-    }
-
     pub fn look_at(&mut self, coordinate: Point) -> &mut Self {
         self.look_at = Some(coordinate);
         self
     }
     pub fn up_direction_by_coordinates(&mut self, up_direction: Point) -> &mut Self {
         self.up_direction = Some(up_direction);
-        self
-    }
-
-    pub fn up_direction_by_rotation(&mut self, _rotation: f64) -> &mut Self {
         self
     }
 
@@ -174,25 +211,5 @@ impl CameraBuilder {
     pub fn sensor_width(&mut self, sensor_width: f64) -> &mut Self {
         self.sensor_width = Some(sensor_width);
         self
-    }
-
-    pub fn build(&self) -> Camera {
-        let fov = 2.0
-            * ((self.sensor_width.unwrap_or(DEFAULT_SENSOR_WIDTH)
-                / (2.0 * self.focal_length.unwrap_or(DEFAULT_FOCAL_LENGTH)))
-            .atan());
-        let (width, height) = self.resolution.unwrap_or(DEFAULT_RESOLUTION);
-        Camera {
-            sample_size: self.sample_size.unwrap_or(DEFAULT_SAMPLE_SIZE),
-            position: self.position.unwrap_or(DEFAULT_CAMERA_POSITION),
-            look_at: self.look_at.unwrap_or_default(), // 0,0,0 is the default
-            up_direction: self.up_direction.unwrap_or(DEFAULT_UP_DIRECTION),
-            fov,
-            resolution: self.resolution.unwrap_or(DEFAULT_RESOLUTION),
-            aspect_ratio: width as f64 / height as f64,
-            focal_length: self.focal_length.unwrap_or(DEFAULT_FOCAL_LENGTH),
-            sensor_width: self.sensor_width.unwrap_or(DEFAULT_SENSOR_WIDTH),
-            pixels: Vec::new(),
-        }
     }
 }
