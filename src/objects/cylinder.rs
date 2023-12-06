@@ -37,18 +37,16 @@ impl Cylinder {
 
     fn normal(&self, point: Point) -> Normal {
         // Determine if the point is on the top or bottom cap
-        /*
         if (point - self.top.center).norm() <= self.radius {
-            Normal::new(0.0, 1.0, 0.0) // Normal for the top cap
+            Normal::up()// Normal for the top cap
         } else if (point - self.bottom.center).norm() <= self.radius {
-            Normal::new(0.0, -1.0, 0.0) // Normal for the bottom cap
+            Normal::down() // Normal for the bottom cap
         } else {
-            */
             // Normal for the cylindrical surface
-            let axis = Normal::new(0.0, 1.0, 0.0);
+            let axis = Direction::down();
             let projection = axis * (point - self.center).dot(&axis);
             (point - self.center - projection).normalize()
-        //}
+        }
 
     }
 }
@@ -57,7 +55,7 @@ impl Object for Cylinder {
     fn intersection(&self, ray: &Ray) -> Option<Intersection> {
         let bottom = self.bottom.center;
         let axis = Direction::up(); // Cylinder aligned along Y-axis
-        let mut intersections = Vec::new();
+        let mut valid_intersections = Vec::new();
 
         // Check intersection with cylindrical surface
         let vec_to_ray = ray.origin - bottom;
@@ -75,32 +73,35 @@ impl Object for Cylinder {
             let dist_2 = (-b + sqrt_discriminant) / (2.0 * a);
 
             for dist in [dist_1, dist_2] {
-                if dist <= 1e-7 {
+                if dist <= 0.0 {
                     continue;
                 }
 
                 let point = ray.origin + ray.direction * dist;
-                let height = (point + bottom).dot(&axis);
+                let height = (point - bottom).dot(&axis);
 
                 if (0.0..=self.height).contains(&height) && dist < ray.intersection_dist {
                     let normal = self.normal(point);
-                    let intersection = Intersection::new(point, normal, dist, self.texture());
-                    intersections.push(intersection);
+                    let offset = if matches!(self.texture, Texture::Reflective) {
+                        1.0 + 1e-7
+                    } else {
+                        1.0
+                    };
+                    valid_intersections.push(Intersection::new(point * offset, normal, dist, self.texture));
                 }
             }
         }
 
         // Check intersections with both caps
         if let Some(bottom_intersection) = self.bottom.intersection(ray) {
-            intersections.push(bottom_intersection);
+            valid_intersections.push(bottom_intersection);
         }
-
         if let Some(top_intersection) = self.top.intersection(ray) {
-            intersections.push(top_intersection);
+            valid_intersections.push(top_intersection);
         }
 
         // Find the closest valid intersection
-        intersections
+        valid_intersections
             .into_iter()
             .min_by(|a, b| a.distance.partial_cmp(&b.distance).unwrap())
     }

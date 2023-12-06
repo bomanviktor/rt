@@ -44,7 +44,7 @@ impl Object for FlatPlane {
         let hit_point = ray.origin + ray.direction * dist;
 
         if (hit_point - self.center).norm() <= self.radius {
-            return Some(Intersection::new(hit_point, normal, dist, self.texture()));
+            return Some(Intersection::new(hit_point * (1.0 + 1e-6), normal, dist, self.texture()));
         }
 
         None

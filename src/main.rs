@@ -7,15 +7,15 @@ const OUTPUT_PATH: &str = "output.ppm";
 
 fn main() {
     let mut camera = CameraBuilder::new()
-        .sample_size(10)
-        .position_by_coordinates(Point::new(-5.0, 4.0, 5.0))
-        .focal_length(0.5)
+        .sample_size(1000)
+        .position_by_coordinates(Point::new(-9.0, 8.0, 15.0))
+        .focal_length(1.0)
         .sensor_width(1.0)
         .resolution(1920, 1080)
         .build();
 
     let scene_data = "scene info from gui here";
-    let scene = Arc::new(Scene::init(scene_data, 0.2));
+    let scene = Arc::new(Scene::init(scene_data, 0.0));
     let start = Instant::now();
 
     // Perform ray tracing
