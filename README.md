@@ -10,6 +10,7 @@
 - [Light](#light)
 - [Brightness](#brightness)
 - [Creating Objects In Code](#creating-objects-in-code)
+    - [Camera Position](#camera-position)
     - [Sphere](#sphere)
     - [Cube](#cube)
     - [Plane](#plane)
@@ -75,6 +76,21 @@ fn main() {
 }
 
 ```
+
+### Camera Position
+
+To change the camera position, change the following `position_by_coordinates` in `main.rs`:
+```rusts
+let mut camera = CameraBuilder::new()
+                    .sample_size(20)
+                    .position_by_coordinates(Point::new(-3.0, -4.0, 5.0))
+                    .look_at(Point::new(0.0, 0.0, 0.0))
+                    .up_direction_by_coordinates(Direction::new(0.0, 1.0, 0.0))
+                    .focal_length(0.5)
+                    .sensor_width(1.0)
+                    .build();
+```
+
 
 ### Sphere
 
