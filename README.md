@@ -6,6 +6,7 @@
 #### Project Description: [rt instructions](https://github.com/01-edu/public/blob/master/subjects/rt/README.md)
 
 ## Table of Contents
+- [Installation/Running Instructions](#installationrunning-instructions)
 - [GUI](#gui)
 - [Light](#light)
 - [Brightness](#brightness)
@@ -16,6 +17,16 @@
     - [Plane](#plane)
     - [Cylinder](#cylinder)
 
+## Installation/Running Instructions
+1. Clone the repo
+2. Install brew
+     - `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
+3. Install Rust
+    - `brew install rust`
+4. Install gtk-rs dependencies
+    - `brew install gtk+3`
+5. Run in repo root
+    - `cargo run --release`
 
 ## GUI
 The GUI is built using [gtk-rs](https://gtk-rs.org/). It is a simple GUI that allows the user to create objects and change their properties. The GUI also allows the user to change the camera position and rotation, as well as the background color. The GUI also allows the user to change the resolution of the image and the number of samples per pixel.
