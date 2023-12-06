@@ -29,7 +29,7 @@ impl Camera {
             .enumerate()
             .for_each(|(pixel, pixel_color)| {
                 let column = pixel as u32 % width;
-                let row = pixel as u32 / width;
+                let row = (total_pixels - pixel) as u32 / width;
                 let mut total_color = Color::black();
 
                 for _sample in 0..self.sample_size {
