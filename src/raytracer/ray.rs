@@ -23,6 +23,8 @@ impl Ray {
         }
     }
 
+    /// Find the closest intersection, create a new ray based on the surface, and recursively call
+    /// `trace`
     pub fn trace(&mut self, scene: &Scene) {
         if self.reached_max_depth() {
             return;
@@ -37,7 +39,7 @@ impl Ray {
             match intersection.texture {
                 Texture::Diffusive(color) => {
                     self.collisions.push(color);
-                    let direction = self.reflective_direction(normal, 0.9);
+                    let direction = self.diffuse_reflection_direction(normal);
                     if direction.near_zero() {
                         self.diffusive(origin, normal, scene);
                     } else {
@@ -84,7 +86,9 @@ impl Ray {
         closest_intersection
     }
 
-    /*
+    /// ### diffuse_reflection_direction
+    ///
+    /// Generate a random direction for diffuse reflection on a hemisphere given a surface normal
     fn diffuse_reflection_direction(&self, normal: Normal) -> Direction {
         let mut rng = rand::thread_rng();
 
@@ -111,8 +115,9 @@ impl Ray {
         tangent_u * local_x + tangent_v * local_y + incident_ray * local_z
     }
 
-     */
-
+    /// ### reflective_direction
+    ///
+    /// Generate a direction within a range specified in `diffusion_range`
     fn reflective_direction(&self, normal: Normal, diffusion_range: f64) -> Direction {
         // Calculate the perfect reflection direction
         let perfect_reflection = self.direction - 2.0 * self.direction.dot(&normal) * normal;

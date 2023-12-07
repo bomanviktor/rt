@@ -36,21 +36,23 @@ impl Cube {
 }
 
 impl Object for Cube {
+    /// Loops through the faces of the cube, finds the one with the closest intersection,
+    /// and returns the `Intersection`
     fn intersection(&self, ray: &Ray) -> Option<Intersection> {
         let mut closest_distance = f64::MAX;
         let mut hit_point = Point::default();
 
         let half_size = self.size / 2.0;
         let (x, y, z) = (0, 1, 2);
-        let (pos, neg) = (1.0, -1.0);
 
         // Check intersections with each face of the cube
         for axis in [x, y, z] {
-            for sign in [pos, neg] {
+            for sign in [1.0, -1.0] {
                 let mut normal = Normal::default();
                 normal[axis] = sign;
                 let face_center = self.center + half_size * normal;
 
+                // Catch degenerate reflections
                 let denom = normal.dot(&ray.direction);
                 if denom.abs() <= 1e-6 {
                     continue;
@@ -58,6 +60,7 @@ impl Object for Cube {
                 let face_center_to_origin = face_center - ray.origin;
                 let distance = face_center_to_origin.dot(&normal) / denom;
 
+                // Also catch degenerate reflections
                 if !(1e-6..ray.intersection_dist).contains(&distance) {
                     continue;
                 }
@@ -65,16 +68,18 @@ impl Object for Cube {
                 let point = ray.origin + distance * ray.direction;
                 let local_point = point - self.center;
 
-                // Check if point is within cube bounds
-                let small_offset = if matches!(self.texture, Texture::Reflective) {
-                    1.0 + 1e-8
-                } else {
-                    1.0 + f64::EPSILON
-                };
-
+                // Check if point is within cube bounds and that the distance
+                // is shorter than the previously closest distance
                 if local_point.iter().all(|&coord| coord.abs() <= half_size)
                     && distance < closest_distance
                 {
+                    // Add a small offset depending on texture
+                    let small_offset = if matches!(self.texture, Texture::Reflective) {
+                        1.0 + 1e-8
+                    } else {
+                        1.0 + f64::EPSILON
+                    };
+
                     // Update closest intersection
                     closest_distance = distance;
                     hit_point = point * small_offset;
@@ -83,15 +88,14 @@ impl Object for Cube {
         }
 
         if closest_distance < ray.intersection_dist {
-            let normal = self.normal(hit_point);
             Some(Intersection::new(
                 hit_point,
-                normal,
+                self.normal(hit_point),
                 closest_distance,
                 self.texture(),
             ))
         } else {
-            None
+            None // No intersection was found or closest intersection was too far away.
         }
     }
 

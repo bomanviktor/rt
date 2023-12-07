@@ -62,6 +62,7 @@ impl Object for Cylinder {
         let b = 2.0 * effective_origin.dot(&effective_direction);
         let c = effective_origin.dot(&effective_origin) - self.radius.powi(2);
 
+        // Check intersection on the cylindrical surface
         if let Some(discriminant) = discriminant(a, b, c) {
             let sqrt_discriminant = discriminant.sqrt();
             let dist_1 = (-b - sqrt_discriminant) / (2.0 * a);
@@ -76,15 +77,16 @@ impl Object for Cylinder {
                 let height = (point - bottom).dot(&axis);
 
                 if (0.0..=self.height).contains(&height) && dist < ray.intersection_dist {
-                    let normal = self.normal(point);
+                    // Add a small offset depending on texture
                     let offset = if matches!(self.texture, Texture::Reflective) {
                         1.0 + 1e-7
                     } else {
                         1.0
                     };
+
                     valid_intersections.push(Intersection::new(
                         point * offset,
-                        normal,
+                        self.normal(point),
                         dist,
                         self.texture,
                     ));
@@ -100,7 +102,7 @@ impl Object for Cylinder {
             valid_intersections.push(top_intersection);
         }
 
-        // Find the closest valid intersection
+        // Find the closest valid intersection. If no intersection was found. Return None.
         valid_intersections
             .into_iter()
             .min_by(|a, b| a.distance.partial_cmp(&b.distance).unwrap())
