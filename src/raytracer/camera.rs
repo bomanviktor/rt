@@ -1,20 +1,5 @@
-use crate::color::Color;
-use crate::config::{Pixels, Point};
-use crate::raytracer::{Ray, Resolution, Scene};
-use nalgebra::Vector3;
-use rand::Rng;
-use rayon::prelude::*;
-use std::io::Write;
-use std::sync::Arc;
-
-const DEFAULT_CAMERA_POSITION: Point = Point::new(1.0, 0.5, 0.0);
-const DEFAULT_SAMPLE_SIZE: u16 = 50;
-const DEFAULT_FOCAL_LENGTH: f64 = 0.5;
-const DEFAULT_SENSOR_WIDTH: f64 = 1.0;
-
-const DEFAULT_UP_DIRECTION: Point = Point::new(0.0, 1.0, 0.0);
-
-const DEFAULT_RESOLUTION: Resolution = (1600, 900);
+use crate::config::camera::*;
+use crate::type_aliases::{Color, Direction};
 
 #[derive(Debug)]
 pub struct Camera {
@@ -32,8 +17,8 @@ pub struct Camera {
 
 impl Camera {
     pub fn send_rays(&mut self, scene: Arc<Scene>) {
-        let (w, h) = self.resolution;
-        let total_pixels = (w * h) as usize;
+        let (width, height) = self.resolution;
+        let total_pixels = (width * height) as usize;
 
         // Pre-allocate a vector with default Color values
         let mut colors = vec![Vector3::default(); total_pixels];
@@ -42,24 +27,33 @@ impl Camera {
         colors
             .par_iter_mut()
             .enumerate()
-            .for_each(|(i, pixel_color)| {
-                let x = i as u32 % w;
-                let y = i as u32 / w;
-                let mut color = Vector3::new(0.0, 0.0, 0.0);
+            .for_each(|(pixel, pixel_color)| {
+                let column = pixel as u32 % width;
+                let row = (total_pixels - pixel) as u32 / width;
+                let mut total_color = Color::black();
 
                 for _sample in 0..self.sample_size {
-                    let dir = self.ray_direction(x, y);
-                    let mut ray = Ray::new(self.position, dir);
+                    let direction = self.ray_direction(column, row);
+                    let mut ray = Ray::new(self.position, direction, 0);
 
-                    ray.trace(&scene, 0);
+                    ray.trace(&scene); // Recursive ray tracing with default 50 depth.
+
                     if ray.collisions.is_empty() {
+                        let rgb = 255. * scene.brightness;
+                        let background_color = Vector3::new(rgb, rgb, rgb);
+                        total_color += background_color; // No collision, add void color.
                         continue;
                     }
 
-                    color += ray.average_color();
+                    if ray.hit_light_source {
+                        total_color += ray.average_color(&scene);
+                    } else {
+                        total_color += ray.average_color(&scene) * scene.brightness
+                    }
                 }
 
-                *pixel_color = color / self.sample_size as f64;
+                // Set the current pixel to the average color of the samples.
+                *pixel_color = total_color / self.sample_size as f64;
             });
 
         // Update the camera's pixels
@@ -79,7 +73,7 @@ impl Camera {
             .map(|row| {
                 row.iter()
                     .map(|pixel| {
-                        let corrected = pixel.correct_gamma(2.2);
+                        let corrected = pixel.correct_gamma(2.0);
                         format!("{} {} {}", corrected.r(), corrected.g(), corrected.b())
                     })
                     .collect::<Vec<String>>()
@@ -135,6 +129,56 @@ impl CameraBuilder {
         }
     }
 
+    pub fn build(&self) -> Camera {
+        let fov = 2.0
+            * ((self.sensor_width.unwrap_or(DEFAULT_SENSOR_WIDTH)
+                / (2.0 * self.focal_length.unwrap_or(DEFAULT_FOCAL_LENGTH)))
+            .atan());
+
+        let (width, height) = self.resolution.unwrap_or(DEFAULT_RESOLUTION);
+
+        Camera {
+            sample_size: self.sample_size.unwrap_or(DEFAULT_SAMPLE_SIZE),
+            position: self.position.unwrap_or(DEFAULT_CAMERA_POSITION),
+            look_at: self.look_at.unwrap_or_default(), // 0,0,0 is the default
+            up_direction: self.adjusted_up_direction(),
+            fov,
+            resolution: self.resolution.unwrap_or(DEFAULT_RESOLUTION),
+            aspect_ratio: width as f64 / height as f64,
+            focal_length: self.focal_length.unwrap_or(DEFAULT_FOCAL_LENGTH),
+            sensor_width: self.sensor_width.unwrap_or(DEFAULT_SENSOR_WIDTH),
+            pixels: Vec::new(),
+        }
+    }
+
+    fn adjusted_up_direction(&self) -> Direction {
+        let mut camera_position = self.position.unwrap_or(DEFAULT_CAMERA_POSITION);
+
+        if camera_position.x == 0.0 && camera_position.z == 0.0 {
+            camera_position.z = 0.1;
+        }
+
+        let look_at_position = self.look_at.unwrap_or_default();
+
+        // Step 1: Compute Look Direction
+        let look_direction = look_at_position - camera_position;
+
+        // Step 2: Normalize the Look Direction
+        let normalized_look_direction = look_direction.normalize();
+
+        // Step 3: Define Up Direction (Positive Y)
+        let up_direction = -Vector3::y().normalize();
+
+        // Step 4: Compute Right Direction
+        let right_direction = normalized_look_direction.cross(&up_direction);
+
+        // Step 5: Normalize the Right Direction
+        let normalized_right_direction = right_direction.normalize();
+
+        // Step 6: Compute Final Up Direction
+        normalized_look_direction.cross(&normalized_right_direction)
+    }
+
     pub fn sample_size(&mut self, sample_size: u16) -> &mut Self {
         self.sample_size = Some(sample_size);
         self
@@ -142,15 +186,6 @@ impl CameraBuilder {
 
     pub fn position_by_coordinates(&mut self, position: Point) -> &mut Self {
         self.position = Some(position);
-        self
-    }
-
-    pub fn position_by_degrees(
-        &mut self,
-        _horizontal_degrees: f64,
-        _vertical_degrees: f64,
-    ) -> &mut Self {
-        self.look_at = None; // This is to trigger the default option in the builder
         self
     }
 
@@ -163,12 +198,8 @@ impl CameraBuilder {
         self
     }
 
-    pub fn up_direction_by_rotation(&mut self, _rotation: f64) -> &mut Self {
-        self
-    }
-
-    pub fn resolution(&mut self, resolution: Resolution) -> &mut Self {
-        self.resolution = Some(resolution);
+    pub fn resolution(&mut self, w: u32, h: u32) -> &mut Self {
+        self.resolution = Some((w, h) as Resolution);
         self
     }
 
@@ -180,25 +211,5 @@ impl CameraBuilder {
     pub fn sensor_width(&mut self, sensor_width: f64) -> &mut Self {
         self.sensor_width = Some(sensor_width);
         self
-    }
-
-    pub fn build(&self) -> Camera {
-        let fov = 2.0
-            * ((self.sensor_width.unwrap_or(DEFAULT_SENSOR_WIDTH)
-                / (2.0 * self.focal_length.unwrap_or(DEFAULT_FOCAL_LENGTH)))
-            .atan());
-        let (width, height) = self.resolution.unwrap_or(DEFAULT_RESOLUTION);
-        Camera {
-            sample_size: self.sample_size.unwrap_or(DEFAULT_SAMPLE_SIZE),
-            position: self.position.unwrap_or(DEFAULT_CAMERA_POSITION),
-            look_at: self.look_at.unwrap_or_default(), // 0,0,0 is the default
-            up_direction: self.up_direction.unwrap_or(DEFAULT_UP_DIRECTION),
-            fov,
-            resolution: self.resolution.unwrap_or(DEFAULT_RESOLUTION),
-            aspect_ratio: width as f64 / height as f64,
-            focal_length: self.focal_length.unwrap_or(DEFAULT_FOCAL_LENGTH),
-            sensor_width: self.sensor_width.unwrap_or(DEFAULT_SENSOR_WIDTH),
-            pixels: Vec::new(),
-        }
     }
 }

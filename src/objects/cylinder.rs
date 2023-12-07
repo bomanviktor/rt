@@ -1,9 +1,7 @@
-use crate::config::Point;
+use super::Texture;
 use crate::objects::{discriminant, FlatPlane, Intersection, Object};
 use crate::raytracer::Ray;
-use nalgebra::Vector3;
-
-use super::Texture;
+use crate::type_aliases::{Direction, Directions, Normal, Point};
 
 #[derive(Debug)]
 pub struct Cylinder {
@@ -12,23 +10,15 @@ pub struct Cylinder {
     pub height: f64,
     pub bottom: FlatPlane,
     pub top: FlatPlane,
-    pub color: Vector3<f64>,
     pub texture: Texture,
 }
 
 impl Cylinder {
-    pub fn new(
-        center: Point,
-        radius: f64,
-        height: f64,
-        color: Vector3<f64>,
-        texture: Texture,
-    ) -> Self {
-        let bottom = FlatPlane::new(center, radius, color, texture);
+    pub fn new(center: Point, radius: f64, height: f64, texture: Texture) -> Self {
+        let bottom = FlatPlane::new(center, radius, texture);
         let top = FlatPlane::new(
-            Vector3::new(center.x, center.y + height, center.z),
+            Point::new(center.x, center.y + height, center.z),
             radius,
-            color,
             texture,
         );
         Self {
@@ -37,16 +27,29 @@ impl Cylinder {
             height,
             bottom,
             top,
-            color,
             texture,
+        }
+    }
+
+    fn normal(&self, point: Point) -> Normal {
+        // Determine if the point is on the top or bottom cap
+        if (point - self.top.center).norm() <= self.radius {
+            Normal::up() // Normal for the top cap
+        } else if (point - self.bottom.center).norm() <= self.radius {
+            Normal::down() // Normal for the bottom cap
+        } else {
+            // Normal for the cylindrical surface
+            let axis = Direction::down();
+            let projection = axis * (point - self.center).dot(&axis);
+            (point - self.center - projection).normalize()
         }
     }
 }
 
 impl Object for Cylinder {
-    fn intersection(&self, ray: &Ray) -> Intersection {
+    fn intersection(&self, ray: &Ray) -> Option<Intersection> {
         let bottom = self.bottom.center;
-        let axis = Vector3::new(0.0, 1.0, 0.0); // Cylinder aligned along Y-axis
+        let axis = Direction::up(); // Cylinder aligned along Y-axis
         let mut valid_intersections = Vec::new();
 
         // Check intersection with cylindrical surface
@@ -73,7 +76,18 @@ impl Object for Cylinder {
                 let height = (point - bottom).dot(&axis);
 
                 if (0.0..=self.height).contains(&height) && dist < ray.intersection_dist {
-                    valid_intersections.push((point, dist));
+                    let normal = self.normal(point);
+                    let offset = if matches!(self.texture, Texture::Reflective) {
+                        1.0 + 1e-7
+                    } else {
+                        1.0
+                    };
+                    valid_intersections.push(Intersection::new(
+                        point * offset,
+                        normal,
+                        dist,
+                        self.texture,
+                    ));
                 }
             }
         }
@@ -89,26 +103,9 @@ impl Object for Cylinder {
         // Find the closest valid intersection
         valid_intersections
             .into_iter()
-            .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
+            .min_by(|a, b| a.distance.partial_cmp(&b.distance).unwrap())
     }
 
-    fn normal_at(&self, _ray: &Ray, point: Point) -> Vector3<f64> {
-        // Determine if the point is on the top or bottom cap
-        if (point - self.top.center).norm() <= self.radius {
-            Vector3::new(0.0, 1.0, 0.0) // Normal for the top cap
-        } else if (point - self.bottom.center).norm() <= self.radius {
-            Vector3::new(0.0, -1.0, 0.0) // Normal for the bottom cap
-        } else {
-            // Normal for the cylindrical surface
-            let axis = Vector3::new(0.0, -1.0, 0.0);
-            let projection = axis * (point - self.center).dot(&axis);
-            (point - self.center - projection).normalize()
-        }
-    }
-
-    fn color(&self) -> Vector3<f64> {
-        self.color
-    }
     fn texture(&self) -> Texture {
         self.texture
     }
@@ -116,6 +113,6 @@ impl Object for Cylinder {
         self.center
     }
     fn is_light(&self) -> bool {
-        self.texture == Texture::Light
+        matches!(self.texture, Texture::Light(_))
     }
 }
