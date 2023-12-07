@@ -48,17 +48,7 @@ comboboxtext {
     border: 1px solid #aaa;
     border-radius: 4px;
 }
-.antialiasing-label {
-    font-weight: bold;
-    color: blue;
-}
 
-.antialiasing-check {
-    background-image: none;
-    background-color: lightgray;
-    border-radius: 5px;
-    padding: 5px;
-}
 .about-button { 
     border-radius: 15px; 
     background-image: none;

@@ -15,7 +15,7 @@ pub fn create_sphere_section(
         .load_from_path("src/gui/style.css")
         .expect("Failed to load CSS");
 
-    let sphere_count = app_state.borrow().spheres.len();
+    let sphere_count = app_state.borrow().spheres.len() + 1;
     let unique_id = format!("sphere_{}", sphere_count); // Generate unique ID
 
     let grid = gtk::Grid::new();
@@ -65,6 +65,7 @@ pub fn create_sphere_section(
     material_selector.append_text("Diffusive");
     material_selector.append_text("Glossy");
     material_selector.append_text("Reflective");
+    material_selector.append_text("Light");
     material_selector.set_active(Some(0));
     grid.attach(&material_selector, 0, 10, 1, 1); // Column 0, Row 10
 
@@ -204,7 +205,7 @@ pub fn create_cylinder_section(
         .load_from_path("src/gui/style.css")
         .expect("Failed to load CSS");
 
-    let cylinder_count = app_state.borrow().cylinders.len();
+    let cylinder_count = app_state.borrow().cylinders.len() + 1;
     let unique_id = format!("cylinder_{}", cylinder_count); // Generate unique ID
     println!("Creating cylinder section with ID: {}", unique_id); // Debug print for cylinder ID
 
@@ -273,6 +274,7 @@ pub fn create_cylinder_section(
     material_selector.append_text("Diffusive");
     material_selector.append_text("Glossy");
     material_selector.append_text("Reflective");
+    material_selector.append_text("Light");
     material_selector.set_active(Some(0));
     grid.attach(&material_selector, 0, 12, 1, 1); // Column 0, Row 12
 
@@ -412,7 +414,7 @@ pub fn create_cube_section(
         .load_from_path("src/gui/style.css")
         .expect("Failed to load CSS");
 
-    let cube_count = app_state.borrow().cubes.len();
+    let cube_count = app_state.borrow().cubes.len() + 1;
     let unique_id = format!("cube_{}", cube_count); // Generate unique ID
 
     let grid = gtk::Grid::new();
@@ -460,6 +462,7 @@ pub fn create_cube_section(
     material_selector.append_text("Diffusive");
     material_selector.append_text("Glossy");
     material_selector.append_text("Reflective");
+    material_selector.append_text("Light");
     material_selector.set_active(Some(0));
     grid.attach(&material_selector, 0, 10, 1, 1); // Column 0, Row 10
 
@@ -594,7 +597,7 @@ pub fn create_flat_plane_section(
         .load_from_path("src/gui/style.css")
         .expect("Failed to load CSS");
 
-    let flat_plane_count = app_state.borrow().flat_planes.len();
+    let flat_plane_count = app_state.borrow().flat_planes.len() + 1;
     let unique_id = format!("flat_plane_{}", flat_plane_count); // Generate unique ID
 
     let grid = gtk::Grid::new();
@@ -642,6 +645,7 @@ pub fn create_flat_plane_section(
     material_selector.append_text("Diffusive");
     material_selector.append_text("Glossy");
     material_selector.append_text("Reflective");
+    material_selector.append_text("Light");
     material_selector.set_active(Some(0));
     grid.attach(&material_selector, 0, 10, 1, 1); // Column 0, Row 10
 

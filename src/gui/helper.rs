@@ -26,10 +26,6 @@ pub fn update_scene_from_gui(app_state: Rc<RefCell<AppState>>) -> Scene {
     let app_state_borrowed = app_state.borrow();
     let mut objects: Objects = Vec::new();
 
-    let light = Sphere::new(Vector3::new(-5.0, 10.0, -10.0), 2.0, Light(Color::white()));
-
-    objects.push(Arc::new(light));
-
     // Creating Spheres
     for sphere_config in app_state_borrowed.spheres.iter() {
         let pos_x = sphere_config
@@ -70,6 +66,7 @@ pub fn update_scene_from_gui(app_state: Rc<RefCell<AppState>>) -> Scene {
             "Diffusive" => Diffusive(sphere_color),
             "Reflective" => Reflective,
             "Glossy" => Glossy(sphere_color),
+            "Light" => Light(sphere_color),
             // Add other cases as needed
             _ => Diffusive(sphere_color), // Default case
         };
@@ -123,6 +120,7 @@ pub fn update_scene_from_gui(app_state: Rc<RefCell<AppState>>) -> Scene {
             "Diffusive" => Diffusive(cylinder_color),
             "Reflective" => Reflective,
             "Glossy" => Glossy(cylinder_color),
+            "Light" => Light(cylinder_color),
             // Add other cases as needed
             _ => Diffusive(cylinder_color), // Default case
         };
@@ -175,6 +173,7 @@ pub fn update_scene_from_gui(app_state: Rc<RefCell<AppState>>) -> Scene {
             "Diffusive" => Diffusive(cube_color),
             "Reflective" => Reflective,
             "Glossy" => Glossy(cube_color),
+            "Light" => Light(cube_color),
             // Add other cases as needed
             _ => Diffusive(cube_color), // Default case
         };
@@ -222,6 +221,7 @@ pub fn update_scene_from_gui(app_state: Rc<RefCell<AppState>>) -> Scene {
             "Diffusive" => Diffusive(flat_plane_color),
             "Reflective" => Reflective,
             "Glossy" => Glossy(flat_plane_color),
+            "Light" => Light(flat_plane_color),
             // Add other cases as needed
             _ => Diffusive(flat_plane_color), // Default case
         };

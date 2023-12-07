@@ -101,7 +101,7 @@ pub fn launch_gui() {
     let scrolled_window = gtk::ScrolledWindow::new(gtk::NONE_ADJUSTMENT, gtk::NONE_ADJUSTMENT);
     match Pixbuf::from_file("src/gui/RT.png") {
         Ok(icon) => window.set_icon(Some(&icon)),
-        Err(err) => eprintln!("Failed to load icon: {}", err),
+        Err(err) => std::eprintln!("Failed to load icon: {}", err),
     }
 
     // About Dialog window
@@ -145,25 +145,155 @@ pub fn launch_gui() {
     scrolled_window.add(&vbox);
     window.add(&scrolled_window);
 
-    let render_button = Button::with_label("Render picture");
-    vbox.pack_start(&render_button, false, false, 0);
-    render_button
+    // Separator
+    let separator = Separator::new(Orientation::Horizontal);
+    vbox.pack_start(&separator, false, false, 10);
+
+    // Sample Size
+    let sample_size_label = gtk::Label::new(Some("Sample Size"));
+    sample_size_label
         .get_style_context()
-        .add_provider(&provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
+        .add_class("sample-size-label");
+    vbox.pack_start(&sample_size_label, false, false, 0);
 
-    // Define CSS styles for the message label
-    let red_style =
-        "<span foreground='red'>Invalid input detected. Please enter numbers in 0.0 format.</span>";
-    let green_style =
-        "<span foreground='green'>All inputs are valid. Proceeding with rendering.</span>";
+    let adjustment = gtk::Adjustment::new(1.0, 1.0, 10000.0, 1.0, 10.0, 0.0);
+    let sample_size_scale = gtk::Scale::new(gtk::Orientation::Horizontal, Some(&adjustment));
+    sample_size_scale.set_digits(0); // No decimal places
+    sample_size_scale.set_hexpand(true);
+    sample_size_scale.set_valign(gtk::Align::Start);
+    sample_size_scale.connect_scroll_event(|_, _| {
+        Inhibit(true) // This prevents the scale from being adjusted with the mouse scroll
+    });
+        vbox.pack_start(&sample_size_scale, false, true, 0);
 
-    // Create a label for displaying messages
-    let message_label = gtk::Label::new(None);
-    message_label.set_text("Ready"); // Default text
-    vbox.pack_start(&message_label, false, false, 10); // Adjust packing as needed
+    // Brightness
+    let adjustment = gtk::Adjustment::new(
+        0.5, // initial value
+        0.0, // minimum value
+        1.0, // maximum value
+        0.01, // step increment
+        0.01, // page increment
+        0.0, // page size
+    );
+    let brightness_label = gtk::Label::new(Some("Brightness"));
+    vbox.pack_start(&brightness_label, false, false, 0);
 
-    let show_image_button = Button::with_label("Show Image");
-    vbox.pack_start(&show_image_button, false, false, 0);
+    let brightness_entry = Scale::new(Orientation::Horizontal, Some(&adjustment));
+    brightness_entry.set_value(0.5); // Set a default value
+    brightness_entry.connect_scroll_event(|_, _| {
+        Inhibit(true) // This prevents the scale from being adjusted with the mouse scroll
+    });
+    vbox.pack_start(&brightness_entry, false, false, 0);
+
+    let app_state_clone = app_state.clone();
+
+    brightness_entry.connect_value_changed(move |scale| {
+        let brightness_value = scale.get_value();
+        app_state_clone.borrow_mut().brightness = brightness_value;
+        // Optionally, you can also do some real-time updates or logging here
+        std::println!("Brightness adjusted to: {}", brightness_value);
+    });
+    //////////////////////////////////////////////////////////////////////////
+    // Camera Options
+    // Focal length
+    let focal_length_label = gtk::Label::new(Some("Focal length"));
+    focal_length_label
+        .get_style_context()
+        .add_class("sample-size-label");
+    vbox.pack_start(&focal_length_label, false, false, 0);
+
+    let adjustment = gtk::Adjustment::new(
+        0.1,
+        0.1,
+        5.0,
+        0.1,
+        0.1,
+        0.0,
+    );
+    let focal_length_scale = Scale::new(gtk::Orientation::Horizontal, Some(&adjustment));
+    focal_length_scale.set_value(0.1);
+    focal_length_scale.set_hexpand(true);
+    focal_length_scale.set_valign(gtk::Align::Start);
+    focal_length_scale.connect_scroll_event(|_, _| {
+        Inhibit(true) // This prevents the scale from being adjusted with the mouse scroll
+    });
+    vbox.pack_start(&focal_length_scale, false, true, 0);
+
+
+    // Position
+    let camera_label = gtk::Label::new(Some("Camera Position:"));
+    vbox.pack_start(&camera_label, false, false, 0);
+
+    let x_coord = gtk::Label::new(Some("-- X-Coordinate --"));
+    vbox.pack_start(&x_coord, false, false, 0);
+
+    let cam_x_entry = Entry::new();
+    cam_x_entry.set_placeholder_text(Some("Default: 0"));
+    vbox.pack_start(&cam_x_entry, false, false, 0);
+
+    let y_coord = gtk::Label::new(Some("-- Y-Coordinate --"));
+    vbox.pack_start(&y_coord, false, false, 0);
+
+    let cam_y_entry = Entry::new();
+    cam_y_entry.set_placeholder_text(Some("Default: 1"));
+    vbox.pack_start(&cam_y_entry, false, false, 0);
+
+    let z_coord = gtk::Label::new(Some("-- Z-Coordinate --"));
+    vbox.pack_start(&z_coord, false, false, 0);
+
+    let cam_z_entry = Entry::new();
+    cam_z_entry.set_placeholder_text(Some("Default: 3"));
+    vbox.pack_start(&cam_z_entry, false, false, 0);
+
+    // Looking at
+    let camera_label = gtk::Label::new(Some("Looking at:"));
+    vbox.pack_start(&camera_label, false, false, 0);
+
+    let looking_at_x_coord = gtk::Label::new(Some("-- X-Coordinate --"));
+    vbox.pack_start(&looking_at_x_coord, false, false, 0);
+
+    let looking_at_x_entry = Entry::new();
+    looking_at_x_entry.set_placeholder_text(Some("Default: 0"));
+    vbox.pack_start(&looking_at_x_entry, false, false, 0);
+
+    let looking_at_y_coord = gtk::Label::new(Some("-- Y-Coordinate --"));
+    vbox.pack_start(&looking_at_y_coord, false, false, 0);
+
+    let looking_at_y_entry = Entry::new();
+    looking_at_y_entry.set_placeholder_text(Some("Default: 0"));
+    vbox.pack_start(&looking_at_y_entry, false, false, 0);
+
+    let looking_at_z_coord = gtk::Label::new(Some("-- Z-Coordinate --"));
+    vbox.pack_start(&looking_at_z_coord, false, false, 0);
+
+    let looking_at_z_entry = Entry::new();
+    looking_at_z_entry.set_placeholder_text(Some("Default: 0"));
+    vbox.pack_start(&looking_at_z_entry, false, false, 0);
+
+
+    //////////////////////////////////////////////////////////////////////////
+    let flow_box = gtk::FlowBox::new();
+
+    // Resolution Selection
+    let resolution_label = gtk::Label::new(Some("Resolution"));
+    vbox.pack_start(&resolution_label, false, false, 0);
+
+    let resolution_hbox = gtk::Box::new(Orientation::Horizontal, 5);
+    resolution_hbox.set_halign(gtk::Align::Center);
+
+    let width_entry = Entry::new();
+    width_entry.set_placeholder_text(Some("Width Default: 800"));
+    resolution_hbox.pack_start(&width_entry, false, false, 0);
+
+    let resolution_separator = gtk::Label::new(Some("x"));
+    resolution_hbox.pack_start(&resolution_separator, false, false, 0);
+
+    let height_entry = Entry::new();
+    height_entry.set_placeholder_text(Some("Height Default: 600"));
+    resolution_hbox.pack_start(&height_entry, false, false, 0);
+    vbox.pack_start(&resolution_hbox, false, false, 0);
+    vbox.pack_start(&flow_box, false, false, 0);
+
 
     // Create a horizontal box for the side-by-side buttons
     let hbox = gtk::Box::new(gtk::Orientation::Horizontal, 0);
@@ -196,7 +326,7 @@ pub fn launch_gui() {
     // Add the horizontal box to the vertical box
     vbox.pack_start(&hbox, false, false, 0);
 
-    let flow_box = gtk::FlowBox::new();
+
     flow_box.set_valign(gtk::Align::Start);
     flow_box.set_max_children_per_line(10); // Adjust as needed
     flow_box.set_selection_mode(gtk::SelectionMode::None);
@@ -217,93 +347,28 @@ pub fn launch_gui() {
         create_flat_plane_section(app_state.clone(), flow_box.clone());
     }));
 
-    // Separator
-    let separator = Separator::new(Orientation::Horizontal);
-    vbox.pack_start(&separator, false, false, 10);
 
-    // Sample Size
-    let sample_size_label = gtk::Label::new(Some("Sample Size"));
-    sample_size_label
+    let render_button = Button::with_label("Render picture");
+    vbox.pack_start(&render_button, false, false, 0);
+    render_button
         .get_style_context()
-        .add_class("sample-size-label");
-    vbox.pack_start(&sample_size_label, false, false, 0);
+        .add_provider(&provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
 
-    let adjustment = gtk::Adjustment::new(1.0, 1.0, 10000.0, 1.0, 10.0, 0.0);
-    let sample_size_scale = gtk::Scale::new(gtk::Orientation::Horizontal, Some(&adjustment));
-    sample_size_scale.set_digits(0); // No decimal places
-    sample_size_scale.set_hexpand(true);
-    sample_size_scale.set_valign(gtk::Align::Start);
-    vbox.pack_start(&sample_size_scale, false, true, 0);
+    // Define CSS styles for the message label
+    let red_style =
+        "<span foreground='red'>Invalid input detected. Please enter numbers in 0.0 format.</span>";
+    let green_style =
+        "<span foreground='green'>All inputs are valid. Proceeding with rendering.</span>";
 
-    // Brightness
-    let adjustment = gtk::Adjustment::new(
-        0.5, // initial value
-        0.0, // minimum value
-        1.0, // maximum value
-        0.1, // step increment
-        0.1, // page increment
-        0.0, // page size
-    );
-    let brightness_label = gtk::Label::new(Some("Brightness"));
-    vbox.pack_start(&brightness_label, false, false, 0);
+    // Create a label for displaying messages
+    let message_label = gtk::Label::new(None);
+    message_label.set_text("Ready"); // Default text
+    vbox.pack_start(&message_label, false, false, 10); // Adjust packing as needed
 
-    let brightness_entry = Scale::new(Orientation::Horizontal, Some(&adjustment));
-    brightness_entry.set_value(0.5); // Set a default value
-    vbox.pack_start(&brightness_entry, false, false, 0);
+    let show_image_button = Button::with_label("Show Image");
+    vbox.pack_start(&show_image_button, false, false, 0);
 
-    let app_state_clone = app_state.clone();
 
-    brightness_entry.connect_value_changed(move |scale| {
-        let brightness_value = scale.get_value();
-        app_state_clone.borrow_mut().brightness = brightness_value;
-        // Optionally, you can also do some real-time updates or logging here
-        println!("Brightness adjusted to: {}", brightness_value);
-    });
-
-    // Camera Options
-    let camera_label = gtk::Label::new(Some("Camera Position:"));
-    vbox.pack_start(&camera_label, false, false, 0);
-
-    let x_coord = gtk::Label::new(Some("-- X-Coordinate --"));
-    vbox.pack_start(&x_coord, false, false, 0);
-
-    let cam_x_entry = Entry::new();
-    cam_x_entry.set_placeholder_text(Some("Default: 0"));
-    vbox.pack_start(&cam_x_entry, false, false, 0);
-
-    let y_coord = gtk::Label::new(Some("-- Y-Coordinate --"));
-    vbox.pack_start(&y_coord, false, false, 0);
-
-    let cam_y_entry = Entry::new();
-    cam_y_entry.set_placeholder_text(Some("Default: 1"));
-    vbox.pack_start(&cam_y_entry, false, false, 0);
-
-    let z_coord = gtk::Label::new(Some("-- Z-Coordinate --"));
-    vbox.pack_start(&z_coord, false, false, 0);
-
-    let cam_z_entry = Entry::new();
-    cam_z_entry.set_placeholder_text(Some("Default: 3"));
-    vbox.pack_start(&cam_z_entry, false, false, 0);
-
-    // Resolution Selection
-    let resolution_label = gtk::Label::new(Some("Resolution"));
-    vbox.pack_start(&resolution_label, false, false, 0);
-
-    let resolution_hbox = gtk::Box::new(Orientation::Horizontal, 5);
-    resolution_hbox.set_halign(gtk::Align::Center);
-
-    let width_entry = Entry::new();
-    width_entry.set_placeholder_text(Some("Width Default: 800"));
-    resolution_hbox.pack_start(&width_entry, false, false, 0);
-
-    let resolution_separator = gtk::Label::new(Some("x"));
-    resolution_hbox.pack_start(&resolution_separator, false, false, 0);
-
-    let height_entry = Entry::new();
-    height_entry.set_placeholder_text(Some("Height Default: 600"));
-    resolution_hbox.pack_start(&height_entry, false, false, 0);
-    vbox.pack_start(&resolution_hbox, false, false, 0);
-    vbox.pack_start(&flow_box, false, false, 0);
 
     let brightness_entry_clone = brightness_entry.clone();
     let sample_size_scale_clone = sample_size_scale.clone();
@@ -422,29 +487,38 @@ pub fn launch_gui() {
         println!("Sample size: {}", sample_size_scale_clone.get_value());
         println!("Camera X Position: {}", cam_x_entry_clone.get_text());
         println!("Camera Y Position: {}", cam_y_entry_clone.get_text());
-        println!("Camera Angle: {}", cam_z_entry_clone.get_text());
+        println!("Camera Z Position: {}", cam_z_entry_clone.get_text());
         println!("Resolution Width: {}", width_entry_clone.get_text());
         println!("Resolution Height: {}", height_entry_clone.get_text());
 
         let mut cam_x = 0.0;
         let mut cam_y = 0.0;
         let mut cam_z = 0.0;
+        let mut look_at_x = 0.0;
+        let mut look_at_y = 0.0;
+        let mut look_at_z = 0.0;
         let mut width = 0;
         let mut height = 0;
 
 
         let sample_size = sample_size_scale_clone.get_value() as u16;
-
-        if let (Ok(x), Ok(y), Ok(z), Ok(w), Ok(h)) = (
+        let focal_length = focal_length_scale.get_value() as f64;
+        if let (Ok(x), Ok(y), Ok(z), Ok(look_x), Ok(look_y), Ok(look_z), Ok(w), Ok(h)) = (
             cam_x_entry_clone.get_text().parse::<f64>(),
             cam_y_entry_clone.get_text().parse::<f64>(),
             cam_z_entry_clone.get_text().parse::<f64>(),
+            looking_at_x_entry.get_text().parse::<f64>(),
+            looking_at_y_entry.get_text().parse::<f64>(),
+            looking_at_z_entry.get_text().parse::<f64>(),
             width_entry_clone.get_text().parse::<u32>(),
             height_entry_clone.get_text().parse::<u32>(),
         ) {
             cam_x = x;
             cam_y = y;
             cam_z = z;
+            look_at_x = look_x;
+            look_at_y = look_y;
+            look_at_z = look_z;
             width = w;
             height = h;
         } else {
@@ -463,9 +537,8 @@ pub fn launch_gui() {
                 let mut camera = CameraBuilder::new()
                 .sample_size(sample_size)
                 .position_by_coordinates(Vector3::new(cam_x, cam_y, cam_z))
-                .look_at(Vector3::new(0.0, 0.0, 0.0))
-                .up_direction_by_coordinates(Vector3::new(0.0, 1.0, 0.0))
-                .focal_length(0.5)
+                .look_at(Vector3::new(look_at_x, look_at_y, look_at_z))
+                .focal_length(focal_length)
                 .resolution(width, height)
                 .sensor_width(1.0)
                 .build();
