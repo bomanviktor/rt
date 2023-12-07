@@ -1,10 +1,5 @@
-use crate::gui::interface::{AppState, CubeConfig, CylinderConfig, SphereConfig};
-use crate::gui::FlatPlaneConfig;
-use glib::clone;
-use gtk::{prelude::*, Button, ComboBoxText, CssProvider, Entry};
+use crate::gui::*;
 use rand::Rng;
-use std::cell::RefCell;
-use std::rc::Rc;
 
 pub fn create_sphere_section(
     app_state: Rc<RefCell<AppState>>,
@@ -404,7 +399,6 @@ pub fn create_cylinder_section(
     grid.upcast::<gtk::Widget>() // Return the grid as a generic widget
 }
 
-//Todo: refine this function
 pub fn create_cube_section(
     app_state: Rc<RefCell<AppState>>,
     flow_box: gtk::FlowBox,
@@ -740,7 +734,6 @@ pub fn create_flat_plane_section(
 
     flow_box.add(&grid); // Directly add the grid to the flow_box
     flow_box.show_all();
-    print!("Added GUI element with ID: '{}'", unique_id); // Debug print for flat_plane ID
 
     grid.upcast::<gtk::Widget>() // Return the grid as a generic widget
 }

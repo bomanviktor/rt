@@ -4,22 +4,8 @@ use crate::raytracer::Scene;
 use crate::textures::Texture::*;
 use crate::type_aliases::Color;
 use gtk::{ColorChooserExt, ComboBoxTextExt, EntryExt};
-use nalgebra::Vector3;
-use std::cell::RefCell;
-use std::rc::Rc;
-use std::sync::Arc;
 
-// Function to validate position entries
-pub fn is_valid_float(input: &str) -> bool {
-    // Check if the input is a valid floating-point number
-    let is_float = input.parse::<f64>().is_ok();
-
-    // Check if the input contains a decimal point
-    let has_decimal_point = input.contains('.');
-
-    // The input is valid if it's a float and contains a decimal point
-    is_float && has_decimal_point
-}
+use crate::gui::{Arc, Rc, RefCell, Vector3};
 
 pub fn update_scene_from_gui(app_state: Rc<RefCell<AppState>>) -> Scene {
     let app_state_borrowed = app_state.borrow();

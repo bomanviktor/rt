@@ -1,20 +1,6 @@
-use gdk_pixbuf::Pixbuf;
-use glib::clone;
-use glib::signal::Inhibit;
-use gtk::{prelude::*, Image};
-use gtk::{
-    Box as GtkBox, Button, ComboBoxText, CssProvider, Entry, Orientation, Scale, Separator, Window,
-    WindowType,
-};
-use nalgebra::Vector3;
-use std::cell::RefCell;
-use std::rc::Rc;
-use std::sync::Arc;
-
-use crate::gui::helper::{is_valid_float, update_scene_from_gui};
-use crate::gui::sections::{
-    create_cube_section, create_cylinder_section, create_flat_plane_section, create_sphere_section,
-};
+use crate::gui::components::*;
+use crate::gui::components::{add_coordinate_widgets, add_resolution_box};
+use crate::gui::*;
 use crate::raytracer::CameraBuilder;
 
 pub struct AppState {
@@ -214,78 +200,36 @@ pub fn launch_gui() {
     });
     vbox.pack_start(&focal_length_scale, false, true, 0);
 
-    // Position
-    let camera_label = gtk::Label::new(Some("Camera Position:"));
-    vbox.pack_start(&camera_label, false, false, 0);
-
-    let x_coord = gtk::Label::new(Some("-- X-Coordinate --"));
-    vbox.pack_start(&x_coord, false, false, 0);
-
-    let cam_x_entry = Entry::new();
-    cam_x_entry.set_placeholder_text(Some("Default: 0"));
-    vbox.pack_start(&cam_x_entry, false, false, 0);
-
-    let y_coord = gtk::Label::new(Some("-- Y-Coordinate --"));
-    vbox.pack_start(&y_coord, false, false, 0);
-
-    let cam_y_entry = Entry::new();
-    cam_y_entry.set_placeholder_text(Some("Default: 1"));
-    vbox.pack_start(&cam_y_entry, false, false, 0);
-
-    let z_coord = gtk::Label::new(Some("-- Z-Coordinate --"));
-    vbox.pack_start(&z_coord, false, false, 0);
-
-    let cam_z_entry = Entry::new();
-    cam_z_entry.set_placeholder_text(Some("Default: 3"));
-    vbox.pack_start(&cam_z_entry, false, false, 0);
+    // Camera position
+    let (cam_x_entry, cam_y_entry, cam_z_entry) = add_coordinate_widgets(
+        &vbox,
+        "Camera Position:",
+        ["Default: 0.0", "Default: 0.0", "Default: 0.0"],
+    );
 
     // Looking at
-    let camera_label = gtk::Label::new(Some("Looking at:"));
-    vbox.pack_start(&camera_label, false, false, 0);
+    let (look_at_x_entry, look_at_y_entry, look_at_z_entry) = add_coordinate_widgets(
+        &vbox,
+        "Looking at:",
+        ["Default: 0.0", "Default: 0.0", "Default: 0.0"],
+    );
 
-    let looking_at_x_coord = gtk::Label::new(Some("-- X-Coordinate --"));
-    vbox.pack_start(&looking_at_x_coord, false, false, 0);
+    /*
+           cam_x_entry_clone.get_text().parse::<f64>(),
+           cam_y_entry_clone.get_text().parse::<f64>(),
+           cam_z_entry_clone.get_text().parse::<f64>(),
+           looking_at_x_entry.get_text().parse::<f64>(),
+           looking_at_y_entry.get_text().parse::<f64>(),
+           looking_at_z_entry.get_text().parse::<f64>(),
+           width_entry_clone.get_text().parse::<u32>(),
+           height_entry_clone.get_text().parse::<u32>(),
+    */
 
-    let looking_at_x_entry = Entry::new();
-    looking_at_x_entry.set_placeholder_text(Some("Default: 0"));
-    vbox.pack_start(&looking_at_x_entry, false, false, 0);
-
-    let looking_at_y_coord = gtk::Label::new(Some("-- Y-Coordinate --"));
-    vbox.pack_start(&looking_at_y_coord, false, false, 0);
-
-    let looking_at_y_entry = Entry::new();
-    looking_at_y_entry.set_placeholder_text(Some("Default: 0"));
-    vbox.pack_start(&looking_at_y_entry, false, false, 0);
-
-    let looking_at_z_coord = gtk::Label::new(Some("-- Z-Coordinate --"));
-    vbox.pack_start(&looking_at_z_coord, false, false, 0);
-
-    let looking_at_z_entry = Entry::new();
-    looking_at_z_entry.set_placeholder_text(Some("Default: 0"));
-    vbox.pack_start(&looking_at_z_entry, false, false, 0);
-
-    //////////////////////////////////////////////////////////////////////////
     let flow_box = gtk::FlowBox::new();
+    let resolution_hbox = gtk::Box::new(Orientation::Horizontal, 5);
 
     // Resolution Selection
-    let resolution_label = gtk::Label::new(Some("Resolution"));
-    vbox.pack_start(&resolution_label, false, false, 0);
-
-    let resolution_hbox = gtk::Box::new(Orientation::Horizontal, 5);
-    resolution_hbox.set_halign(gtk::Align::Center);
-
-    let width_entry = Entry::new();
-    width_entry.set_placeholder_text(Some("Width Default: 800"));
-    resolution_hbox.pack_start(&width_entry, false, false, 0);
-
-    let resolution_separator = gtk::Label::new(Some("x"));
-    resolution_hbox.pack_start(&resolution_separator, false, false, 0);
-
-    let height_entry = Entry::new();
-    height_entry.set_placeholder_text(Some("Height Default: 600"));
-    resolution_hbox.pack_start(&height_entry, false, false, 0);
-    vbox.pack_start(&resolution_hbox, false, false, 0);
-    vbox.pack_start(&flow_box, false, false, 0);
+    let (width_entry, height_entry) = add_resolution_box(&vbox, &flow_box, &resolution_hbox);
 
     // Create a horizontal box for the side-by-side buttons
     let hbox = gtk::Box::new(gtk::Orientation::Horizontal, 0);
@@ -358,7 +302,6 @@ pub fn launch_gui() {
     let show_image_button = Button::with_label("Show Image");
     vbox.pack_start(&show_image_button, false, false, 0);
 
-    let brightness_entry_clone = brightness_entry.clone();
     let sample_size_scale_clone = sample_size_scale.clone();
     let cam_x_entry_clone = cam_x_entry.clone();
     let cam_y_entry_clone = cam_y_entry.clone();
@@ -379,105 +322,28 @@ pub fn launch_gui() {
 
     // Render Button
     render_button.connect_clicked(clone!(@strong app_state, @strong message_label => move |_| {
-        let mut all_inputs_valid = true;
         let app_state_borrowed = app_state.borrow();
+        let mut all_inputs_valid = true;
 
-    // Iterate and validate sphere inputs
-    for (index, sphere) in app_state_borrowed.spheres.iter().enumerate() {
-        let pos_x = sphere.pos_x_entry.borrow().get_text().to_string();
-        let pos_y = sphere.pos_y_entry.borrow().get_text().to_string();
-        let pos_z = sphere.pos_z_entry.borrow().get_text().to_string();
-        let radius = sphere.radius_entry.borrow().get_text().to_string();
-
-        // Check if inputs are valid floats
-        if !is_valid_float(&pos_x) || !is_valid_float(&pos_y) || !is_valid_float(&pos_z) || !is_valid_float(&radius) {
-            all_inputs_valid = false;
-            println!("Invalid input for Sphere {}: X: {}, Y: {}, Z: {}, Radius: {}", index + 1, pos_x, pos_y, pos_z, radius);
-            break; // Stop checking further if any invalid input is found
+        if !validate_spheres(&app_state_borrowed.spheres) {
+            message_label.set_markup("<span foreground='red'>Invalid sphere detected.</span>");
+            return;
         }
 
-        // Retrieve and print other properties
-        let material = sphere.material_selector.borrow().get_active_text().unwrap_or_else(|| "Lambertian".into());
-        let sphere_color = sphere.color_button.borrow().get_rgba();
-        let (r, g, b) = (sphere_color.red * 255.0, sphere_color.green * 255.0, sphere_color.blue * 255.0);
-        println!("Valid Sphere {}: X: {}, Y: {}, Z: {}, Radius: {}, Material: {}, Color: RGB({}, {}, {})", 
-                 index + 1, pos_x, pos_y, pos_z, radius, material, r as u8, g as u8, b as u8);
-    }
-
-
-    for (index, cylinder) in app_state_borrowed.cylinders.iter().enumerate() {
-        let pos_x = cylinder.pos_x_entry.borrow().get_text().to_string();
-        let pos_y = cylinder.pos_y_entry.borrow().get_text().to_string();
-        let pos_z = cylinder.pos_z_entry.borrow().get_text().to_string();
-        let radius = cylinder.radius_entry.borrow().get_text().to_string();
-        let height = cylinder.height_entry.borrow().get_text().to_string();
-
-        if !is_valid_float(&pos_x) || !is_valid_float(&pos_y) || !is_valid_float(&pos_z) ||
-           !is_valid_float(&radius) || !is_valid_float(&height) {
-            all_inputs_valid = false;
-            println!("Invalid input for Cylinder {}: X: {}, Y: {}, Z: {}, Radius: {}, Height: {}", index + 1, pos_x, pos_y, pos_z, radius, height);
-            break;
+        if !validate_cylinders(&app_state_borrowed.cylinders) {
+            message_label.set_markup("<span foreground='red'>Invalid cylinder detected.</span>");
+            return;
         }
 
-        let material = cylinder.material_selector.borrow().get_active_text().unwrap_or_else(|| "Lambertian".into());
-        let cylinder_color = cylinder.color_button.borrow().get_rgba();
-        let (r, g, b) = (cylinder_color.red * 255.0, cylinder_color.green * 255.0, cylinder_color.blue * 255.0);
-
-        println!("Cylinder {}: X: {}, Y: {}, Z: {}, Radius: {}, Height: {}, Material: {}, Color: RGB({}, {}, {})", 
-                 index + 1, pos_x, pos_y, pos_z, radius, height, material, r as u8, g as u8, b as u8);
-    }
-
-
-        for (index, cube) in app_state_borrowed.cubes.iter().enumerate() {
-            let pos_x = cube.pos_x_entry.borrow().get_text().to_string();
-            let pos_y = cube.pos_y_entry.borrow().get_text().to_string();
-            let pos_z = cube.pos_z_entry.borrow().get_text().to_string();
-            let radius = cube.radius_entry.borrow().get_text().to_string();
-
-        // Check if inputs are valid floats
-        if !is_valid_float(&pos_x) || !is_valid_float(&pos_y) || !is_valid_float(&pos_z) || !is_valid_float(&radius) {
-            all_inputs_valid = false;
-            println!("Invalid input for Cube {}: X: {}, Y: {}, Z: {}, Radius: {}", index + 1, pos_x, pos_y, pos_z, radius);
-            break; // Stop checking further if any invalid input is found
-        }
-            let material = cube.material_selector.borrow().get_active_text().unwrap_or_else(|| "Lambertian".into());
-            let cube_color = cube.color_button.borrow().get_rgba();
-            let (r, g, b) = (cube_color.red * 255.0, cube_color.green * 255.0, cube_color.blue * 255.0);
-
-            println!("Valid Cube{}: X: {}, Y: {}, Z: {}, Radius: {}, Material: {}, Color: RGB({}, {}, {})", 
-            index + 1, pos_x, pos_y, pos_z, radius, material, r as u8, g as u8, b as u8);
+        if !validate_cubes(&app_state_borrowed.cubes) {
+            message_label.set_markup("<span foreground='red'>Invalid cube detected.</span>");
+            return;
         }
 
-        for (index, flat_plane) in app_state_borrowed.flat_planes.iter().enumerate() {
-            let pos_x = flat_plane.pos_x_entry.borrow().get_text().to_string();
-            let pos_y = flat_plane.pos_y_entry.borrow().get_text().to_string();
-            let pos_z = flat_plane.pos_z_entry.borrow().get_text().to_string();
-            let radius = flat_plane.radius_entry.borrow().get_text().to_string();
-
-        // Check if inputs are valid floats
-        if !is_valid_float(&pos_x) || !is_valid_float(&pos_y) || !is_valid_float(&pos_z) || !is_valid_float(&radius) {
-            all_inputs_valid = false;
-            println!("Invalid input for Flat plane {}: X: {}, Y: {}, Z: {}, Radius: {}", index + 1, pos_x, pos_y, pos_z, radius);
-            break; // Stop checking further if any invalid input is found
+        if !validate_flat_planes(&app_state_borrowed.flat_planes) {
+            message_label.set_markup("<span foreground='red'>Invalid flat plane detected.</span>");
+            return;
         }
-
-            let material = flat_plane.material_selector.borrow().get_active_text().unwrap_or_else(|| "Lambertian".into());
-            let flat_plane_color = flat_plane.color_button.borrow().get_rgba();
-            let (r, g, b) = (flat_plane_color.red * 255.0, flat_plane_color.green * 255.0, flat_plane_color.blue * 255.0);
-
-            println!("Valid Flat Plane {}: X: {}, Y: {}, Z: {}, Radius: {}, Material: {}, Color: RGB({}, {}, {})", 
-            index + 1, pos_x, pos_y, pos_z, radius, material, r as u8, g as u8, b as u8);
-        }
-
-
-
-        println!("Brightness: {}", brightness_entry_clone.get_value());
-        println!("Sample size: {}", sample_size_scale_clone.get_value());
-        println!("Camera X Position: {}", cam_x_entry_clone.get_text());
-        println!("Camera Y Position: {}", cam_y_entry_clone.get_text());
-        println!("Camera Z Position: {}", cam_z_entry_clone.get_text());
-        println!("Resolution Width: {}", width_entry_clone.get_text());
-        println!("Resolution Height: {}", height_entry_clone.get_text());
 
         let mut cam_x = 0.0;
         let mut cam_y = 0.0;
@@ -495,9 +361,9 @@ pub fn launch_gui() {
             cam_x_entry_clone.get_text().parse::<f64>(),
             cam_y_entry_clone.get_text().parse::<f64>(),
             cam_z_entry_clone.get_text().parse::<f64>(),
-            looking_at_x_entry.get_text().parse::<f64>(),
-            looking_at_y_entry.get_text().parse::<f64>(),
-            looking_at_z_entry.get_text().parse::<f64>(),
+            look_at_x_entry.get_text().parse::<f64>(),
+            look_at_y_entry.get_text().parse::<f64>(),
+            look_at_z_entry.get_text().parse::<f64>(),
             width_entry_clone.get_text().parse::<u32>(),
             height_entry_clone.get_text().parse::<u32>(),
         ) {

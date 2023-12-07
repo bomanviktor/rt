@@ -303,13 +303,42 @@ pub mod color {
 }
 
 pub mod gui {
+    pub use gdk_pixbuf::Pixbuf;
+    pub use glib::clone;
+    pub use glib::signal::Inhibit;
+    pub use gtk::{prelude::*, Image};
+    pub use gtk::{
+        Box as GtkBox, Button, ComboBoxText, CssProvider, Entry, Orientation, Scale, Separator,
+        Window, WindowType,
+    };
+    pub use nalgebra::Vector3;
+    pub use std::cell::RefCell;
+    pub use std::rc::Rc;
+    pub use std::sync::Arc;
+
     pub mod interface;
     pub use interface::*;
-    pub mod sections;
-    pub use sections::*;
 
     pub mod helper;
     pub use helper::*;
+
+    pub mod validate;
+    pub use validate::*;
+
+    pub mod components {
+        pub use super::*;
+        pub mod camera;
+        pub use camera::*;
+
+        pub mod resolution;
+        pub use resolution::*;
+
+        pub mod objects;
+        pub use objects::*;
+
+        pub mod buttons;
+        pub use buttons::*;
+    }
 }
 
 pub mod raytracer {
