@@ -84,9 +84,9 @@ pub fn launch_gui() {
         .expect("Failed to load CSS");
 
     let window = Window::new(WindowType::Toplevel);
-    window.set_resizable(true); // Allows the window to be resized
+    window.set_resizable(false); // Allows the window to be resized
     window.set_decorated(true); // Allows the window to be decorated
-    window.set_title("Ray Tracing Settings");
+    window.set_title("Ray Trace Settings");
     window.set_default_size(800, 1000);
     window
         .get_style_context()
