@@ -1,10 +1,26 @@
+use crate::gui::components::text_box::*;
 use crate::gui::*;
+use gtk::{Box, FlowBox};
 use rand::Rng;
 
-pub fn create_sphere_section(
-    app_state: Rc<RefCell<AppState>>,
-    flow_box: gtk::FlowBox,
-) -> gtk::Widget {
+const MATERIALS: [&str; 4] = ["Diffusive", "Glossy", "Reflective", "Light"];
+fn append_materials(material_selector: &ComboBoxText) {
+    for material in MATERIALS {
+        material_selector.append_text(material);
+    }
+    material_selector.set_active(Some(0));
+}
+
+pub fn create_object_box(vertical_box: &Box) -> FlowBox {
+    let flow_box = FlowBox::new();
+    flow_box.set_valign(gtk::Align::Start);
+    flow_box.set_max_children_per_line(10);
+    flow_box.set_selection_mode(gtk::SelectionMode::None);
+    vertical_box.pack_start(&flow_box, false, false, 0);
+    flow_box
+}
+
+pub fn create_sphere_section(app_state: Rc<RefCell<AppState>>, flow_box: FlowBox) -> gtk::Widget {
     let provider = CssProvider::new();
     provider
         .load_from_path("src/gui/style.css")
@@ -19,49 +35,27 @@ pub fn create_sphere_section(
     print!("Setting grid ID: '{}'", grid.get_widget_name()); // Debug print for grid ID
     println!("Grid set with widget name: {}", unique_id); // Debug print for grid ID
 
-    let label_text = format!("Sphere {}:", sphere_count);
-    let sphere_label = gtk::Label::new(Some(&label_text));
-    grid.attach(&sphere_label, 0, 0, 1, 1); // Column 0, Row 0 (Sphere label)
-
-    let pos_x_label = gtk::Label::new(Some("X Position"));
-    grid.attach(&pos_x_label, 0, 1, 1, 1); // Column 0, Row 1 (X Position label)
-
-    let pos_x_entry = Entry::new();
-    pos_x_entry.set_text("0.0"); // Set default text
-    grid.attach(&pos_x_entry, 0, 2, 1, 1); // Column 0, Row 2 (X Position entry)
-
-    let pos_y_label = gtk::Label::new(Some("Y Position"));
-    grid.attach(&pos_y_label, 0, 3, 1, 1); // Column 0, Row 3
-
-    let pos_y_entry = Entry::new();
-    pos_y_entry.set_text("0.0");
-    grid.attach(&pos_y_entry, 0, 4, 1, 1); // Column 0, Row 4
-
-    let pos_z_label = gtk::Label::new(Some("Z Position"));
-    grid.attach(&pos_z_label, 0, 5, 1, 1); // Column 0, Row 5
-
-    let pos_z_entry = Entry::new();
-    pos_z_entry.set_text("0.0");
-    grid.attach(&pos_z_entry, 0, 6, 1, 1); // Column 0, Row 6
-
-    // Radius Label and Entry
-    let radius_label = gtk::Label::new(Some("Radius"));
-    grid.attach(&radius_label, 0, 7, 1, 1); // Column 0, Row 7
-
-    let radius_entry = Entry::new();
-    radius_entry.set_text("1.0"); // Set default text
-    grid.attach(&radius_entry, 0, 8, 1, 1); // Column 0, Row 8
+    let placeholders = vec!["0.0", "0.0", "0.0", "1.0"];
+    let sphere_entries = add_coordinate_widgets_grid(
+        &grid,
+        &provider,
+        &format!("Sphere {sphere_count}:"),
+        &placeholders,
+    );
+    let pos_x_entry = &sphere_entries[0];
+    let pos_y_entry = &sphere_entries[1];
+    let pos_z_entry = &sphere_entries[2];
+    let radius_entry = &sphere_entries[3];
 
     // Material Selector Label and ComboBox
     let material_label = gtk::Label::new(Some("Material"));
     grid.attach(&material_label, 0, 9, 1, 1); // Column 0, Row 9
 
     let material_selector = ComboBoxText::new();
-    material_selector.append_text("Diffusive");
-    material_selector.append_text("Glossy");
-    material_selector.append_text("Reflective");
-    material_selector.append_text("Light");
-    material_selector.set_active(Some(0));
+    append_materials(&material_selector);
+
+    let style_context = material_selector.get_style_context();
+    style_context.add_provider(&provider, gtk::STYLE_PROVIDER_PRIORITY_USER);
     grid.attach(&material_selector, 0, 10, 1, 1); // Column 0, Row 10
 
     // Color Button Label and ColorPicker
@@ -70,16 +64,6 @@ pub fn create_sphere_section(
 
     let color_button = gtk::ColorButton::new();
     grid.attach(&color_button, 0, 12, 1, 1); // Column 0, Row 12
-
-    // Apply styles to ComboBoxText and Entries
-    let entries = vec![&pos_x_entry, &pos_y_entry, &pos_z_entry, &radius_entry];
-    for entry in entries {
-        let style_context = entry.get_style_context();
-        style_context.add_provider(&provider, gtk::STYLE_PROVIDER_PRIORITY_USER);
-    }
-
-    let style_context = material_selector.get_style_context();
-    style_context.add_provider(&provider, gtk::STYLE_PROVIDER_PRIORITY_USER);
 
     let sphere_config = SphereConfig {
         id: Rc::new(RefCell::new(sphere_count as u32)),
@@ -107,10 +91,10 @@ pub fn create_sphere_section(
         pos_x_entry_clone.set_text(&format!("{:.2}", rng.gen_range(-10.0..10.0)));
         pos_y_entry_clone.set_text(&format!("{:.2}", rng.gen_range(-10.0..10.0)));
         pos_z_entry_clone.set_text(&format!("{:.2}", rng.gen_range(-10.0..10.0)));
-        radius_entry_clone.set_text(&format!("{:.2}", rng.gen_range(0.1..5.0)));
+        radius_entry_clone.set_text(&format!("{:.2}", rng.gen_range(0.1..1.0)));
 
         // Randomly select a material
-        let materials = ["Lambertian", "Metal", "Dielectric"];
+        let materials = ["Diffusive", "Glossy", "Light"];
         let random_material_index = rng.gen_range(0..materials.len());
         material_selector_clone.set_active(Some(random_material_index as u32));
     });
@@ -123,60 +107,16 @@ pub fn create_sphere_section(
 
     // Connect the delete button click handler
     delete_button.connect_clicked(clone!(@strong app_state, @strong flow_box => move |_| {
-    let id_number = *delete_id.borrow();
-    let id = format!("sphere_{}", id_number);
-    println!("Attempting to delete sphere with ID: {}", id);
+    let id = format!("sphere_{}", *delete_id.borrow());
 
-    // Debug: Print current sphere IDs before deletion
-    println!("Current sphere IDs before deletion:");
-    for sphere in app_state.borrow().spheres.iter() {
-        println!("Sphere ID: {}", *sphere.id.borrow());
-    }
-    #[allow(unused_assignments)]
-    let mut deletion_successful = false;
-    {
-        let mut app_state = app_state.borrow_mut();
-        if let Some(index) = app_state.spheres.iter().position(|s| format!("sphere_{}", *s.id.borrow()) == id) {
-            app_state.spheres.remove(index);
-            deletion_successful = true;
-        } else {
-            eprintln!("Error: No sphere with ID {} found in app_state", id);
-            return;
-        }
-    }
-
-    // Debug: Inspect the children of flow_box before attempting deletion
-    println!("Inspecting GUI elements in flow_box before deletion:");
-    let children = flow_box.get_children();
-    for (index, child) in children.iter().enumerate() {
-        // Attempt to downcast the child to GtkFlowBoxChild
-        if let Some(flowbox_child) = child.downcast_ref::<gtk::FlowBoxChild>() {
-            if let Some(widget) = flowbox_child.get_child() {
-                let widget_name = widget.get_widget_name().to_string(); // Get the name of the widget inside the GtkFlowBoxChild
-                println!("Child {}: GUI element ID inside GtkFlowBoxChild: {}", index, widget_name);
-                println!("Child {}: Type: {}", index, widget);
-
-                if widget_name == id {
-                    flow_box.remove(child);
-                    deletion_successful = true;
-                    break;
-                }
-            }
-        }
-    }
-
-    if deletion_successful {
-        println!("Successfully deleted sphere with ID: {}", id);
+    let mut app_state = app_state.borrow_mut();
+    if let Some(index) = app_state.spheres.iter().position(|s| format!("sphere_{}", *s.id.borrow()) == id) {
+        app_state.spheres.remove(index);
     } else {
-        eprintln!("Error: GUI element for sphere with ID {} not found", id);
+        eprintln!("Error: No sphere with ID {} found in app_state", id);
+        return;
     }
-
-    // Borrow app_state again for reading
-    println!("Current sphere IDs after deletion:");
-    for sphere in app_state.borrow().spheres.iter() {
-        println!("Sphere ID: {}", *sphere.id.borrow());
-    }
-
+    delete_component(&flow_box, id);
     flow_box.show_all();
 }));
 
@@ -184,10 +124,6 @@ pub fn create_sphere_section(
 
     flow_box.add(&grid); // Directly add the grid to the flow_box
     flow_box.show_all();
-
-    // Debug: Print the ID of the created GUI element
-    println!("Added GUI element with ID: {}", unique_id);
-
     grid.upcast::<gtk::Widget>() // Return the grid as a generic widget
 }
 
@@ -207,88 +143,36 @@ pub fn create_cylinder_section(
     let grid = gtk::Grid::new();
     grid.set_column_spacing(5); // Adjust the spacing as needed
     grid.set_widget_name(&unique_id); // Set the ID of the grid
-
-    let label_text = format!("Cylinder {}:", cylinder_count);
-    let cylinder_label = gtk::Label::new(Some(&label_text));
-    grid.attach(&cylinder_label, 0, 0, 1, 1); // Column 0, Row 0
-
-    let pos_x_label = gtk::Label::new(Some("X Position"));
-    grid.attach(&pos_x_label, 0, 1, 1, 1); // Column 0, Row 1 (X Position label)
-
-    let pos_x_entry = Entry::new();
-    pos_x_entry.set_text("0.0"); // Set default text
-    grid.attach(&pos_x_entry, 0, 2, 1, 1); // Column 0, Row 2 (X Position entry)
-
-    let pos_y_label = gtk::Label::new(Some("Y Position"));
-    grid.attach(&pos_y_label, 0, 3, 1, 1); // Column 0, Row 3
-
-    let pos_y_entry = Entry::new();
-    pos_y_entry.set_text("0.0");
-    grid.attach(&pos_y_entry, 0, 4, 1, 1); // Column 0, Row 4
-
-    let pos_z_label = gtk::Label::new(Some("Z Position"));
-    grid.attach(&pos_z_label, 0, 5, 1, 1); // Column 0, Row 5
-
-    let pos_z_entry = Entry::new();
-    pos_z_entry.set_text("0.0");
-    grid.attach(&pos_z_entry, 0, 6, 1, 1); // Column 0, Row 6
-
-    // Radius Label and Entry
-    let radius_label = gtk::Label::new(Some("Radius"));
-    grid.attach(&radius_label, 0, 7, 1, 1); // Column 0, Row 7
-
-    let radius_entry = Entry::new();
-    radius_entry.set_text("1.0"); // Set default text
-    grid.attach(&radius_entry, 0, 8, 1, 1); // Column 0, Row 8
-
-    let height_label = gtk::Label::new(Some("Height"));
-    grid.attach(&height_label, 0, 9, 1, 1); // Column 0, Row 9
-    let height_entry = Entry::new();
-    height_entry.set_text("2.0"); // Set default text
-    height_entry.set_placeholder_text(Some("Height"));
-    grid.attach(&height_entry, 0, 10, 1, 1); // Column 0, Row 10
-
-    // Apply styles to entries
-    let entries = vec![
-        &pos_x_entry,
-        &pos_y_entry,
-        &pos_z_entry,
-        &radius_entry,
-        &height_entry,
-    ];
-    for entry in entries {
-        let style_context = entry.get_style_context();
-        style_context.add_provider(&provider, gtk::STYLE_PROVIDER_PRIORITY_USER);
-    }
+    let placeholders = vec!["0.0", "0.0", "0.0", "1.0", "2.0"];
+    let cylinder_entries = add_coordinate_widgets_grid(
+        &grid,
+        &provider,
+        &format!("Cylinder {cylinder_count}:"),
+        &placeholders,
+    );
+    let pos_x_entry = &cylinder_entries[0];
+    let pos_y_entry = &cylinder_entries[1];
+    let pos_z_entry = &cylinder_entries[2];
+    let radius_entry = &cylinder_entries[3];
+    let height_entry = &cylinder_entries[4];
 
     // Material Selector Label and ComboBox
     let material_label = gtk::Label::new(Some("Material"));
-    grid.attach(&material_label, 0, 11, 1, 1); // Column 0, Row 11
+    grid.attach(&material_label, 0, 11, 1, 1);
 
     let material_selector = ComboBoxText::new();
-    material_selector.append_text("Diffusive");
-    material_selector.append_text("Glossy");
-    material_selector.append_text("Reflective");
-    material_selector.append_text("Light");
-    material_selector.set_active(Some(0));
-    grid.attach(&material_selector, 0, 12, 1, 1); // Column 0, Row 12
-
-    // Color Button Label and ColorPicker
-    let color_label = gtk::Label::new(Some("Color"));
-    grid.attach(&color_label, 0, 13, 1, 1); // Column 0, Row 13
-
-    let color_button = gtk::ColorButton::new();
-    grid.attach(&color_button, 0, 14, 1, 1); // Column 0, Row 14
-
-    // Apply styles to ComboBoxText and Entries
-    let entries = vec![&pos_x_entry, &pos_y_entry, &pos_z_entry, &radius_entry];
-    for entry in entries {
-        let style_context = entry.get_style_context();
-        style_context.add_provider(&provider, gtk::STYLE_PROVIDER_PRIORITY_USER);
-    }
+    append_materials(&material_selector);
+    grid.attach(&material_selector, 0, 12, 1, 1);
 
     let style_context = material_selector.get_style_context();
     style_context.add_provider(&provider, gtk::STYLE_PROVIDER_PRIORITY_USER);
+
+    // Color Button Label and ColorPicker
+    let color_label = gtk::Label::new(Some("Color"));
+    grid.attach(&color_label, 0, 13, 1, 1);
+
+    let color_button = gtk::ColorButton::new();
+    grid.attach(&color_button, 0, 14, 1, 1);
 
     let cylinder_config = CylinderConfig {
         id: Rc::new(RefCell::new(cylinder_count as u32)),
@@ -321,7 +205,7 @@ pub fn create_cylinder_section(
         height_entry_clone.set_text(&format!("{:.2}", rng.gen_range(0.1..5.0)));
 
         // Randomly select a material
-        let materials = ["Lambertian", "Metal", "Dielectric"];
+        let materials = ["Diffusive", "Glossy", "Light"];
         let random_material_index = rng.gen_range(0..materials.len());
         material_selector_clone.set_active(Some(random_material_index as u32));
     });
@@ -333,60 +217,16 @@ pub fn create_cylinder_section(
 
     // Connect the delete button click handler
     delete_button.connect_clicked(clone!(@strong app_state, @strong flow_box => move |_| {
-        let id_number = *delete_id.borrow();
-        let id = format!("cylinder_{}", id_number);
-        println!("Attempting to delete cylinder with ID: {}", id);
+        let id = format!("cylinder_{}", *delete_id.borrow());
 
-        // Debug: Print current cylinder IDs before deletion
-        println!("Current cylinder IDs before deletion:");
-        for cylinder in app_state.borrow().cylinders.iter() {
-            println!("cylinder ID: {}", *cylinder.id.borrow());
-        }
-        #[allow(unused_assignments)]
-        let mut deletion_successful = false;
-        {
-            let mut app_state = app_state.borrow_mut();
-            if let Some(index) = app_state.cylinders.iter().position(|s| format!("cylinder_{}", *s.id.borrow()) == id) {
-                app_state.cylinders.remove(index);
-                deletion_successful = true;
-            } else {
-                eprintln!("Error: No cylinder with ID {} found in app_state", id);
-                return;
-            }
-        }
-
-        // Debug: Inspect the children of flow_box before attempting deletion
-        println!("Inspecting GUI elements in flow_box before deletion:");
-        let children = flow_box.get_children();
-        for (index, child) in children.iter().enumerate() {
-            // Attempt to downcast the child to GtkFlowBoxChild
-            if let Some(flowbox_child) = child.downcast_ref::<gtk::FlowBoxChild>() {
-                if let Some(widget) = flowbox_child.get_child() {
-                    let widget_name = widget.get_widget_name().to_string(); // Get the name of the widget inside the GtkFlowBoxChild
-                    println!("Child {}: GUI element ID inside GtkFlowBoxChild: {}", index, widget_name);
-                    println!("Child {}: Type: {}", index, widget);
-
-                    if widget_name == id {
-                        flow_box.remove(child);
-                        deletion_successful = true;
-                        break;
-                    }
-                }
-            }
-        }
-
-        if deletion_successful {
-            println!("Successfully deleted cylinder with ID: {}", id);
+        let mut app_state = app_state.borrow_mut();
+        if let Some(index) = app_state.cylinders.iter().position(|c| format!("cylinder_{}", *c.id.borrow()) == id) {
+            app_state.cylinders.remove(index);
         } else {
-            eprintln!("Error: GUI element for cylinder with ID {} not found", id);
+            eprintln!("Error: No cylinder with ID {} found in app_state", id);
+            return;
         }
-
-        // Borrow app_state again for reading
-        println!("Current cylinder IDs after deletion:");
-        for cylinder in app_state.borrow().cylinders.iter() {
-            println!("cylinder ID: {}", *cylinder.id.borrow());
-        }
-
+        delete_component(&flow_box, id);
         flow_box.show_all();
     }));
 
@@ -415,50 +255,28 @@ pub fn create_cube_section(
     grid.set_column_spacing(5); // Adjust the spacing as needed
     grid.set_widget_name(&unique_id); // Set the ID of the grid
 
-    let label_text = format!("Cube {}:", cube_count);
-    let cube_label = gtk::Label::new(Some(&label_text));
-    grid.attach(&cube_label, 0, 0, 1, 1); // Column 0, Row 0
-
-    let pos_x_label = gtk::Label::new(Some("X Position"));
-    grid.attach(&pos_x_label, 0, 1, 1, 1); // Column 0, Row 1 (X Position label)
-
-    let pos_x_entry = Entry::new();
-    pos_x_entry.set_text("0.0"); // Set default text
-    grid.attach(&pos_x_entry, 0, 2, 1, 1); // Column 0, Row 2 (X Position entry)
-
-    let pos_y_label = gtk::Label::new(Some("Y Position"));
-    grid.attach(&pos_y_label, 0, 3, 1, 1); // Column 0, Row 3
-
-    let pos_y_entry = Entry::new();
-    pos_y_entry.set_text("0.0");
-    grid.attach(&pos_y_entry, 0, 4, 1, 1); // Column 0, Row 4
-
-    let pos_z_label = gtk::Label::new(Some("Z Position"));
-    grid.attach(&pos_z_label, 0, 5, 1, 1); // Column 0, Row 5
-
-    let pos_z_entry = Entry::new();
-    pos_z_entry.set_text("0.0");
-    grid.attach(&pos_z_entry, 0, 6, 1, 1); // Column 0, Row 6
-
-    // Radius Label and Entry
-    let radius_label = gtk::Label::new(Some("Size"));
-    grid.attach(&radius_label, 0, 7, 1, 1); // Column 0, Row 7
-
-    let radius_entry = Entry::new();
-    radius_entry.set_text("1.0"); // Set default text
-    grid.attach(&radius_entry, 0, 8, 1, 1); // Column 0, Row 8
+    let placeholders = vec!["0.0", "0.0", "0.0", "1.0"];
+    let cube_entries = add_coordinate_widgets_grid(
+        &grid,
+        &provider,
+        &format!("Cube {cube_count}:"),
+        &placeholders,
+    );
+    let pos_x_entry = &cube_entries[0];
+    let pos_y_entry = &cube_entries[1];
+    let pos_z_entry = &cube_entries[2];
+    let radius_entry = &cube_entries[3];
 
     // Material Selector Label and ComboBox
     let material_label = gtk::Label::new(Some("Material"));
     grid.attach(&material_label, 0, 9, 1, 1); // Column 0, Row 9
 
     let material_selector = ComboBoxText::new();
-    material_selector.append_text("Diffusive");
-    material_selector.append_text("Glossy");
-    material_selector.append_text("Reflective");
-    material_selector.append_text("Light");
-    material_selector.set_active(Some(0));
+    append_materials(&material_selector);
     grid.attach(&material_selector, 0, 10, 1, 1); // Column 0, Row 10
+
+    let style_context = material_selector.get_style_context();
+    style_context.add_provider(&provider, gtk::STYLE_PROVIDER_PRIORITY_USER);
 
     // Color Button Label and ColorPicker
     let color_label = gtk::Label::new(Some("Color"));
@@ -466,16 +284,6 @@ pub fn create_cube_section(
 
     let color_button = gtk::ColorButton::new();
     grid.attach(&color_button, 0, 12, 1, 1); // Column 0, Row 12
-
-    // Apply styles to ComboBoxText and Entries
-    let entries = vec![&pos_x_entry, &pos_y_entry, &pos_z_entry, &radius_entry];
-    for entry in entries {
-        let style_context = entry.get_style_context();
-        style_context.add_provider(&provider, gtk::STYLE_PROVIDER_PRIORITY_USER);
-    }
-
-    let style_context = material_selector.get_style_context();
-    style_context.add_provider(&provider, gtk::STYLE_PROVIDER_PRIORITY_USER);
 
     grid.set_widget_name(&unique_id);
 
@@ -517,60 +325,15 @@ pub fn create_cube_section(
 
     // Connect a handler to the delete button
     delete_button.connect_clicked(clone!(@strong app_state, @strong flow_box => move |_| {
-        let id_number = *delete_id.borrow();
-        let id = format!("cube_{}", id_number);
-        println!("Attempting to delete cube with ID: {}", id);
-
-        // Debug: Print current cube IDs before deletion
-        println!("Current cube IDs before deletion:");
-        for cube in app_state.borrow().cubes.iter() {
-            println!("cube ID: {}", *cube.id.borrow());
-        }
-        #[allow(unused_assignments)]
-        let mut deletion_successful = false;
-        {
-            let mut app_state = app_state.borrow_mut();
-            if let Some(index) = app_state.cubes.iter().position(|s| format!("cube_{}", *s.id.borrow()) == id) {
-                app_state.cubes.remove(index);
-                deletion_successful = true;
-            } else {
-                eprintln!("Error: No cube with ID {} found in app_state", id);
-                return;
-            }
-        }
-
-        // Debug: Inspect the children of flow_box before attempting deletion
-        println!("Inspecting GUI elements in flow_box before deletion:");
-        let children = flow_box.get_children();
-        for (index, child) in children.iter().enumerate() {
-            // Attempt to downcast the child to GtkFlowBoxChild
-            if let Some(flowbox_child) = child.downcast_ref::<gtk::FlowBoxChild>() {
-                if let Some(widget) = flowbox_child.get_child() {
-                    let widget_name = widget.get_widget_name().to_string(); // Get the name of the widget inside the GtkFlowBoxChild
-                    println!("Child {}: GUI element ID inside GtkFlowBoxChild: {}", index, widget_name);
-                    println!("Child {}: Type: {}", index, widget);
-
-                    if widget_name == id {
-                        flow_box.remove(child);
-                        deletion_successful = true;
-                        break;
-                    }
-                }
-            }
-        }
-
-        if deletion_successful {
-            println!("Successfully deleted cube with ID: {}", id);
+        let id = format!("cube_{}", *delete_id.borrow());
+        let mut app_state = app_state.borrow_mut();
+        if let Some(index) = app_state.cubes.iter().position(|c| format!("cube_{}", *c.id.borrow()) == id) {
+            app_state.cubes.remove(index);
         } else {
-            eprintln!("Error: GUI element for cube with ID {} not found", id);
+            eprintln!("Error: No cube with ID {} found in app_state", id);
+            return;
         }
-
-        // Borrow app_state again for reading
-        println!("Current cube IDs after deletion:");
-        for cube in app_state.borrow().cubes.iter() {
-            println!("cube ID: {}", *cube.id.borrow());
-        }
-
+        delete_component(&flow_box, id);
         flow_box.show_all();
     }));
 
@@ -598,76 +361,44 @@ pub fn create_flat_plane_section(
     grid.set_column_spacing(5); // Adjust the spacing as needed
     grid.set_widget_name(&unique_id); // Set the ID of the grid
 
-    let label_text = format!("Flat Plane {}:", flat_plane_count);
-    let flat_plane_label = gtk::Label::new(Some(&label_text));
-    grid.attach(&flat_plane_label, 0, 0, 1, 1); // Column 0, Row 0
-
-    let pos_x_label = gtk::Label::new(Some("X Position"));
-    grid.attach(&pos_x_label, 0, 1, 1, 1); // Column 0, Row 1 (X Position label)
-
-    let pos_x_entry = Entry::new();
-    pos_x_entry.set_text("0.0"); // Set default text
-    grid.attach(&pos_x_entry, 0, 2, 1, 1); // Column 0, Row 2 (X Position entry)
-
-    let pos_y_label = gtk::Label::new(Some("Y Position"));
-    grid.attach(&pos_y_label, 0, 3, 1, 1); // Column 0, Row 3
-
-    let pos_y_entry = Entry::new();
-    pos_y_entry.set_text("0.0");
-    grid.attach(&pos_y_entry, 0, 4, 1, 1); // Column 0, Row 4
-
-    let pos_z_label = gtk::Label::new(Some("Z Position"));
-    grid.attach(&pos_z_label, 0, 5, 1, 1); // Column 0, Row 5
-
-    let pos_z_entry = Entry::new();
-    pos_z_entry.set_text("0.0");
-    grid.attach(&pos_z_entry, 0, 6, 1, 1); // Column 0, Row 6
-
-    // Radius Label and Entry
-    let radius_label = gtk::Label::new(Some("Radius"));
-    grid.attach(&radius_label, 0, 7, 1, 1); // Column 0, Row 7
-
-    let radius_entry = Entry::new();
-    radius_entry.set_text("10.0"); // Set default text
-    grid.attach(&radius_entry, 0, 8, 1, 1); // Column 0, Row 8
+    let placeholders = vec!["0.0", "0.0", "0.0", "10.0"];
+    let flat_plane_entries = add_coordinate_widgets_grid(
+        &grid,
+        &provider,
+        &format!("Cylinder {flat_plane_count}:"),
+        &placeholders,
+    );
+    let pos_x_entry = &flat_plane_entries[0];
+    let pos_y_entry = &flat_plane_entries[1];
+    let pos_z_entry = &flat_plane_entries[2];
+    let radius_entry = &flat_plane_entries[3];
 
     // Material Selector Label and ComboBox
     let material_label = gtk::Label::new(Some("Material"));
-    grid.attach(&material_label, 0, 9, 1, 1); // Column 0, Row 9
+    grid.attach(&material_label, 0, 9, 1, 1);
 
     let material_selector = ComboBoxText::new();
-    material_selector.append_text("Diffusive");
-    material_selector.append_text("Glossy");
-    material_selector.append_text("Reflective");
-    material_selector.append_text("Light");
-    material_selector.set_active(Some(0));
-    grid.attach(&material_selector, 0, 10, 1, 1); // Column 0, Row 10
-
-    // Color Button Label and ColorPicker
-    let color_label = gtk::Label::new(Some("Color"));
-    grid.attach(&color_label, 0, 11, 1, 1); // Column 0, Row 11
-
-    let color_button = gtk::ColorButton::new();
-    grid.attach(&color_button, 0, 12, 1, 1); // Column 0, Row 12
-
-    // Apply styles to ComboBoxText and Entries
-    let entries = vec![&pos_x_entry, &pos_y_entry, &pos_z_entry, &radius_entry];
-    for entry in entries {
-        let style_context = entry.get_style_context();
-        style_context.add_provider(&provider, gtk::STYLE_PROVIDER_PRIORITY_USER);
-    }
+    append_materials(&material_selector);
+    grid.attach(&material_selector, 0, 10, 1, 1);
 
     let style_context = material_selector.get_style_context();
     style_context.add_provider(&provider, gtk::STYLE_PROVIDER_PRIORITY_USER);
+
+    // Color Button Label and ColorPicker
+    let color_label = gtk::Label::new(Some("Color"));
+    grid.attach(&color_label, 0, 11, 1, 1);
+
+    let color_button = gtk::ColorButton::new();
+    grid.attach(&color_button, 0, 12, 1, 1);
 
     grid.set_widget_name(&unique_id);
 
     let flat_plane_config = FlatPlaneConfig {
         id: Rc::new(RefCell::new(flat_plane_count as u32)),
-        pos_x_entry: Rc::new(RefCell::new(pos_x_entry)),
-        pos_y_entry: Rc::new(RefCell::new(pos_y_entry)),
-        pos_z_entry: Rc::new(RefCell::new(pos_z_entry)),
-        radius_entry: Rc::new(RefCell::new(radius_entry)),
+        pos_x_entry: Rc::new(RefCell::new(pos_x_entry.clone())),
+        pos_y_entry: Rc::new(RefCell::new(pos_y_entry.clone())),
+        pos_z_entry: Rc::new(RefCell::new(pos_z_entry.clone())),
+        radius_entry: Rc::new(RefCell::new(radius_entry.clone())),
         material_selector: Rc::new(RefCell::new(material_selector)),
         color_button: Rc::new(RefCell::new(color_button)),
     };
@@ -680,53 +411,17 @@ pub fn create_flat_plane_section(
     delete_button.connect_clicked(clone!(@strong app_state, @strong flow_box => move |_| {
         let id_number = *delete_id.borrow();
         let id = format!("flat_plane_{}", id_number);
-        println!("Attempting to delete flat_plane with ID: {}", id);
-        // Debug: Print current flat_plane IDs before deletion
-        println!("Current flat_plane IDs before deletion:");
-        for flat_plane in app_state.borrow().flat_planes.iter() {
-            println!("flat_plane ID: {}", *flat_plane.id.borrow());
-        }
-        #[allow(unused_assignments)]
-        let mut deletion_successful = false;
-        {
-            let mut app_state = app_state.borrow_mut();
-            if let Some(index) = app_state.flat_planes.iter().position(|s| format!("flat_plane_{}", *s.id.borrow()) == id) {
-                app_state.flat_planes.remove(index);
-                deletion_successful = true;
-            } else {
-                eprintln!("Error: No flat_plane with ID {} found in app_state", id);
-                return;
-            }
-        }
-        // Debug: Inspect the children of flow_box before attempting deletion
-        println!("Inspecting GUI elements in flow_box before deletion:");
-        let children = flow_box.get_children();
-        for (index, child) in children.iter().enumerate() {
-            // Attempt to downcast the child to GtkFlowBoxChild
-            if let Some(flowbox_child) = child.downcast_ref::<gtk::FlowBoxChild>() {
-                if let Some(widget) = flowbox_child.get_child() {
-                    let widget_name = widget.get_widget_name().to_string(); // Get the name of the widget inside the GtkFlowBoxChild
-                    println!("Child {}: GUI element ID inside GtkFlowBoxChild: {}", index, widget_name);
-                    println!("Child {}: Type: {}", index, widget);
 
-                    if widget_name == id {
-                        flow_box.remove(child);
-                        deletion_successful = true;
-                        break;
-                    }
-                }
-            }
-        }
-        if deletion_successful {
-            println!("Successfully deleted flat_plane with ID: {}", id);
+        let mut app_state = app_state.borrow_mut();
+        if let Some(index) = app_state.flat_planes.iter().position(|fp| format!("flat_plane_{}", *fp.id.borrow()) == id) {
+            app_state.flat_planes.remove(index);
         } else {
-            eprintln!("Error: GUI element for flat_plane with ID {} not found", id);
+            eprintln!("Error: No flat_plane with ID {} found in app_state", id);
+            return;
         }
-        // Borrow app_state again for reading
-        println!("Current flat_plane IDs after deletion:");
-        for flat_plane in app_state.borrow().flat_planes.iter() {
-            println!("Sphere ID: {}", *flat_plane.id.borrow());
-        }
+
+        delete_component(&flow_box, id);
+
         flow_box.show_all();
     }));
 
@@ -736,4 +431,19 @@ pub fn create_flat_plane_section(
     flow_box.show_all();
 
     grid.upcast::<gtk::Widget>() // Return the grid as a generic widget
+}
+
+fn delete_component(flow_box: &FlowBox, id: String) {
+    for child in flow_box.get_children().iter() {
+        // Attempt to downcast the child to GtkFlowBoxChild
+        if let Some(flow_box_child) = child.downcast_ref::<gtk::FlowBoxChild>() {
+            if let Some(widget) = flow_box_child.get_child() {
+                let widget_name = widget.get_widget_name().to_string(); // Get the name of the widget inside the GtkFlowBoxChild
+                if widget_name == id {
+                    flow_box.remove(child);
+                    break;
+                }
+            }
+        }
+    }
 }

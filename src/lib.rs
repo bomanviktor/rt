@@ -316,6 +316,55 @@ pub mod gui {
     pub use std::rc::Rc;
     pub use std::sync::Arc;
 
+    pub struct AppState {
+        pub spheres: Vec<SphereConfig>,
+        pub cylinders: Vec<CylinderConfig>,
+        pub cubes: Vec<CubeConfig>,
+        pub flat_planes: Vec<FlatPlaneConfig>,
+        pub brightness: f64,
+    }
+
+    pub struct SphereConfig {
+        pub id: Rc<RefCell<u32>>,
+        pub pos_x_entry: Rc<RefCell<Entry>>,
+        pub pos_y_entry: Rc<RefCell<Entry>>,
+        pub pos_z_entry: Rc<RefCell<Entry>>,
+        pub radius_entry: Rc<RefCell<Entry>>,
+        pub material_selector: Rc<RefCell<ComboBoxText>>,
+        pub color_button: Rc<RefCell<gtk::ColorButton>>,
+    }
+    #[derive(Clone)]
+    pub struct CylinderConfig {
+        pub id: Rc<RefCell<u32>>,
+        pub pos_x_entry: Rc<RefCell<Entry>>,
+        pub pos_y_entry: Rc<RefCell<Entry>>,
+        pub pos_z_entry: Rc<RefCell<Entry>>,
+        pub radius_entry: Rc<RefCell<Entry>>,
+        pub material_selector: Rc<RefCell<ComboBoxText>>,
+        pub height_entry: Rc<RefCell<Entry>>,
+        pub color_button: Rc<RefCell<gtk::ColorButton>>,
+    }
+
+    pub struct CubeConfig {
+        pub id: Rc<RefCell<u32>>,
+        pub pos_x_entry: Rc<RefCell<Entry>>,
+        pub pos_y_entry: Rc<RefCell<Entry>>,
+        pub pos_z_entry: Rc<RefCell<Entry>>,
+        pub radius_entry: Rc<RefCell<Entry>>,
+        pub material_selector: Rc<RefCell<ComboBoxText>>,
+        pub color_button: Rc<RefCell<gtk::ColorButton>>,
+    }
+
+    pub struct FlatPlaneConfig {
+        pub id: Rc<RefCell<u32>>,
+        pub pos_x_entry: Rc<RefCell<Entry>>,
+        pub pos_y_entry: Rc<RefCell<Entry>>,
+        pub pos_z_entry: Rc<RefCell<Entry>>,
+        pub radius_entry: Rc<RefCell<Entry>>,
+        pub material_selector: Rc<RefCell<ComboBoxText>>,
+        pub color_button: Rc<RefCell<gtk::ColorButton>>,
+    }
+
     pub mod interface;
     pub use interface::*;
 
@@ -327,8 +376,8 @@ pub mod gui {
 
     pub mod components {
         pub use super::*;
-        pub mod camera;
-        pub use camera::*;
+        pub mod text_box;
+        pub use text_box::*;
 
         pub mod resolution;
         pub use resolution::*;
@@ -338,6 +387,9 @@ pub mod gui {
 
         pub mod buttons;
         pub use buttons::*;
+
+        pub mod scales;
+        pub use scales::*;
     }
 }
 

@@ -1,56 +1,7 @@
 use crate::gui::components::*;
-use crate::gui::components::{add_coordinate_widgets, add_resolution_box};
+use crate::gui::components::{add_coordinate_widgets_box, add_resolution_box};
 use crate::gui::*;
 use crate::raytracer::CameraBuilder;
-
-pub struct AppState {
-    pub spheres: Vec<SphereConfig>,
-    pub cylinders: Vec<CylinderConfig>,
-    pub cubes: Vec<CubeConfig>,
-    pub flat_planes: Vec<FlatPlaneConfig>,
-    pub brightness: f64,
-}
-
-pub struct SphereConfig {
-    pub id: Rc<RefCell<u32>>,
-    pub pos_x_entry: Rc<RefCell<Entry>>,
-    pub pos_y_entry: Rc<RefCell<Entry>>,
-    pub pos_z_entry: Rc<RefCell<Entry>>,
-    pub radius_entry: Rc<RefCell<Entry>>,
-    pub material_selector: Rc<RefCell<ComboBoxText>>,
-    pub color_button: Rc<RefCell<gtk::ColorButton>>,
-}
-#[derive(Clone)]
-pub struct CylinderConfig {
-    pub id: Rc<RefCell<u32>>,
-    pub pos_x_entry: Rc<RefCell<Entry>>,
-    pub pos_y_entry: Rc<RefCell<Entry>>,
-    pub pos_z_entry: Rc<RefCell<Entry>>,
-    pub radius_entry: Rc<RefCell<Entry>>,
-    pub material_selector: Rc<RefCell<ComboBoxText>>,
-    pub height_entry: Rc<RefCell<Entry>>,
-    pub color_button: Rc<RefCell<gtk::ColorButton>>,
-}
-
-pub struct CubeConfig {
-    pub id: Rc<RefCell<u32>>,
-    pub pos_x_entry: Rc<RefCell<Entry>>,
-    pub pos_y_entry: Rc<RefCell<Entry>>,
-    pub pos_z_entry: Rc<RefCell<Entry>>,
-    pub radius_entry: Rc<RefCell<Entry>>,
-    pub material_selector: Rc<RefCell<ComboBoxText>>,
-    pub color_button: Rc<RefCell<gtk::ColorButton>>,
-}
-
-pub struct FlatPlaneConfig {
-    pub id: Rc<RefCell<u32>>,
-    pub pos_x_entry: Rc<RefCell<Entry>>,
-    pub pos_y_entry: Rc<RefCell<Entry>>,
-    pub pos_z_entry: Rc<RefCell<Entry>>,
-    pub radius_entry: Rc<RefCell<Entry>>,
-    pub material_selector: Rc<RefCell<ComboBoxText>>,
-    pub color_button: Rc<RefCell<gtk::ColorButton>>,
-}
 
 pub fn launch_gui() {
     let app_state = Rc::new(RefCell::new(AppState {
@@ -111,182 +62,106 @@ pub fn launch_gui() {
     about_dialog.set_modal(true);
     about_dialog.set_destroy_with_parent(true);
 
-    let vbox = GtkBox::new(Orientation::Vertical, 0);
-    let top_vbox = GtkBox::new(Orientation::Horizontal, 10);
-    vbox.set_border_width(10);
-    vbox.set_spacing(10);
+    let vertical_box = GtkBox::new(Orientation::Vertical, 0);
+    let top_horizontal_box = GtkBox::new(Orientation::Horizontal, 10);
+    vertical_box.set_border_width(10);
+    vertical_box.set_spacing(10);
 
-    let about_button = gtk::Button::with_label("About");
+    let about_button = Button::with_label("About");
     about_button.connect_clicked(clone!(@weak about_dialog => move |_| {
         about_dialog.run();
         about_dialog.hide();
     }));
-    top_vbox.pack_start(&about_button, false, false, 0);
+    top_horizontal_box.pack_start(&about_button, false, false, 0);
     about_button.get_style_context().add_class("about-button");
     about_button
         .get_style_context()
         .add_provider(&provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
 
-    vbox.pack_start(&top_vbox, false, false, 0);
-    scrolled_window.add(&vbox);
+    vertical_box.pack_start(&top_horizontal_box, false, false, 0);
+    scrolled_window.add(&vertical_box);
     window.add(&scrolled_window);
 
     // Separator
     let separator = Separator::new(Orientation::Horizontal);
-    vbox.pack_start(&separator, false, false, 10);
+    vertical_box.pack_start(&separator, false, false, 10);
 
     // Sample Size
-    let sample_size_label = gtk::Label::new(Some("Sample Size"));
-    sample_size_label
-        .get_style_context()
-        .add_class("sample-size-label");
-    vbox.pack_start(&sample_size_label, false, false, 0);
-
     let adjustment = gtk::Adjustment::new(1000.0, 1.0, 10000.0, 1.0, 10.0, 0.0);
-    let sample_size_scale = gtk::Scale::new(gtk::Orientation::Horizontal, Some(&adjustment));
-    sample_size_scale.set_digits(0); // No decimal places
-    sample_size_scale.set_hexpand(true);
-    sample_size_scale.set_valign(gtk::Align::Start);
-    sample_size_scale.connect_scroll_event(|_, _| {
-        Inhibit(true) // This prevents the scale from being adjusted with the mouse scroll
-    });
-    vbox.pack_start(&sample_size_scale, false, true, 0);
+    let sample_size_scale = horizontal_scale("Sample size", adjustment, &vertical_box);
+    sample_size_scale.set_digits(0);
 
     // Brightness
-    let adjustment = gtk::Adjustment::new(
-        0.5,  // initial value
-        0.0,  // minimum value
-        1.0,  // maximum value
-        0.01, // step increment
-        0.01, // page increment
-        0.0,  // page size
-    );
-    let brightness_label = gtk::Label::new(Some("Brightness"));
-    vbox.pack_start(&brightness_label, false, false, 0);
+    let adjustment = gtk::Adjustment::new(0.5, 0.0, 1.0, 0.01, 0.01, 0.0);
+    let brightness_scale = horizontal_scale("Brightness", adjustment, &vertical_box);
+    brightness_scale.set_value(0.5);
+    brightness_scale.set_digits(2);
 
-    let brightness_entry = Scale::new(Orientation::Horizontal, Some(&adjustment));
-    brightness_entry.set_value(0.5); // Set a default value
-    brightness_entry.set_digits(2); // Set a default value
-    brightness_entry.connect_scroll_event(|_, _| {
-        Inhibit(true) // This prevents the scale from being adjusted with the mouse scroll
-    });
-    vbox.pack_start(&brightness_entry, false, false, 0);
-
-    let app_state_clone = app_state.clone();
-
-    brightness_entry.connect_value_changed(move |scale| {
-        let brightness_value = scale.get_value();
-        app_state_clone.borrow_mut().brightness = brightness_value;
-        // Optionally, you can also do some real-time updates or logging here
-        std::println!("Brightness adjusted to: {}", brightness_value);
-    });
-    //////////////////////////////////////////////////////////////////////////
-    // Camera Options
     // Focal length
-    let focal_length_label = gtk::Label::new(Some("Focal length"));
-    focal_length_label
-        .get_style_context()
-        .add_class("sample-size-label");
-    vbox.pack_start(&focal_length_label, false, false, 0);
-
     let adjustment = gtk::Adjustment::new(1.0, 0.1, 5.0, 0.01, 0.01, 0.0);
-    let focal_length_scale = Scale::new(gtk::Orientation::Horizontal, Some(&adjustment));
+    let focal_length_scale = horizontal_scale("Focal length", adjustment, &vertical_box);
     focal_length_scale.set_value(1.0);
     focal_length_scale.set_digits(2);
-    focal_length_scale.set_hexpand(true);
-    focal_length_scale.set_valign(gtk::Align::Start);
-    focal_length_scale.connect_scroll_event(|_, _| {
-        Inhibit(true) // This prevents the scale from being adjusted with the mouse scroll
-    });
-    vbox.pack_start(&focal_length_scale, false, true, 0);
+
+    // SEPARATOR
+    vertical_box.pack_start(&separator, false, false, 10);
+    let camera_box = gtk::Box::new(Orientation::Horizontal, 5);
+    camera_box.set_border_width(10);
+    camera_box.set_spacing(10);
 
     // Camera position
-    let (cam_x_entry, cam_y_entry, cam_z_entry) = add_coordinate_widgets(
-        &vbox,
-        "Camera Position:",
-        ["Default: 0.0", "Default: 0.0", "Default: 0.0"],
-    );
+    let camera_position = gtk::Box::new(Orientation::Vertical, 0);
+    let (cam_x_entry, cam_y_entry, cam_z_entry) =
+        add_coordinate_widgets_box(&camera_position, "Camera Position:", ["0.0", "0.0", "0.0"]);
 
     // Looking at
-    let (look_at_x_entry, look_at_y_entry, look_at_z_entry) = add_coordinate_widgets(
-        &vbox,
-        "Looking at:",
-        ["Default: 0.0", "Default: 0.0", "Default: 0.0"],
-    );
+    let looking_at = gtk::Box::new(Orientation::Vertical, 0);
+    let (look_at_x_entry, look_at_y_entry, look_at_z_entry) =
+        add_coordinate_widgets_box(&looking_at, "Looking at:", ["0.0", "0.0", "0.0"]);
 
-    /*
-           cam_x_entry_clone.get_text().parse::<f64>(),
-           cam_y_entry_clone.get_text().parse::<f64>(),
-           cam_z_entry_clone.get_text().parse::<f64>(),
-           looking_at_x_entry.get_text().parse::<f64>(),
-           looking_at_y_entry.get_text().parse::<f64>(),
-           looking_at_z_entry.get_text().parse::<f64>(),
-           width_entry_clone.get_text().parse::<u32>(),
-           height_entry_clone.get_text().parse::<u32>(),
-    */
+    camera_box.pack_start(&camera_position, true, true, 0);
+    camera_box.pack_start(&looking_at, true, true, 0);
+    vertical_box.pack_start(&camera_box, false, false, 0);
 
-    let flow_box = gtk::FlowBox::new();
-    let resolution_hbox = gtk::Box::new(Orientation::Horizontal, 5);
+    // SEPARATOR
+    vertical_box.pack_start(&separator, false, false, 10);
 
     // Resolution Selection
-    let (width_entry, height_entry) = add_resolution_box(&vbox, &flow_box, &resolution_hbox);
+    let (width_entry, height_entry) = add_resolution_box(&vertical_box);
 
     // Create a horizontal box for the side-by-side buttons
-    let hbox = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-    hbox.set_halign(gtk::Align::Center);
+    let button_box = gtk::Box::new(Orientation::Horizontal, 5);
+    let (add_sphere_btn, add_cylinder_btn, add_cube_btn, add_plane_btn) = create_buttons_row(
+        &button_box,
+        &provider,
+        ["Add Sphere", "Add Cylinder", "Add Cube", "Add Flat Plane"],
+    );
 
-    let add_sphere_button = Button::with_label("Add Sphere");
-    hbox.pack_start(&add_sphere_button, false, false, 0);
-    add_sphere_button
-        .get_style_context()
-        .add_provider(&provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
+    // Add the button box to the vertical box
+    vertical_box.pack_start(&button_box, false, false, 0);
 
-    let add_cylinder_button = Button::with_label("Add Cylinder");
-    hbox.pack_start(&add_cylinder_button, false, false, 0);
-    add_cylinder_button
-        .get_style_context()
-        .add_provider(&provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
+    // Create a flow box for all the objects
+    let object_box = create_object_box(&vertical_box);
 
-    let add_cube_button = Button::with_label("Add Cube");
-    hbox.pack_start(&add_cube_button, false, false, 0);
-    add_cube_button
-        .get_style_context()
-        .add_provider(&provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
-
-    let add_flat_plane_button = Button::with_label("Add Flat Plane");
-    hbox.pack_start(&add_flat_plane_button, false, false, 0);
-    add_flat_plane_button
-        .get_style_context()
-        .add_provider(&provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
-
-    // Add the horizontal box to the vertical box
-    vbox.pack_start(&hbox, false, false, 0);
-
-    flow_box.set_valign(gtk::Align::Start);
-    flow_box.set_max_children_per_line(10); // Adjust as needed
-    flow_box.set_selection_mode(gtk::SelectionMode::None);
-
-    add_sphere_button.connect_clicked(clone!(@strong flow_box, @strong app_state => move |_| {
-        create_sphere_section(app_state.clone(), flow_box.clone());
+    add_sphere_btn.connect_clicked(clone!(@strong object_box, @strong app_state => move |_| {
+        create_sphere_section(app_state.clone(), object_box.clone());
     }));
 
-    add_cylinder_button.connect_clicked(clone!(@strong flow_box, @strong app_state => move |_| {
-        create_cylinder_section(app_state.clone(), flow_box.clone());
+    add_cylinder_btn.connect_clicked(clone!(@strong object_box, @strong app_state => move |_| {
+        create_cylinder_section(app_state.clone(), object_box.clone());
     }));
 
-    add_cube_button.connect_clicked(clone!(@strong flow_box, @strong app_state => move |_| {
-        create_cube_section(app_state.clone(), flow_box.clone());
+    add_cube_btn.connect_clicked(clone!(@strong object_box, @strong app_state => move |_| {
+        create_cube_section(app_state.clone(), object_box.clone());
     }));
 
-    add_flat_plane_button.connect_clicked(clone!(@strong flow_box, @strong app_state => move |_| {
-        create_flat_plane_section(app_state.clone(), flow_box.clone());
+    add_plane_btn.connect_clicked(clone!(@strong object_box, @strong app_state => move |_| {
+        create_flat_plane_section(app_state.clone(), object_box.clone());
     }));
 
-    let render_button = Button::with_label("Render picture");
-    vbox.pack_start(&render_button, false, false, 0);
-    render_button
-        .get_style_context()
-        .add_provider(&provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
+    // Create and add the render button to the vertical box
+    let render_button = create_button_with_label("Render", &provider);
+    vertical_box.pack_start(&render_button, false, false, 0);
 
     // Define CSS styles for the message label
     let red_style =
@@ -297,17 +172,10 @@ pub fn launch_gui() {
     // Create a label for displaying messages
     let message_label = gtk::Label::new(None);
     message_label.set_text("Ready"); // Default text
-    vbox.pack_start(&message_label, false, false, 10); // Adjust packing as needed
+    vertical_box.pack_start(&message_label, false, false, 10); // Adjust packing as needed
 
     let show_image_button = Button::with_label("Show Image");
-    vbox.pack_start(&show_image_button, false, false, 0);
-
-    let sample_size_scale_clone = sample_size_scale.clone();
-    let cam_x_entry_clone = cam_x_entry.clone();
-    let cam_y_entry_clone = cam_y_entry.clone();
-    let cam_z_entry_clone = cam_z_entry.clone();
-    let width_entry_clone = width_entry.clone();
-    let height_entry_clone = height_entry.clone();
+    vertical_box.pack_start(&show_image_button, false, false, 0);
 
     show_image_button.connect_clicked(move |_| {
         let image_window = Window::new(WindowType::Toplevel);
@@ -355,17 +223,17 @@ pub fn launch_gui() {
         let mut height = 0;
 
 
-        let sample_size = sample_size_scale_clone.get_value() as u16;
+        let sample_size = sample_size_scale.get_value() as u16;
         let focal_length = focal_length_scale.get_value();
         if let (Ok(x), Ok(y), Ok(z), Ok(look_x), Ok(look_y), Ok(look_z), Ok(w), Ok(h)) = (
-            cam_x_entry_clone.get_text().parse::<f64>(),
-            cam_y_entry_clone.get_text().parse::<f64>(),
-            cam_z_entry_clone.get_text().parse::<f64>(),
+            cam_x_entry.get_text().parse::<f64>(),
+            cam_y_entry.get_text().parse::<f64>(),
+            cam_z_entry.get_text().parse::<f64>(),
             look_at_x_entry.get_text().parse::<f64>(),
             look_at_y_entry.get_text().parse::<f64>(),
             look_at_z_entry.get_text().parse::<f64>(),
-            width_entry_clone.get_text().parse::<u32>(),
-            height_entry_clone.get_text().parse::<u32>(),
+            width_entry.get_text().parse::<u32>(),
+            height_entry.get_text().parse::<u32>(),
         ) {
             cam_x = x;
             cam_y = y;
