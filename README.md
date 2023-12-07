@@ -8,6 +8,7 @@
 
 ## Table of Contents
 - [About](#about)
+- [System requirements](#system-requirements)
 - [Dependencies](#dependencies)
 - [Installation/Running Instructions](#installationrunning-instructions)
 - [Features](#features)
@@ -19,7 +20,12 @@
     - [Colors](#colors)
     - [Finalize the scene](#finalize-the-scene)
 
+## About
+This is a Monte Carlo based ray tracer with a GUI written from scratch, entirely in [Rust](https://www.rust-lang.org/).
+For the GUI the [GTK3](https://docs.gtk.org/gtk3/) library for rust was used.
 
+## System requirements
+Unix based OS such as Linux or Mac OS
 
 ## Dependencies
 - [Rust](https://www.rust-lang.org/)
@@ -37,9 +43,7 @@
     - `cargo run --release`
 
 
-- ## About
-This is a Monte Carlo based ray tracer with a GUI written from scratch, entirely in [Rust](https://www.rust-lang.org/).
-For the GUI the [GTK3](https://docs.gtk.org/gtk3/) library for rust was used.
+
 
 ## Features
 - Four shapes: `Cube`, `Sphere`, `Flat plane` and `Cylinder`.
