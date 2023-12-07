@@ -251,6 +251,15 @@ pub fn launch_gui() {
     brightness_entry.set_value(0.5); // Set a default value
     vbox.pack_start(&brightness_entry, false, false, 0);
 
+    let app_state_clone = app_state.clone();
+
+    brightness_entry.connect_value_changed(move |scale| {
+        let brightness_value = scale.get_value();
+        app_state_clone.borrow_mut().brightness = brightness_value;
+        // Optionally, you can also do some real-time updates or logging here
+        println!("Brightness adjusted to: {}", brightness_value);
+    });
+
     // Camera Options
     let camera_label = gtk::Label::new(Some("Camera Position:"));
     vbox.pack_start(&camera_label, false, false, 0);
@@ -408,6 +417,7 @@ pub fn launch_gui() {
         }
 
 
+
         println!("Brightness: {}", brightness_entry_clone.get_value());
         println!("Sample size: {}", sample_size_scale_clone.get_value());
         println!("Camera X Position: {}", cam_x_entry_clone.get_text());
@@ -422,9 +432,6 @@ pub fn launch_gui() {
         let mut width = 0;
         let mut height = 0;
 
-
-        // Assign brightness to app_state
-        app_state.borrow_mut().brightness = brightness_entry_clone.get_value();
 
         let sample_size = sample_size_scale_clone.get_value() as u16;
 

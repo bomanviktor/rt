@@ -26,7 +26,7 @@ pub fn update_scene_from_gui(app_state: Rc<RefCell<AppState>>) -> Scene {
     let app_state_borrowed = app_state.borrow();
     let mut objects: Objects = Vec::new();
 
-    let light = Sphere::new(Vector3::new(-5.0, -6.0, -10.0), 2.0, Light(Color::white()));
+    let light = Sphere::new(Vector3::new(-5.0, 10.0, -10.0), 2.0, Light(Color::white()));
 
     objects.push(Arc::new(light));
 
