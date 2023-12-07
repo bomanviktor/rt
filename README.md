@@ -1,21 +1,28 @@
-# Ray Tracing
+# rt
 
 #### Authored by: [Viktor Boman](https://github.com/bomanviktor), [Johannes Eckerman](https://github.com/jo-eman), [Salam Foon](https://github.com/salam-github), [Ville Patjas](https://github.com/Villepat), and [André Teetor](https://github.com/FinnTune)
 ###### Completed during [grit:lab](https://gritlab.ax/) full-stack development course.
+#### Project Description: [here](https://github.com/01-edu/public/blob/master/subjects/rt/README.md)
 
-#### Project Description: [rt instructions](https://github.com/01-edu/public/blob/master/subjects/rt/README.md)
-
+![closeup.png](..%2F..%2F..%2FDesktop%2Fcloseup.png)
 ## Table of Contents
+- [About](#about)
+- [Dependencies](#dependencies)
 - [Installation/Running Instructions](#installationrunning-instructions)
-- [GUI](#gui)
-- [Light](#light)
-- [Brightness](#brightness)
-- [No Gui](#no-gui)
-    - [Camera Position](#camera-position)
-    - [Sphere](#sphere)
-    - [Cube](#cube)
-    - [Plane](#plane)
-    - [Cylinder](#cylinder)
+- [Features](#features)
+- [Run without GUI](#run-without-gui)
+    - [Camera settings](#camera-settings)
+    - [Brightness](#brightness)
+    - [Objects](#objects)
+    - [Textures](#textures)
+    - [Colors](#colors)
+    - [Finalize the scene](#finalize-the-scene)
+
+
+
+## Dependencies
+- [Rust](https://www.rust-lang.org/)
+- [GTK3](https://docs.gtk.org/gtk3/)
 
 ## Installation/Running Instructions
 1. Clone the repo
@@ -28,65 +35,92 @@
 5. Run in repo root
     - `cargo run --release`
 
-## GUI
-The GUI is built using [gtk-rs](https://gtk-rs.org/). It is a simple GUI that allows the user to create objects and change their properties. The GUI also allows the user to change the camera position and rotation, as well as the background color. The GUI also allows the user to change the resolution of the image and the number of samples per pixel.
 
+- ## About
+This is a Monte Carlo based ray tracer with a GUI written from scratch, entirely in [Rust](https://www.rust-lang.org/).
+For the GUI the [GTK3](https://docs.gtk.org/gtk3/) library for rust was used.
 
-## Light
-The light is hardcoded into the `Scene` and can be moved around thusly in `gui/helper.rs`
+## Features
+- Four shapes: `Cube`, `Sphere`, `Flat plane` and `Cylinder`.
+- Four materials: `Diffusive`, `Glossy`, `Reflective` and `Light`.
+- Ability to change ambient brightness by changing the `brightness` value.
+- Rayon multithreading for faster rendering 🚀
 
-```rust
-pub fn update_scene_from_gui(app_state: Rc<RefCell<AppState>>) -> Scene {
-    let light = Sphere::new(Vector3::new(-5.0, -6.0, -10.0), 2.0, Light(Color::white()));
-
-    objects.push(Arc::new(light));
-}
-  ```
-
-## Brightness
-The brightness of the image can be changed by changing...
-
-
-## No GUI
+## Run without GUI
 
 To run program without launching the GUI:
-```cargo run --release -- --no-gui```
+```cargo run --release no-gui```
 
-### Camera Position
+### Camera Settings
 
-To change the camera position, change the following `position_by_coordinates` in `main.rs`:
-```rusts
+To change the sample size, camera position, focal length and looking at, change the following in `main.rs`:
+```rust
 let mut camera = CameraBuilder::new()
                     .sample_size(20)
-                    .position_by_coordinates(Point::new(-3.0, -4.0, 5.0))
+                    .position_by_coordinates(Point::new(-6.0, 4.0, 15.0))
+                    .focal_length(1.0)
                     .look_at(Point::new(0.0, 0.0, 0.0))
-                    .up_direction_by_coordinates(Direction::new(0.0, 1.0, 0.0))
-                    .focal_length(0.5)
-                    .sensor_width(1.0)
                     .build();
 ```
 
+### Brightness
+```rust
+ let scene = Arc::new(Scene::init(0.01)); // Change the 0.01 to a value between 0.0 and 1.0. 1.0 being max, 0.0 being min.
+```
 
-### Sphere
+### Objects
 
+To create the objects, go to `scene.rs` to initialize the objects, and add them to the `objects` vector using `Arc::new()`:
 To create a objects, use the below, e.g. `Sphere` struct from `sphere.rs` in `scene.rs`. Here's an example:
 
 ```rust
-let sphere = Sphere::new(position, radius, material);
+let sphere = Sphere::new(position, radius, texture);
+let cube = Cube::new(position, side_length, texture);
+let plane = FlatPlane::new(position, radius, texture);
+let cylinder = Cylinder::new(position, radius, height, texture);
 ```
 
-### Cube
+### Textures
 ```rust
-let cube = Cube::new(min, max, material);
+Diffusive(color)
+Glossy(color)
+Light(color)
+Reflective
 ```
 
-### Plane
+### Colors
+There are a wide range of colors to choose from. These are just a small sample of all the available colors.
 ```rust
-let plane = FlatPlane::new(normal, distance, material);
+RGB::new() // Custom color in 255,255,255 format
+RGB::random()
+RGB::red()
+RGB::green()
+RGB::blue()
 ```
 
-### Cylinder
+### Finalize the scene
 ```rust
-let cylinder = Cylinder::new(base, axis, radius, material);
+// Initialize an object
+let sphere = Sphere::new(
+    Point::new(0.0, 1.0, 0.0),
+    1.0, 
+    Textures::Diffusive(RGB::red())
+);
+
+// more objects here...
+
+// Add the objects to the scene in this vector
+let objects: Objects = vec![
+    Arc::new(sphere),
+    Arc::(object2),
+    // More objects here...
+];
+
+// Return the scene
+Scene {
+    objects, brightness
+}
 ```
+
+
 

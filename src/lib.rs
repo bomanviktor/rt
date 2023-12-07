@@ -353,8 +353,6 @@ pub mod objects {
     pub trait Object: Send + Sync {
         fn intersection(&self, ray: &Ray) -> Option<Intersection>;
         fn texture(&self) -> Texture;
-        fn center(&self) -> Point;
-        fn is_light(&self) -> bool;
     }
 
     pub type Objects = Vec<Arc<dyn Object>>;
@@ -396,6 +394,7 @@ pub mod textures {
     }
 
     impl Ray {
+        /// Function for `Texture::Diffusive` and `Texture::Glossy`
         pub fn diffusive(&mut self, origin: Point, direction: Direction, scene: &Scene) {
             let new_rays = match self.depth {
                 0 => NUM_SECONDARY_RAYS,
@@ -419,6 +418,8 @@ pub mod textures {
                 }
             }
         }
+
+        /// Function for `Texture::Reflective`
         pub fn reflective(&mut self, origin: Point, direction: Direction, scene: &Scene) {
             let mut secondary_ray = Ray::new(origin, direction, self.depth + 1);
 
