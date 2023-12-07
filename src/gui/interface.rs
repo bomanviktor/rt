@@ -156,7 +156,7 @@ pub fn launch_gui() {
         .add_class("sample-size-label");
     vbox.pack_start(&sample_size_label, false, false, 0);
 
-    let adjustment = gtk::Adjustment::new(1.0, 1.0, 10000.0, 1.0, 10.0, 0.0);
+    let adjustment = gtk::Adjustment::new(1000.0, 1.0, 10000.0, 1.0, 10.0, 0.0);
     let sample_size_scale = gtk::Scale::new(gtk::Orientation::Horizontal, Some(&adjustment));
     sample_size_scale.set_digits(0); // No decimal places
     sample_size_scale.set_hexpand(true);
@@ -180,6 +180,7 @@ pub fn launch_gui() {
 
     let brightness_entry = Scale::new(Orientation::Horizontal, Some(&adjustment));
     brightness_entry.set_value(0.5); // Set a default value
+    brightness_entry.set_digits(2); // Set a default value
     brightness_entry.connect_scroll_event(|_, _| {
         Inhibit(true) // This prevents the scale from being adjusted with the mouse scroll
     });
@@ -202,9 +203,10 @@ pub fn launch_gui() {
         .add_class("sample-size-label");
     vbox.pack_start(&focal_length_label, false, false, 0);
 
-    let adjustment = gtk::Adjustment::new(0.1, 0.1, 5.0, 0.1, 0.1, 0.0);
+    let adjustment = gtk::Adjustment::new(1.0, 0.1, 5.0, 0.01, 0.01, 0.0);
     let focal_length_scale = Scale::new(gtk::Orientation::Horizontal, Some(&adjustment));
-    focal_length_scale.set_value(0.1);
+    focal_length_scale.set_value(1.0);
+    focal_length_scale.set_digits(2);
     focal_length_scale.set_hexpand(true);
     focal_length_scale.set_valign(gtk::Align::Start);
     focal_length_scale.connect_scroll_event(|_, _| {
