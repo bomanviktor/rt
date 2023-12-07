@@ -4,7 +4,8 @@
 ###### Completed during [grit:lab](https://gritlab.ax/) full-stack development course.
 #### Project Description: [here](https://github.com/01-edu/public/blob/master/subjects/rt/README.md)
 
-![closeup.png](..%2F..%2F..%2FDesktop%2Fcloseup.png)
+![closeup](https://github.com/bomanviktor/rt/assets/72476579/115a7a5e-e942-46e9-a75f-2246820571cf)
+
 ## Table of Contents
 - [About](#about)
 - [Dependencies](#dependencies)
