@@ -10,7 +10,7 @@
 - [GUI](#gui)
 - [Light](#light)
 - [Brightness](#brightness)
-- [Creating Objects In Code](#creating-objects-in-code)
+- [No Gui](#no-gui)
     - [Camera Position](#camera-position)
     - [Sphere](#sphere)
     - [Cube](#cube)
@@ -47,46 +47,10 @@ pub fn update_scene_from_gui(app_state: Rc<RefCell<AppState>>) -> Scene {
 The brightness of the image can be changed by changing...
 
 
-## Creating Objects In Code
+## No GUI
 
-To create objects in code (without launching the GUI), you can uncomment the following code snippet and dependencies in `main.rs`:
-```rust
-use rt::gui::launch_gui; // Comment out to run ray tracer without gui
-// Uncomment below to run ray tracer without gui
-// use std::sync::Arc;
-// use std::time::Instant;
-// use rt::raytracer::{CameraBuilder, Scene};
-// use rt::type_aliases::{Direction, Point};
-//
-// const OUTPUT_PATH: &str = "output.ppm";
-
-fn main() {
-  launch_gui(); // Comment out to run ray tracer without gui
-  // Uncomment below to run ray tracer without gui
-  // let mut camera = CameraBuilder::new()
-  //     .sample_size(20)
-  //     .position_by_coordinates(Point::new(-3.0, -4.0, 5.0))
-  //     .look_at(Point::new(0.0, 0.0, 0.0))
-  //     .up_direction_by_coordinates(Direction::new(0.0, 1.0, 0.0))
-  //     .focal_length(0.5)
-  //     .sensor_width(1.0)
-  //     .build();
-  //
-  // let scene_data = "scene info from gui here";
-  // let scene = Arc::new(Scene::init(scene_data));
-  //
-  // let start = Instant::now();
-  //
-  // // Perform ray tracing
-  // camera.send_rays(scene.clone());
-  //
-  // camera.write_to_ppm(OUTPUT_PATH);
-  //
-  // let duration = start.elapsed();
-  // println!("Time taken for rendering: {:?}", duration);
-}
-
-```
+To run program without launching the GUI:
+```cargo run --release -- --no-gui```
 
 ### Camera Position
 
