@@ -7,7 +7,6 @@ pub struct Camera {
     pub position: Vector3<f64>,
     pub look_at: Vector3<f64>,
     pub up_direction: Vector3<f64>,
-    pub fov: f64,
     pub resolution: Resolution,
     pub aspect_ratio: f64,
     pub focal_length: f64,
@@ -130,11 +129,6 @@ impl CameraBuilder {
     }
 
     pub fn build(&self) -> Camera {
-        let fov = 2.0
-            * ((self.sensor_width.unwrap_or(DEFAULT_SENSOR_WIDTH)
-                / (2.0 * self.focal_length.unwrap_or(DEFAULT_FOCAL_LENGTH)))
-            .atan());
-
         let (width, height) = self.resolution.unwrap_or(DEFAULT_RESOLUTION);
 
         Camera {
@@ -142,7 +136,6 @@ impl CameraBuilder {
             position: self.position.unwrap_or(DEFAULT_CAMERA_POSITION),
             look_at: self.look_at.unwrap_or_default(), // 0,0,0 is the default
             up_direction: self.adjusted_up_direction(),
-            fov,
             resolution: self.resolution.unwrap_or(DEFAULT_RESOLUTION),
             aspect_ratio: width as f64 / height as f64,
             focal_length: self.focal_length.unwrap_or(DEFAULT_FOCAL_LENGTH),

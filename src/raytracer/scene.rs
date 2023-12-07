@@ -12,7 +12,7 @@ pub struct Scene {
 }
 
 impl Scene {
-    pub fn init(_scene_data: &str, brightness: f64) -> Self {
+    pub fn init(brightness: f64) -> Self {
         let flat_plane = FlatPlane::new(Point::new(0.0, 0.0, 0.0), 10.0, Diffusive(RGB::grey()));
 
         // AROUND CYLINDER LIGHT
