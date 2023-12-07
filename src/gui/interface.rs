@@ -164,16 +164,16 @@ pub fn launch_gui() {
     sample_size_scale.connect_scroll_event(|_, _| {
         Inhibit(true) // This prevents the scale from being adjusted with the mouse scroll
     });
-        vbox.pack_start(&sample_size_scale, false, true, 0);
+    vbox.pack_start(&sample_size_scale, false, true, 0);
 
     // Brightness
     let adjustment = gtk::Adjustment::new(
-        0.5, // initial value
-        0.0, // minimum value
-        1.0, // maximum value
+        0.5,  // initial value
+        0.0,  // minimum value
+        1.0,  // maximum value
         0.01, // step increment
         0.01, // page increment
-        0.0, // page size
+        0.0,  // page size
     );
     let brightness_label = gtk::Label::new(Some("Brightness"));
     vbox.pack_start(&brightness_label, false, false, 0);
@@ -202,14 +202,7 @@ pub fn launch_gui() {
         .add_class("sample-size-label");
     vbox.pack_start(&focal_length_label, false, false, 0);
 
-    let adjustment = gtk::Adjustment::new(
-        0.1,
-        0.1,
-        5.0,
-        0.1,
-        0.1,
-        0.0,
-    );
+    let adjustment = gtk::Adjustment::new(0.1, 0.1, 5.0, 0.1, 0.1, 0.0);
     let focal_length_scale = Scale::new(gtk::Orientation::Horizontal, Some(&adjustment));
     focal_length_scale.set_value(0.1);
     focal_length_scale.set_hexpand(true);
@@ -218,7 +211,6 @@ pub fn launch_gui() {
         Inhibit(true) // This prevents the scale from being adjusted with the mouse scroll
     });
     vbox.pack_start(&focal_length_scale, false, true, 0);
-
 
     // Position
     let camera_label = gtk::Label::new(Some("Camera Position:"));
@@ -270,7 +262,6 @@ pub fn launch_gui() {
     looking_at_z_entry.set_placeholder_text(Some("Default: 0"));
     vbox.pack_start(&looking_at_z_entry, false, false, 0);
 
-
     //////////////////////////////////////////////////////////////////////////
     let flow_box = gtk::FlowBox::new();
 
@@ -293,7 +284,6 @@ pub fn launch_gui() {
     resolution_hbox.pack_start(&height_entry, false, false, 0);
     vbox.pack_start(&resolution_hbox, false, false, 0);
     vbox.pack_start(&flow_box, false, false, 0);
-
 
     // Create a horizontal box for the side-by-side buttons
     let hbox = gtk::Box::new(gtk::Orientation::Horizontal, 0);
@@ -326,7 +316,6 @@ pub fn launch_gui() {
     // Add the horizontal box to the vertical box
     vbox.pack_start(&hbox, false, false, 0);
 
-
     flow_box.set_valign(gtk::Align::Start);
     flow_box.set_max_children_per_line(10); // Adjust as needed
     flow_box.set_selection_mode(gtk::SelectionMode::None);
@@ -347,7 +336,6 @@ pub fn launch_gui() {
         create_flat_plane_section(app_state.clone(), flow_box.clone());
     }));
 
-
     let render_button = Button::with_label("Render picture");
     vbox.pack_start(&render_button, false, false, 0);
     render_button
@@ -367,8 +355,6 @@ pub fn launch_gui() {
 
     let show_image_button = Button::with_label("Show Image");
     vbox.pack_start(&show_image_button, false, false, 0);
-
-
 
     let brightness_entry_clone = brightness_entry.clone();
     let sample_size_scale_clone = sample_size_scale.clone();
@@ -502,7 +488,7 @@ pub fn launch_gui() {
 
 
         let sample_size = sample_size_scale_clone.get_value() as u16;
-        let focal_length = focal_length_scale.get_value() as f64;
+        let focal_length = focal_length_scale.get_value();
         if let (Ok(x), Ok(y), Ok(z), Ok(look_x), Ok(look_y), Ok(look_z), Ok(w), Ok(h)) = (
             cam_x_entry_clone.get_text().parse::<f64>(),
             cam_y_entry_clone.get_text().parse::<f64>(),

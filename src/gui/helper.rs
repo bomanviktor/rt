@@ -1,4 +1,3 @@
-use crate::color::RGB;
 use crate::gui::AppState;
 use crate::objects::{Cube, Cylinder, FlatPlane, Objects, Sphere};
 use crate::raytracer::Scene;
