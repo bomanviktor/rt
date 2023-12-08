@@ -17,10 +17,11 @@ pub fn create_entry_with_placeholder(placeholder: &str) -> Entry {
 }
 
 pub fn add_coordinate_widgets_box(
-    vbox: &Box,
+    horizontal_box: &Box,
     label_text: &str,
     placeholders: [&str; 3],
 ) -> (Entry, Entry, Entry) {
+    let vbox = Box::new(Orientation::Vertical, 0);
     let label = Label::new(Some(label_text));
     vbox.pack_start(&label, false, false, 0);
 
@@ -38,6 +39,8 @@ pub fn add_coordinate_widgets_box(
         vbox.pack_start(&entry, false, false, 0);
         entries[i] = entry;
     }
+
+    horizontal_box.pack_start(&vbox, true, true, 0);
 
     (entries[0].clone(), entries[1].clone(), entries[2].clone())
 }

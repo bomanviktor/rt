@@ -370,7 +370,7 @@ pub fn create_flat_plane_section(
     let flat_plane_entries = add_coordinate_widgets_grid(
         &grid,
         &provider,
-        &format!("Cylinder {flat_plane_count}:"),
+        &format!("Flat Plane {flat_plane_count}:"),
         &placeholders,
     );
     let pos_x_entry = &flat_plane_entries[0];

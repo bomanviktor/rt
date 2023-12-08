@@ -58,13 +58,14 @@ To run program without launching the GUI:
 
 ### Camera Settings
 
-To change the sample size, camera position, focal length and looking at, change the following in `main.rs`:
+To change the sample size, camera position, focal length, looking at and resolution, change the following in `main.rs`:
 ```rust
 let mut camera = CameraBuilder::new()
                     .sample_size(20)
                     .position_by_coordinates(Point::new(-6.0, 4.0, 15.0))
                     .focal_length(1.0)
                     .look_at(Point::new(0.0, 0.0, 0.0))
+                    .resolution(1920, 1080)
                     .build();
 ```
 

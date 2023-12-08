@@ -1,4 +1,5 @@
 use crate::gui::components::*;
+use crate::gui::GtkBox as Box;
 use crate::gui::*;
 use crate::raytracer::CameraBuilder;
 
@@ -56,52 +57,60 @@ pub fn launch_gui() {
     scrolled_window.add(&vertical_box);
     window.add(&scrolled_window);
 
-    // Separator
-    let separator = Separator::new(Orientation::Horizontal);
-    vertical_box.pack_start(&separator, false, false, 10);
-
     // Sample Size
-    let adjustment = gtk::Adjustment::new(1000.0, 1.0, 10000.0, 1.0, 10.0, 0.0);
+    let adjustment = gtk::Adjustment::new(5000.0, 1.0, 10000.0, 1.0, 10.0, 0.0);
     let sample_size_scale = horizontal_scale("Sample size", adjustment, &vertical_box);
     sample_size_scale.set_digits(0);
 
+    let dual_scales = gtk::Box::new(Orientation::Horizontal, 0);
+
     // Brightness
+    let brightness_box = gtk::Box::new(Orientation::Vertical, 0);
     let adjustment = gtk::Adjustment::new(0.5, 0.0, 1.0, 0.01, 0.01, 0.0);
-    let brightness_scale = horizontal_scale("Brightness", adjustment, &vertical_box);
+    let brightness_scale = horizontal_scale("Brightness", adjustment, &brightness_box);
     brightness_scale.set_value(0.5);
     brightness_scale.set_digits(2);
 
     // Focal length
-    let adjustment = gtk::Adjustment::new(1.0, 0.1, 5.0, 0.01, 0.01, 0.0);
-    let focal_length_scale = horizontal_scale("Focal length", adjustment, &vertical_box);
+    let focal_length_box = gtk::Box::new(Orientation::Vertical, 0);
+    let adjustment = gtk::Adjustment::new(1.0, 0.01, 2.0, 0.01, 0.01, 0.0);
+    let focal_length_scale = horizontal_scale("Focal length", adjustment, &focal_length_box);
     focal_length_scale.set_value(1.0);
     focal_length_scale.set_digits(2);
 
-    // SEPARATOR
-    vertical_box.pack_start(&separator, false, false, 10);
+    dual_scales.pack_start(&brightness_box, true, true, 0);
+    dual_scales.pack_start(&focal_length_box, true, true, 0);
+    vertical_box.pack_start(&dual_scales, false, true, 0);
+
+    let app_state_clone = app_state.clone();
+
+    brightness_scale.connect_value_changed(move |scale| {
+        let brightness_value = scale.get_value();
+        app_state_clone.borrow_mut().brightness = brightness_value;
+    });
+
+    separator(&vertical_box, 10);
+
     let camera_box = gtk::Box::new(Orientation::Horizontal, 5);
     camera_box.set_border_width(10);
     camera_box.set_spacing(10);
 
     // Camera position
-    let camera_position = gtk::Box::new(Orientation::Vertical, 0);
     let (cam_x_entry, cam_y_entry, cam_z_entry) =
-        add_coordinate_widgets_box(&camera_position, "Camera Position:", ["0.0", "0.0", "0.0"]);
+        add_coordinate_widgets_box(&camera_box, "Camera position:", ["0.0", "0.0", "0.0"]);
 
     // Looking at
-    let looking_at = gtk::Box::new(Orientation::Vertical, 0);
     let (look_at_x_entry, look_at_y_entry, look_at_z_entry) =
-        add_coordinate_widgets_box(&looking_at, "Looking at:", ["0.0", "0.0", "0.0"]);
+        add_coordinate_widgets_box(&camera_box, "Looking at:", ["0.0", "0.0", "0.0"]);
 
-    camera_box.pack_start(&camera_position, true, true, 0);
-    camera_box.pack_start(&looking_at, true, true, 0);
     vertical_box.pack_start(&camera_box, false, false, 0);
 
-    // SEPARATOR
-    vertical_box.pack_start(&separator, false, false, 10);
+    separator(&vertical_box, 10);
 
     // Resolution Selection
     let (width_entry, height_entry) = add_resolution_box(&vertical_box);
+
+    separator(&vertical_box, 10);
 
     // Create a horizontal box for the side-by-side buttons
     let button_box = gtk::Box::new(Orientation::Horizontal, 5);
@@ -113,6 +122,8 @@ pub fn launch_gui() {
 
     // Add the button box to the vertical box
     vertical_box.pack_start(&button_box, false, false, 0);
+
+    separator(&vertical_box, 10);
 
     // Create a flow box for all the objects
     let object_box = create_object_box(&vertical_box);
@@ -259,11 +270,16 @@ pub fn launch_gui() {
     gtk::main();
 }
 
-fn create_object_box(vertical_box: &GtkBox) -> FlowBox {
+fn create_object_box(vertical_box: &Box) -> FlowBox {
     let flow_box = FlowBox::new();
     flow_box.set_valign(gtk::Align::Start);
     flow_box.set_max_children_per_line(10);
     flow_box.set_selection_mode(gtk::SelectionMode::None);
     vertical_box.pack_start(&flow_box, false, false, 0);
     flow_box
+}
+
+fn separator(vertical_box: &Box, padding: u32) {
+    let separator = Separator::new(Orientation::Horizontal);
+    vertical_box.pack_start(&separator, false, false, padding);
 }
