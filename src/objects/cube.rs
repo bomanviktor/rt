@@ -75,9 +75,9 @@ impl Object for Cube {
                 {
                     // Add a small offset depending on texture
                     let small_offset = if matches!(self.texture, Texture::Reflective) {
-                        1.0 + 1e-8
+                        1.0 + 1e-7
                     } else {
-                        1.0 + f64::EPSILON
+                        1.0
                     };
 
                     // Update closest intersection

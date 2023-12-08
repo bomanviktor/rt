@@ -49,6 +49,7 @@ impl Ray {
                 Texture::Glossy(color) => {
                     self.collisions.push(color);
                     let direction = self.reflective_direction(normal, 0.6);
+                    self.diffusive(origin, direction, scene);
                     if direction.near_zero() {
                         self.diffusive(origin, normal, scene);
                     } else {
@@ -57,12 +58,8 @@ impl Ray {
                 }
 
                 Texture::Reflective => {
-                    let direction = self.reflective_direction(normal, 0.2);
-                    if direction.near_zero() {
-                        self.reflective(origin, normal, scene);
-                    } else {
-                        self.reflective(origin, direction, scene);
-                    }
+                    let direction = self.perfect_reflection(normal);
+                    self.reflective(origin, direction, scene);
                 }
 
                 Texture::Light(color) => {
@@ -95,9 +92,9 @@ impl Ray {
         // Create a local coordinate system around the normal
         let incident_ray = normal.normalize();
         let tangent_a = if incident_ray.x.abs() > 0.9 {
-            Vector3::new(0.0, 1.0, 0.0)
+            Vector3::new(0.0, -1.0, 0.0)
         } else {
-            Vector3::new(1.0, 0.0, 0.0)
+            Vector3::new(-1.0, 0.0, 0.0)
         };
         let tangent_v = incident_ray.cross(&tangent_a).normalize();
         let tangent_u = incident_ray.cross(&tangent_v);
@@ -115,6 +112,9 @@ impl Ray {
         tangent_u * local_x + tangent_v * local_y + incident_ray * local_z
     }
 
+    fn perfect_reflection(&self, normal: Normal) -> Direction {
+        self.direction - 2.0 * self.direction.dot(&normal) * normal
+    }
     /// ### reflective_direction
     ///
     /// Generate a direction within a range specified in `diffusion_range`
