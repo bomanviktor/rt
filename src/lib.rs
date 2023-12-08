@@ -308,8 +308,8 @@ pub mod gui {
     pub use glib::signal::Inhibit;
     pub use gtk::{prelude::*, Image};
     pub use gtk::{
-        Box as GtkBox, Button, ComboBoxText, CssProvider, Entry, Orientation, Scale, Separator,
-        Window, WindowType,
+        Box as GtkBox, Button, ComboBoxText, CssProvider, Entry, FlowBox, Orientation, Scale,
+        Separator, Window, WindowType,
     };
     pub use nalgebra::Vector3;
     pub use std::cell::RefCell;
@@ -368,19 +368,17 @@ pub mod gui {
     pub mod interface;
     pub use interface::*;
 
-    pub mod helper;
-    pub use helper::*;
+    pub mod update;
+    pub use update::*;
 
     pub mod validate;
     pub use validate::*;
 
     pub mod components {
         pub use super::*;
-        pub mod text_box;
-        pub use text_box::*;
 
-        pub mod resolution;
-        pub use resolution::*;
+        pub mod entries;
+        pub use entries::*;
 
         pub mod objects;
         pub use objects::*;
@@ -390,6 +388,9 @@ pub mod gui {
 
         pub mod scales;
         pub use scales::*;
+
+        pub mod about;
+        pub use about::*;
     }
 }
 

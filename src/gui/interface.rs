@@ -1,5 +1,4 @@
 use crate::gui::components::*;
-use crate::gui::components::{add_coordinate_widgets_box, add_resolution_box};
 use crate::gui::*;
 use crate::raytracer::CameraBuilder;
 
@@ -41,42 +40,17 @@ pub fn launch_gui() {
         Err(err) => std::eprintln!("Failed to load icon: {}", err),
     }
 
-    // About Dialog window
-    let about_dialog = gtk::AboutDialog::new();
-    about_dialog.set_program_name("Grit:Lab Ray Tracing Project");
-    about_dialog.set_comments(Some(
-        "Completed during grit:lab full-stack development course as part of the RUST Studies. \n
-        December 2023",
-    ));
-    about_dialog.set_authors(&[
-        "Viktor Boman",
-        "Johannes Eckerman",
-        "Salam Foon",
-        "Ville Patjas",
-        "André Teetor",
-    ]);
-    about_dialog.set_website_label(Some("Code Repository"));
-    about_dialog.set_website(Some("https://github.com/bomanviktor/rt"));
-    about_dialog.set_logo(Some(&scaled_icon));
-    about_dialog.set_transient_for(Some(&window));
-    about_dialog.set_modal(true);
-    about_dialog.set_destroy_with_parent(true);
-
     let vertical_box = GtkBox::new(Orientation::Vertical, 0);
     let top_horizontal_box = GtkBox::new(Orientation::Horizontal, 10);
     vertical_box.set_border_width(10);
     vertical_box.set_spacing(10);
 
-    let about_button = Button::with_label("About");
-    about_button.connect_clicked(clone!(@weak about_dialog => move |_| {
-        about_dialog.run();
-        about_dialog.hide();
-    }));
+    // About window and button
+    let about_dialog = about_dialog(&scaled_icon);
+    about_dialog.set_transient_for(Some(&window));
+    let about_button = about_btn(&about_dialog, &provider);
+
     top_horizontal_box.pack_start(&about_button, false, false, 0);
-    about_button.get_style_context().add_class("about-button");
-    about_button
-        .get_style_context()
-        .add_provider(&provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
 
     vertical_box.pack_start(&top_horizontal_box, false, false, 0);
     scrolled_window.add(&vertical_box);
@@ -283,4 +257,13 @@ pub fn launch_gui() {
 
     window.show_all();
     gtk::main();
+}
+
+fn create_object_box(vertical_box: &GtkBox) -> FlowBox {
+    let flow_box = FlowBox::new();
+    flow_box.set_valign(gtk::Align::Start);
+    flow_box.set_max_children_per_line(10);
+    flow_box.set_selection_mode(gtk::SelectionMode::None);
+    vertical_box.pack_start(&flow_box, false, false, 0);
+    flow_box
 }

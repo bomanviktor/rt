@@ -1,6 +1,5 @@
-use crate::gui::components::text_box::*;
+use crate::gui::components::entries::*;
 use crate::gui::*;
-use gtk::{Box, FlowBox};
 use rand::Rng;
 
 const MATERIALS: [&str; 4] = ["Diffusive", "Glossy", "Reflective", "Light"];
@@ -11,13 +10,19 @@ fn append_materials(material_selector: &ComboBoxText) {
     material_selector.set_active(Some(0));
 }
 
-pub fn create_object_box(vertical_box: &Box) -> FlowBox {
-    let flow_box = FlowBox::new();
-    flow_box.set_valign(gtk::Align::Start);
-    flow_box.set_max_children_per_line(10);
-    flow_box.set_selection_mode(gtk::SelectionMode::None);
-    vertical_box.pack_start(&flow_box, false, false, 0);
-    flow_box
+fn delete_component(flow_box: &FlowBox, id: String) {
+    for child in flow_box.get_children().iter() {
+        // Attempt to downcast the child to GtkFlowBoxChild
+        if let Some(flow_box_child) = child.downcast_ref::<gtk::FlowBoxChild>() {
+            if let Some(widget) = flow_box_child.get_child() {
+                let widget_name = widget.get_widget_name().to_string(); // Get the name of the widget inside the GtkFlowBoxChild
+                if widget_name == id {
+                    flow_box.remove(child);
+                    break;
+                }
+            }
+        }
+    }
 }
 
 pub fn create_sphere_section(app_state: Rc<RefCell<AppState>>, flow_box: FlowBox) -> gtk::Widget {
@@ -431,19 +436,4 @@ pub fn create_flat_plane_section(
     flow_box.show_all();
 
     grid.upcast::<gtk::Widget>() // Return the grid as a generic widget
-}
-
-fn delete_component(flow_box: &FlowBox, id: String) {
-    for child in flow_box.get_children().iter() {
-        // Attempt to downcast the child to GtkFlowBoxChild
-        if let Some(flow_box_child) = child.downcast_ref::<gtk::FlowBoxChild>() {
-            if let Some(widget) = flow_box_child.get_child() {
-                let widget_name = widget.get_widget_name().to_string(); // Get the name of the widget inside the GtkFlowBoxChild
-                if widget_name == id {
-                    flow_box.remove(child);
-                    break;
-                }
-            }
-        }
-    }
 }
