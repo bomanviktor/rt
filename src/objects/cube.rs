@@ -19,84 +19,78 @@ impl Cube {
     }
 
     fn normal(&self, point: Point) -> Normal {
-        let local_point = point - self.center; // Convert the point to the cube's local space
-                                               // Determine which face the point is on by finding the largest component of the local point
+        let local_point = point - self.center;
         let max = local_point
             .iter()
             .map(|v| v.abs())
             .enumerate()
-            .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
-            .unwrap()
-            .0;
+            .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal))
+            .map(|(index, _)| index)
+            .unwrap_or(0);
 
         let mut normal = Normal::default();
-        normal[max] = local_point[max].signum(); // Set the correct component of the normal
+        normal[max] = local_point[max].signum();
         normal
     }
 }
 
 impl Object for Cube {
-    /// Loops through the faces of the cube, finds the one with the closest intersection,
-    /// and returns the `Intersection`
     fn intersection(&self, ray: &Ray) -> Option<Intersection> {
-        let mut closest_distance = f64::MAX;
-        let mut hit_point = Point::default();
-
+        // Calculate the half size of the cube to determine its bounds.
         let half_size = self.size / 2.0;
-        let (x, y, z) = (0, 1, 2);
+        // Determine the minimum bounds of the cube in 3D space.
+        let min_bounds = Point::new(
+            self.center.x - half_size,
+            self.center.y - half_size,
+            self.center.z - half_size,
+        );
+        // Determine the maximum bounds of the cube in 3D space.
+        let max_bounds = Point::new(
+            self.center.x + half_size,
+            self.center.y + half_size,
+            self.center.z + half_size,
+        );
 
-        // Check intersections with each face of the cube
-        for axis in [x, y, z] {
-            for sign in [1.0, -1.0] {
-                let mut normal = Normal::default();
-                normal[axis] = sign;
-                let face_center = self.center + half_size * normal;
+        // Closure to calculate intersections on a single axis.
+        // It returns the nearest and farthest intersection points along the axis.
+        let intersect = |min_bound, max_bound, ray_origin, ray_direction| {
+            let inv_dir = 1.0 / ray_direction;
+            let t1: f64 = (min_bound - ray_origin) * inv_dir;
+            let t2 = (max_bound - ray_origin) * inv_dir;
+            (t1.min(t2), t1.max(t2))
+        };
 
-                // Catch degenerate reflections
-                let denom = normal.dot(&ray.direction);
-                if denom.abs() <= 1e-6 {
-                    continue;
-                }
-                let face_center_to_origin = face_center - ray.origin;
-                let distance = face_center_to_origin.dot(&normal) / denom;
+        // Calculate intersections for each axis.
+        let (t_min_x, t_max_x) =
+            intersect(min_bounds.x, max_bounds.x, ray.origin.x, ray.direction.x);
+        let (t_min_y, t_max_y) =
+            intersect(min_bounds.y, max_bounds.y, ray.origin.y, ray.direction.y);
+        let (t_min_z, t_max_z) =
+            intersect(min_bounds.z, max_bounds.z, ray.origin.z, ray.direction.z);
 
-                // Also catch degenerate reflections
-                if !(1e-6..ray.intersection_dist).contains(&distance) {
-                    continue;
-                }
+        // Determine the overall nearest and farthest intersection points.
+        let t_min = t_min_x.max(t_min_y).max(t_min_z);
+        let t_max = t_max_x.min(t_max_y).min(t_max_z);
 
-                let point = ray.origin + distance * ray.direction;
-                let local_point = point - self.center;
-
-                // Check if point is within cube bounds and that the distance
-                // is shorter than the previously closest distance
-                if local_point.iter().all(|&coord| coord.abs() <= half_size)
-                    && distance < closest_distance
-                {
-                    // Add a small offset depending on texture
-                    let small_offset = if matches!(self.texture, Texture::Reflective) {
-                        1.0 + 1e-7
-                    } else {
-                        1.0
-                    };
-
-                    // Update closest intersection
-                    closest_distance = distance;
-                    hit_point = point * small_offset;
-                }
-            }
+        // If there is no valid intersection, return None.
+        if t_min > t_max || t_max < 0.0 {
+            return None;
         }
 
-        if closest_distance < ray.intersection_dist {
-            Some(Intersection::new(
-                hit_point,
-                self.normal(hit_point),
-                closest_distance,
-                self.texture(),
-            ))
-        } else {
-            None // No intersection was found or closest intersection was too far away.
-        }
+        // Determine the distance to the intersection point.
+        let distance = if t_min >= 0.0 { t_min } else { t_max };
+        // Calculate the exact hit point on the cube's surface.
+        let hit_point = ray.origin + distance * ray.direction * 1.00001;
+        // Calculate the normal at the hit point.
+        let normal = self.normal(hit_point);
+
+        // Return the intersection data, including hit point, normal, distance, and texture.
+        Some(Intersection::new(
+            hit_point,
+            normal,
+            distance,
+            self.texture(),
+        ))
     }
 
     fn texture(&self) -> Texture {

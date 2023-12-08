@@ -302,70 +302,70 @@ pub mod color {
     }
 }
 
-pub mod gui {
-    pub use gdk_pixbuf::Pixbuf;
-    pub use glib::clone;
-    pub use glib::signal::Inhibit;
-    pub use gtk::{prelude::*, Image};
-    pub use gtk::{
-        Box as GtkBox, Button, ComboBoxText, CssProvider, Entry, FlowBox, Orientation, Scale,
-        Separator, Window, WindowType,
-    };
-    pub use nalgebra::Vector3;
-    pub use std::cell::RefCell;
-    pub use std::rc::Rc;
-    pub use std::sync::Arc;
+/*pub mod gui {
+pub use gdk_pixbuf::Pixbuf;
+pub use glib::clone;
+pub use glib::signal::Inhibit;
+pub use gtk::{prelude::*, Image};
+pub use gtk::{
+    Box as GtkBox, Button, ComboBoxText, CssProvider, Entry, FlowBox, Orientation, Scale,
+    Separator, Window, WindowType,
+};*/
+pub use nalgebra::Vector3;
+pub use std::cell::RefCell;
+pub use std::rc::Rc;
+pub use std::sync::Arc;
 
-    pub struct AppState {
-        pub spheres: Vec<SphereConfig>,
-        pub cylinders: Vec<CylinderConfig>,
-        pub cubes: Vec<CubeConfig>,
-        pub flat_planes: Vec<FlatPlaneConfig>,
-        pub brightness: f64,
-    }
+/*pub struct AppState {
+    pub spheres: Vec<SphereConfig>,
+    pub cylinders: Vec<CylinderConfig>,
+    pub cubes: Vec<CubeConfig>,
+    pub flat_planes: Vec<FlatPlaneConfig>,
+    pub brightness: f64,
+}
 
-    pub struct SphereConfig {
-        pub id: Rc<RefCell<u32>>,
-        pub pos_x_entry: Rc<RefCell<Entry>>,
-        pub pos_y_entry: Rc<RefCell<Entry>>,
-        pub pos_z_entry: Rc<RefCell<Entry>>,
-        pub radius_entry: Rc<RefCell<Entry>>,
-        pub material_selector: Rc<RefCell<ComboBoxText>>,
-        pub color_button: Rc<RefCell<gtk::ColorButton>>,
-    }
-    #[derive(Clone)]
-    pub struct CylinderConfig {
-        pub id: Rc<RefCell<u32>>,
-        pub pos_x_entry: Rc<RefCell<Entry>>,
-        pub pos_y_entry: Rc<RefCell<Entry>>,
-        pub pos_z_entry: Rc<RefCell<Entry>>,
-        pub radius_entry: Rc<RefCell<Entry>>,
-        pub material_selector: Rc<RefCell<ComboBoxText>>,
-        pub height_entry: Rc<RefCell<Entry>>,
-        pub color_button: Rc<RefCell<gtk::ColorButton>>,
-    }
+pub struct SphereConfig {
+    pub id: Rc<RefCell<u32>>,
+    pub pos_x_entry: Rc<RefCell<Entry>>,
+    pub pos_y_entry: Rc<RefCell<Entry>>,
+    pub pos_z_entry: Rc<RefCell<Entry>>,
+    pub radius_entry: Rc<RefCell<Entry>>,
+    pub material_selector: Rc<RefCell<ComboBoxText>>,
+    pub color_button: Rc<RefCell<gtk::ColorButton>>,
+}
+#[derive(Clone)]
+pub struct CylinderConfig {
+    pub id: Rc<RefCell<u32>>,
+    pub pos_x_entry: Rc<RefCell<Entry>>,
+    pub pos_y_entry: Rc<RefCell<Entry>>,
+    pub pos_z_entry: Rc<RefCell<Entry>>,
+    pub radius_entry: Rc<RefCell<Entry>>,
+    pub material_selector: Rc<RefCell<ComboBoxText>>,
+    pub height_entry: Rc<RefCell<Entry>>,
+    pub color_button: Rc<RefCell<gtk::ColorButton>>,
+}
 
-    pub struct CubeConfig {
-        pub id: Rc<RefCell<u32>>,
-        pub pos_x_entry: Rc<RefCell<Entry>>,
-        pub pos_y_entry: Rc<RefCell<Entry>>,
-        pub pos_z_entry: Rc<RefCell<Entry>>,
-        pub radius_entry: Rc<RefCell<Entry>>,
-        pub material_selector: Rc<RefCell<ComboBoxText>>,
-        pub color_button: Rc<RefCell<gtk::ColorButton>>,
-    }
+pub struct CubeConfig {
+    pub id: Rc<RefCell<u32>>,
+    pub pos_x_entry: Rc<RefCell<Entry>>,
+    pub pos_y_entry: Rc<RefCell<Entry>>,
+    pub pos_z_entry: Rc<RefCell<Entry>>,
+    pub radius_entry: Rc<RefCell<Entry>>,
+    pub material_selector: Rc<RefCell<ComboBoxText>>,
+    pub color_button: Rc<RefCell<gtk::ColorButton>>,
+}
 
-    pub struct FlatPlaneConfig {
-        pub id: Rc<RefCell<u32>>,
-        pub pos_x_entry: Rc<RefCell<Entry>>,
-        pub pos_y_entry: Rc<RefCell<Entry>>,
-        pub pos_z_entry: Rc<RefCell<Entry>>,
-        pub radius_entry: Rc<RefCell<Entry>>,
-        pub material_selector: Rc<RefCell<ComboBoxText>>,
-        pub color_button: Rc<RefCell<gtk::ColorButton>>,
-    }
+pub struct FlatPlaneConfig {
+    pub id: Rc<RefCell<u32>>,
+    pub pos_x_entry: Rc<RefCell<Entry>>,
+    pub pos_y_entry: Rc<RefCell<Entry>>,
+    pub pos_z_entry: Rc<RefCell<Entry>>,
+    pub radius_entry: Rc<RefCell<Entry>>,
+    pub material_selector: Rc<RefCell<ComboBoxText>>,
+    pub color_button: Rc<RefCell<gtk::ColorButton>>,
+}
 
-    pub mod interface;
+pub mod interface;
     pub use interface::*;
 
     pub mod update;
@@ -392,7 +392,7 @@ pub mod gui {
         pub mod about;
         pub use about::*;
     }
-}
+}*/
 
 pub mod raytracer {
 
