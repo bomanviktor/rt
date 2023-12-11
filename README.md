@@ -42,6 +42,10 @@ Unix based OS such as Linux or Mac OS
 5. Run in repo root
     - `cargo run --release`
 
+_or_
+
+1. Run `./install.sh`
+
 
 
 
@@ -89,7 +93,6 @@ let cylinder = Cylinder::new(position, radius, height, texture);
 ### Textures
 ```rust
 Diffusive(color)
-Glossy(color)
 Light(color)
 Reflective
 ```
