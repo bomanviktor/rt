@@ -16,7 +16,7 @@ impl Scene {
         let flat_plane = FlatPlane::new(Point::new(0.0, 0.0, 0.0), 10.0, Diffusive(RGB::grey()));
 
         // AROUND CYLINDER LIGHT
-        let cylinder = Cylinder::new(Point::new(0.0, 0.0, 0.0), 1.0, 2.0, Light(RGB::coral()));
+        let cylinder = Cylinder::new(Point::new(0.0, 5.0, 0.0), 1.0, 2.0, Light(RGB::coral()));
         let sphere1 = Sphere::new(
             Vector3::new(3.0, 1.0, 0.0),
             1.0,
@@ -32,14 +32,15 @@ impl Scene {
         use rand::Rng;
 
         let mut rng = rand::thread_rng();
-        let cube1 = Cube::new(
+        let cube1 = Cylinder::new(
             Point::new(
                 rng.gen_range(-3.0..5.0),
                 rng.gen_range(0.5..2.0),
                 rng.gen_range(-3.0..5.0),
             ),
             1.0,
-            Diffusive(RGB::random()),
+            1.5,
+            Reflective,
         );
         let cube2 = Cube::new(
             Point::new(
@@ -48,7 +49,7 @@ impl Scene {
                 rng.gen_range(-3.0..5.0),
             ),
             1.0,
-            Diffusive(RGB::random()),
+            Reflective,
         );
         let cube3 = Cube::new(
             Point::new(
@@ -57,7 +58,7 @@ impl Scene {
                 rng.gen_range(-3.0..5.0),
             ),
             1.0,
-            Diffusive(RGB::random()),
+            Reflective,
         );
         let cube4 = Cube::new(
             Point::new(
@@ -66,7 +67,7 @@ impl Scene {
                 rng.gen_range(-3.0..5.0),
             ),
             1.0,
-            Diffusive(RGB::random()),
+            Reflective,
         );
 
         // AROUND SPHERE LIGHT

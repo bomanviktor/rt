@@ -32,7 +32,7 @@ impl Ray {
 
         // Process the closest intersection
         if let Some(intersection) = self.closest_intersection(scene) {
-            let origin = intersection.hit_point;
+            let origin = intersection.hit_point + 1e-4 * intersection.normal;
             let normal = intersection.normal;
 
             // Reflect based on object texture
