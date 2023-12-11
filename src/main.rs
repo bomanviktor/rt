@@ -14,6 +14,7 @@ fn main() {
             .position_by_coordinates(Point::new(-6.0, 10.0, 15.0))
             .look_at(Point::new(0.0, 0.0, 0.0))
             .focal_length(1.0)
+            .resolution(800, 600)
             .build();
 
         let scene = Arc::new(Scene::init(0.1));

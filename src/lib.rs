@@ -291,13 +291,12 @@ pub mod color {
                 scene.background() * ambient_light_boost
             };
 
-            self.collisions.iter().rev().for_each(|color| {
-                total.x *= color.x / 255.;
-                total.y *= color.y / 255.;
-                total.z *= color.z / 255.;
-            });
+            self.collisions
+                .iter()
+                .rev()
+                .for_each(|color| total += color);
 
-            total
+            total / (self.collisions.len() + 1) as f64
         }
     }
 }

@@ -12,13 +12,10 @@ pub struct Scene {
 
 impl Scene {
     pub fn init(brightness: f64) -> Self {
-        let flat_plane = FlatPlane::new(Point::new(0.0, 0.0, 0.0), 10.0, Diffusive(RGB::grey()));
+        let flat_plane = FlatPlane::new(Point::new(0.0, 0.0, 0.0), 10.0, Diffusive(RGB::green()));
         let light = Cylinder::new(Point::default(), 1.0, 2.0, Light(RGB::red()));
 
-        let objects: Objects = vec![
-            Arc::new(flat_plane),
-            Arc::new(light)
-        ];
+        let objects: Objects = vec![Arc::new(flat_plane), Arc::new(light)];
 
         // Adjust invalid value in brightness
         let brightness = if brightness > 1.0 { 1.0 } else { brightness };
