@@ -2,7 +2,7 @@ use crate::gui::components::entries::*;
 use crate::gui::*;
 use rand::Rng;
 
-const MATERIALS: [&str; 4] = ["Diffusive", "Glossy", "Reflective", "Light"];
+const MATERIALS: [&str; 3] = ["Diffusive", "Reflective", "Light"];
 fn append_materials(material_selector: &ComboBoxText) {
     for material in MATERIALS {
         material_selector.append_text(material);
@@ -53,7 +53,7 @@ pub fn create_sphere_section(app_state: Rc<RefCell<AppState>>, flow_box: FlowBox
     let radius_entry = &sphere_entries[3];
 
     // Material Selector Label and ComboBox
-    let material_label = gtk::Label::new(Some("Material"));
+    let material_label = gtk::Label::new(Some("Texture"));
     grid.attach(&material_label, 0, 9, 1, 1); // Column 0, Row 9
 
     let material_selector = ComboBoxText::new();
@@ -99,8 +99,7 @@ pub fn create_sphere_section(app_state: Rc<RefCell<AppState>>, flow_box: FlowBox
         radius_entry_clone.set_text(&format!("{:.2}", rng.gen_range(0.1..1.0)));
 
         // Randomly select a material
-        let materials = ["Diffusive", "Glossy", "Light"];
-        let random_material_index = rng.gen_range(0..materials.len());
+        let random_material_index = rng.gen_range(0..MATERIALS.len());
         material_selector_clone.set_active(Some(random_material_index as u32));
     });
 
@@ -162,7 +161,7 @@ pub fn create_cylinder_section(
     let height_entry = &cylinder_entries[4];
 
     // Material Selector Label and ComboBox
-    let material_label = gtk::Label::new(Some("Material"));
+    let material_label = gtk::Label::new(Some("Texture"));
     grid.attach(&material_label, 0, 11, 1, 1);
 
     let material_selector = ComboBoxText::new();
@@ -210,8 +209,7 @@ pub fn create_cylinder_section(
         height_entry_clone.set_text(&format!("{:.2}", rng.gen_range(0.1..5.0)));
 
         // Randomly select a material
-        let materials = ["Diffusive", "Glossy", "Light"];
-        let random_material_index = rng.gen_range(0..materials.len());
+        let random_material_index = rng.gen_range(0..MATERIALS.len());
         material_selector_clone.set_active(Some(random_material_index as u32));
     });
 
@@ -273,7 +271,7 @@ pub fn create_cube_section(
     let radius_entry = &cube_entries[3];
 
     // Material Selector Label and ComboBox
-    let material_label = gtk::Label::new(Some("Material"));
+    let material_label = gtk::Label::new(Some("Texture"));
     grid.attach(&material_label, 0, 9, 1, 1); // Column 0, Row 9
 
     let material_selector = ComboBoxText::new();
@@ -320,8 +318,7 @@ pub fn create_cube_section(
         radius_entry_clone.set_text(&format!("{:.2}", rng.gen_range(0.1..5.0)));
 
         // Randomly select a material
-        let materials = ["Lambertian", "Metal", "Dielectric"];
-        let random_material_index = rng.gen_range(0..materials.len());
+        let random_material_index = rng.gen_range(0..MATERIALS.len());
         material_selector_clone.set_active(Some(random_material_index as u32));
     });
     let delete_id = cube_config.id.clone();
@@ -352,7 +349,7 @@ pub fn create_cube_section(
 
 pub fn create_flat_plane_section(
     app_state: Rc<RefCell<AppState>>,
-    flow_box: gtk::FlowBox,
+    flow_box: FlowBox,
 ) -> gtk::Widget {
     let provider = CssProvider::new();
     provider
@@ -379,7 +376,7 @@ pub fn create_flat_plane_section(
     let radius_entry = &flat_plane_entries[3];
 
     // Material Selector Label and ComboBox
-    let material_label = gtk::Label::new(Some("Material"));
+    let material_label = gtk::Label::new(Some("Texture"));
     grid.attach(&material_label, 0, 9, 1, 1);
 
     let material_selector = ComboBoxText::new();
