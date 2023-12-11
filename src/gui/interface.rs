@@ -97,7 +97,7 @@ pub fn launch_gui() {
 
     // Camera position
     let (cam_x_entry, cam_y_entry, cam_z_entry) =
-        add_coordinate_widgets_box(&camera_box, "Camera position:", ["0.0", "0.0", "0.0"]);
+        add_coordinate_widgets_box(&camera_box, "Camera position:", ["-6.0", "4.0", "15.0"]);
 
     // Looking at
     let (look_at_x_entry, look_at_y_entry, look_at_z_entry) =
@@ -153,6 +153,8 @@ pub fn launch_gui() {
         "<span foreground='red'>Invalid input detected. Please enter numbers in 0.0 format.</span>";
     let green_style =
         "<span foreground='green'>All inputs are valid. Proceeding with rendering.</span>";
+
+        let render_done_style = "<span foreground='green'>Rendering done.</span>";
 
     // Create a label for displaying messages
     let message_label = gtk::Label::new(None);
@@ -231,6 +233,8 @@ pub fn launch_gui() {
         } else {
             all_inputs_valid = false;
         }
+        let render_done_style_clone = render_done_style.clone();
+        let message_label_clone = message_label.clone();
 
         if all_inputs_valid {
             println!("All inputs are valid. Proceeding with rendering.");
@@ -252,6 +256,7 @@ pub fn launch_gui() {
 
                 camera.send_rays(updated_scene);
                 camera.write_to_ppm(OUTPUT_PATH);
+                message_label_clone.set_markup(render_done_style_clone);
 
                 glib::Continue(false)
             }));

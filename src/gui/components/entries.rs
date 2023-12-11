@@ -12,7 +12,7 @@ pub fn create_label_with_placeholder(text: &str) -> Label {
 
 pub fn create_entry_with_placeholder(placeholder: &str) -> Entry {
     let entry = Entry::new();
-    entry.set_placeholder_text(Some(placeholder));
+    entry.set_text(placeholder);
     entry
 }
 
@@ -92,14 +92,14 @@ pub fn add_resolution_box(vbox: &Box) -> (Entry, Entry) {
     resolution_hbox.set_halign(gtk::Align::Center);
 
     let width_entry = Entry::new();
-    width_entry.set_placeholder_text(Some("Width"));
+    width_entry.set_text("1920");
     resolution_hbox.pack_start(&width_entry, false, false, 0);
 
     let resolution_separator = Label::new(Some("x"));
     resolution_hbox.pack_start(&resolution_separator, false, false, 0);
 
     let height_entry = Entry::new();
-    height_entry.set_placeholder_text(Some("Height"));
+    height_entry.set_text("1080");
     resolution_hbox.pack_start(&height_entry, false, false, 0);
     vbox.pack_start(&resolution_hbox, false, false, 0);
 
