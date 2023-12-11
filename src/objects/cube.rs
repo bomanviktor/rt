@@ -70,19 +70,17 @@ impl Object for Cube {
 
                 // Check if point is within cube bounds and that the distance
                 // is shorter than the previously closest distance
-                if local_point.iter().all(|&coord| coord.abs() <= half_size)
+                let small_offset = 1e-7;
+                if local_point
+                    .iter()
+                    .all(|&coord| coord.abs() <= half_size + small_offset)
                     && distance < closest_distance
                 {
                     // Add a small offset depending on texture
-                    let small_offset = if matches!(self.texture, Texture::Reflective) {
-                        1.0 + 1e-7
-                    } else {
-                        1.0
-                    };
 
                     // Update closest intersection
                     closest_distance = distance;
-                    hit_point = point * small_offset;
+                    hit_point = point;
                 }
             }
         }

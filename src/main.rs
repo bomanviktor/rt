@@ -10,14 +10,13 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     if args.contains(&"no-gui".to_string()) {
         let mut camera = CameraBuilder::new()
-            .sample_size(100)
-            .position_by_coordinates(Point::new(6.0, 10.0, -15.0))
+            .sample_size(50)
+            .position_by_coordinates(Point::new(6.0, 6.0, 15.0))
             .look_at(Point::new(0.0, 0.0, 0.0))
-            .focal_length(1.2)
+            .focal_length(1.0)
             .build();
 
         let scene = Arc::new(Scene::init(0.01));
-
         let start = Instant::now();
 
         // Perform ray tracing

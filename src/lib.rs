@@ -9,7 +9,6 @@ pub mod config {
         pub use rand::Rng;
 
         pub const MAX_DEPTH: u8 = 50;
-        pub const NUM_SECONDARY_RAYS: usize = 2;
     }
 
     /// Configurations for `camera.rs`
@@ -461,57 +460,12 @@ pub mod objects {
 }
 
 pub mod textures {
-    use crate::{
-        config::rays::NUM_SECONDARY_RAYS,
-        raytracer::{Ray, Scene},
-        type_aliases::{Color, Direction, Point},
-    };
+    use crate::type_aliases::Color;
 
     #[derive(Debug, Clone, Copy, PartialEq)]
     pub enum Texture {
         Light(Color),
         Diffusive(Color),
-        Glossy(Color),
         Reflective,
-    }
-
-    impl Ray {
-        /// Function for `Texture::Diffusive` and `Texture::Glossy`
-        pub fn diffusive(&mut self, origin: Point, direction: Direction, scene: &Scene) {
-            let new_rays = match self.depth {
-                0 => NUM_SECONDARY_RAYS,
-                1 => NUM_SECONDARY_RAYS / 2,
-                2 => NUM_SECONDARY_RAYS / 4,
-                _ => 1,
-            };
-
-            // Iterate over secondary rays
-            for _ in 0..new_rays {
-                let mut secondary_ray = Ray::new(origin, direction, self.depth + 1);
-
-                // Recursively trace the secondary ray
-                secondary_ray.trace(scene);
-
-                // Accumulate colors from secondary rays into the original ray's collisions
-                self.collisions.extend(secondary_ray.collisions);
-
-                if secondary_ray.hit_light_source {
-                    self.hit_light_source = true;
-                }
-            }
-        }
-
-        /// Function for `Texture::Reflective`
-        pub fn reflective(&mut self, origin: Point, direction: Direction, scene: &Scene) {
-            let mut secondary_ray = Ray::new(origin, direction, self.depth + 1);
-
-            secondary_ray.trace(scene);
-
-            self.collisions.extend(secondary_ray.collisions);
-
-            if secondary_ray.hit_light_source {
-                self.hit_light_source = true;
-            }
-        }
     }
 }
