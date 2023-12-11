@@ -284,36 +284,36 @@ pub mod color {
             let mut total = if self.hit_light_source {
                 self.collisions.pop().unwrap()
             } else {
-                scene.background()
+                scene.background() / 5.0
             };
 
-            if total.x <= 10.0 {
-                total.x = 10.0;
+            if total.x <= 5.0 {
+                total.x = 5.0;
             }
 
-            if total.y <= 10.0 {
-                total.y = 10.0;
+            if total.y <= 5.0 {
+                total.y = 5.0;
             }
 
-            if total.z <= 10.0 {
-                total.z = 10.0;
+            if total.z <= 5.0 {
+                total.z = 5.0;
             }
 
             self.collisions.iter().rev().for_each(|color| {
                 let r = if color.x <= 10.0 {
-                    10.0 / 255.
+                    5.0 / 255.
                 } else {
                     color.x / 255.
                 };
 
                 let g = if color.y <= 10.0 {
-                    10.0 / 255.
+                    5.0 / 255.
                 } else {
                     color.y / 255.
                 };
 
                 let b = if color.z <= 10.0 {
-                    10.0 / 255.
+                    5.0 / 255.
                 } else {
                     color.z / 255.
                 };

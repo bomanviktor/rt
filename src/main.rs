@@ -11,13 +11,13 @@ fn main() {
     if args.contains(&"no-gui".to_string()) {
         let mut camera = CameraBuilder::new()
             .sample_size(100)
-            .position_by_coordinates(Point::new(-6.0, 10.0, 15.0))
+            .position_by_coordinates(Point::new(-6.0, 6.0, 15.0))
             .look_at(Point::new(0.0, 0.0, 0.0))
-            .focal_length(1.0)
+            .focal_length(2.0)
             .resolution(800, 600)
             .build();
 
-        let scene = Arc::new(Scene::init(1.0));
+        let scene = Arc::new(Scene::init(0.5));
 
         let start = Instant::now();
 

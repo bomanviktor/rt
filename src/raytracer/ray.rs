@@ -32,7 +32,7 @@ impl Ray {
 
         // Process the closest intersection
         if let Some(intersection) = self.closest_intersection(scene) {
-            let small_offset = 1e-4 * intersection.normal;
+            let small_offset = 1e-3 * intersection.normal;
             let origin = intersection.hit_point + small_offset;
             let normal = intersection.normal;
 
