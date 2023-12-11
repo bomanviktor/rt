@@ -9,7 +9,6 @@ pub mod config {
         pub use rand::Rng;
 
         pub const MAX_DEPTH: u8 = 50;
-        pub const NUM_SECONDARY_RAYS: usize = 2;
     }
 
     /// Configurations for `camera.rs`
@@ -25,10 +24,9 @@ pub mod config {
 
         pub const DEFAULT_CAMERA_POSITION: Point = Point::new(1.0, 0.5, 0.0);
         pub const DEFAULT_SAMPLE_SIZE: u16 = 1000;
-        pub const DEFAULT_FOCAL_LENGTH: f64 = 0.5;
+        pub const DEFAULT_FOCAL_LENGTH: f64 = 1.0;
         pub const DEFAULT_SENSOR_WIDTH: f64 = 1.0;
-        pub const DEFAULT_UP_DIRECTION: Point = Point::new(0.0, -1.0, 0.0);
-        pub const DEFAULT_RESOLUTION: Resolution = (1600, 900);
+        pub const DEFAULT_RESOLUTION: Resolution = (800, 600);
     }
 }
 
@@ -283,18 +281,46 @@ pub mod color {
                 return self.collisions[0];
             }
 
-            let light_boost = 10.0;
-            let ambient_light_boost = light_boost / 2.0;
             let mut total = if self.hit_light_source {
-                self.collisions.pop().unwrap() * light_boost
+                self.collisions.pop().unwrap()
             } else {
-                scene.background() * ambient_light_boost
+                scene.background() / 5.0
             };
 
+            if total.x <= 5.0 {
+                total.x = 5.0;
+            }
+
+            if total.y <= 5.0 {
+                total.y = 5.0;
+            }
+
+            if total.z <= 5.0 {
+                total.z = 5.0;
+            }
+
             self.collisions.iter().rev().for_each(|color| {
-                total.x *= color.x / 255.;
-                total.y *= color.y / 255.;
-                total.z *= color.z / 255.;
+                let r = if color.x <= 10.0 {
+                    5.0 / 255.
+                } else {
+                    color.x / 255.
+                };
+
+                let g = if color.y <= 10.0 {
+                    5.0 / 255.
+                } else {
+                    color.y / 255.
+                };
+
+                let b = if color.z <= 10.0 {
+                    5.0 / 255.
+                } else {
+                    color.z / 255.
+                };
+
+                total.x *= r;
+                total.y *= g;
+                total.z *= b;
             });
 
             total
@@ -303,13 +329,95 @@ pub mod color {
 }
 
 pub mod gui {
+    pub use gdk_pixbuf::Pixbuf;
+    pub use glib::clone;
+    pub use glib::signal::Inhibit;
+    pub use gtk::{prelude::*, Image};
+    pub use gtk::{
+        Box as GtkBox, Button, ComboBoxText, CssProvider, Entry, FlowBox, Orientation, Scale,
+        Separator, Window, WindowType,
+    };
+    pub use nalgebra::Vector3;
+    pub use std::cell::RefCell;
+    pub use std::rc::Rc;
+    pub use std::sync::Arc;
+
+    pub struct AppState {
+        pub spheres: Vec<SphereConfig>,
+        pub cylinders: Vec<CylinderConfig>,
+        pub cubes: Vec<CubeConfig>,
+        pub flat_planes: Vec<FlatPlaneConfig>,
+        pub brightness: f64,
+    }
+
+    pub struct SphereConfig {
+        pub id: Rc<RefCell<u32>>,
+        pub pos_x_entry: Rc<RefCell<Entry>>,
+        pub pos_y_entry: Rc<RefCell<Entry>>,
+        pub pos_z_entry: Rc<RefCell<Entry>>,
+        pub radius_entry: Rc<RefCell<Entry>>,
+        pub material_selector: Rc<RefCell<ComboBoxText>>,
+        pub color_button: Rc<RefCell<gtk::ColorButton>>,
+    }
+    #[derive(Clone)]
+    pub struct CylinderConfig {
+        pub id: Rc<RefCell<u32>>,
+        pub pos_x_entry: Rc<RefCell<Entry>>,
+        pub pos_y_entry: Rc<RefCell<Entry>>,
+        pub pos_z_entry: Rc<RefCell<Entry>>,
+        pub radius_entry: Rc<RefCell<Entry>>,
+        pub material_selector: Rc<RefCell<ComboBoxText>>,
+        pub height_entry: Rc<RefCell<Entry>>,
+        pub color_button: Rc<RefCell<gtk::ColorButton>>,
+    }
+
+    pub struct CubeConfig {
+        pub id: Rc<RefCell<u32>>,
+        pub pos_x_entry: Rc<RefCell<Entry>>,
+        pub pos_y_entry: Rc<RefCell<Entry>>,
+        pub pos_z_entry: Rc<RefCell<Entry>>,
+        pub radius_entry: Rc<RefCell<Entry>>,
+        pub material_selector: Rc<RefCell<ComboBoxText>>,
+        pub color_button: Rc<RefCell<gtk::ColorButton>>,
+    }
+
+    pub struct FlatPlaneConfig {
+        pub id: Rc<RefCell<u32>>,
+        pub pos_x_entry: Rc<RefCell<Entry>>,
+        pub pos_y_entry: Rc<RefCell<Entry>>,
+        pub pos_z_entry: Rc<RefCell<Entry>>,
+        pub radius_entry: Rc<RefCell<Entry>>,
+        pub material_selector: Rc<RefCell<ComboBoxText>>,
+        pub color_button: Rc<RefCell<gtk::ColorButton>>,
+    }
+
     pub mod interface;
     pub use interface::*;
-    pub mod sections;
-    pub use sections::*;
 
-    pub mod helper;
-    pub use helper::*;
+    pub mod update;
+    pub use update::*;
+
+    pub mod validate;
+    pub use validate::*;
+
+    pub mod components {
+        pub use super::*;
+
+        pub mod entries;
+        pub use entries::*;
+
+        pub mod objects;
+        pub use objects::*;
+
+        pub mod buttons;
+        pub use buttons::*;
+
+        pub mod scales;
+        pub use scales::*;
+
+        pub mod about;
+        pub use about::*;
+    }
 }
 
 pub mod raytracer {
@@ -353,8 +461,6 @@ pub mod objects {
     pub trait Object: Send + Sync {
         fn intersection(&self, ray: &Ray) -> Option<Intersection>;
         fn texture(&self) -> Texture;
-        fn center(&self) -> Point;
-        fn is_light(&self) -> bool;
     }
 
     pub type Objects = Vec<Arc<dyn Object>>;
@@ -381,54 +487,12 @@ pub mod objects {
 }
 
 pub mod textures {
-    use crate::{
-        config::rays::NUM_SECONDARY_RAYS,
-        raytracer::{Ray, Scene},
-        type_aliases::{Color, Direction, Point},
-    };
+    use crate::type_aliases::Color;
 
     #[derive(Debug, Clone, Copy, PartialEq)]
     pub enum Texture {
         Light(Color),
         Diffusive(Color),
-        Glossy(Color),
         Reflective,
-    }
-
-    impl Ray {
-        pub fn diffusive(&mut self, origin: Point, direction: Direction, scene: &Scene) {
-            let new_rays = match self.depth {
-                0 => NUM_SECONDARY_RAYS,
-                1 => NUM_SECONDARY_RAYS / 2,
-                2 => NUM_SECONDARY_RAYS / 4,
-                _ => 1,
-            };
-
-            // Iterate over secondary rays
-            for _ in 0..new_rays {
-                let mut secondary_ray = Ray::new(origin, direction, self.depth + 1);
-
-                // Recursively trace the secondary ray
-                secondary_ray.trace(scene);
-
-                // Accumulate colors from secondary rays into the original ray's collisions
-                self.collisions.extend(secondary_ray.collisions);
-
-                if secondary_ray.hit_light_source {
-                    self.hit_light_source = true;
-                }
-            }
-        }
-        pub fn reflective(&mut self, origin: Point, direction: Direction, scene: &Scene) {
-            let mut secondary_ray = Ray::new(origin, direction, self.depth + 1);
-
-            secondary_ray.trace(scene);
-
-            self.collisions.extend(secondary_ray.collisions);
-
-            if secondary_ray.hit_light_source {
-                self.hit_light_source = true;
-            }
-        }
     }
 }

@@ -4,22 +4,8 @@ use crate::raytracer::Scene;
 use crate::textures::Texture::*;
 use crate::type_aliases::Color;
 use gtk::{ColorChooserExt, ComboBoxTextExt, EntryExt};
-use nalgebra::Vector3;
-use std::cell::RefCell;
-use std::rc::Rc;
-use std::sync::Arc;
 
-// Function to validate position entries
-pub fn is_valid_float(input: &str) -> bool {
-    // Check if the input is a valid floating-point number
-    let is_float = input.parse::<f64>().is_ok();
-
-    // Check if the input contains a decimal point
-    let has_decimal_point = input.contains('.');
-
-    // The input is valid if it's a float and contains a decimal point
-    is_float && has_decimal_point
-}
+use crate::gui::{Arc, Rc, RefCell, Vector3};
 
 pub fn update_scene_from_gui(app_state: Rc<RefCell<AppState>>) -> Scene {
     let app_state_borrowed = app_state.borrow();
@@ -64,7 +50,6 @@ pub fn update_scene_from_gui(app_state: Rc<RefCell<AppState>>) -> Scene {
         let sphere_texture = match material.as_str() {
             "Diffusive" => Diffusive(sphere_color),
             "Reflective" => Reflective,
-            "Glossy" => Glossy(sphere_color),
             "Light" => Light(sphere_color),
             // Add other cases as needed
             _ => Diffusive(sphere_color), // Default case
@@ -118,7 +103,6 @@ pub fn update_scene_from_gui(app_state: Rc<RefCell<AppState>>) -> Scene {
         let cylinder_texture = match material.as_str() {
             "Diffusive" => Diffusive(cylinder_color),
             "Reflective" => Reflective,
-            "Glossy" => Glossy(cylinder_color),
             "Light" => Light(cylinder_color),
             // Add other cases as needed
             _ => Diffusive(cylinder_color), // Default case
@@ -171,7 +155,6 @@ pub fn update_scene_from_gui(app_state: Rc<RefCell<AppState>>) -> Scene {
         let cube_texture = match material.as_str() {
             "Diffusive" => Diffusive(cube_color),
             "Reflective" => Reflective,
-            "Glossy" => Glossy(cube_color),
             "Light" => Light(cube_color),
             // Add other cases as needed
             _ => Diffusive(cube_color), // Default case
@@ -219,7 +202,6 @@ pub fn update_scene_from_gui(app_state: Rc<RefCell<AppState>>) -> Scene {
         let flat_plane_texture = match material.as_str() {
             "Diffusive" => Diffusive(flat_plane_color),
             "Reflective" => Reflective,
-            "Glossy" => Glossy(flat_plane_color),
             "Light" => Light(flat_plane_color),
             // Add other cases as needed
             _ => Diffusive(flat_plane_color), // Default case

@@ -23,6 +23,8 @@ impl Ray {
         }
     }
 
+    /// Find the closest intersection, create a new ray based on the surface, and recursively call
+    /// `trace`
     pub fn trace(&mut self, scene: &Scene) {
         if self.reached_max_depth() {
             return;
@@ -30,37 +32,24 @@ impl Ray {
 
         // Process the closest intersection
         if let Some(intersection) = self.closest_intersection(scene) {
-            let origin = intersection.hit_point;
+            let small_offset = 1e-3 * intersection.normal;
+            let origin = intersection.hit_point + small_offset;
             let normal = intersection.normal;
 
             // Reflect based on object texture
             match intersection.texture {
                 Texture::Diffusive(color) => {
                     self.collisions.push(color);
-                    let direction = self.reflective_direction(normal, 0.9);
+                    let direction = self.diffuse_direction(normal);
                     if direction.near_zero() {
-                        self.diffusive(origin, normal, scene);
+                        self.reflect(origin, normal, scene);
                     } else {
-                        self.diffusive(origin, direction, scene);
+                        self.reflect(origin, direction, scene);
                     }
                 }
-                Texture::Glossy(color) => {
-                    self.collisions.push(color);
-                    let direction = self.reflective_direction(normal, 0.6);
-                    if direction.near_zero() {
-                        self.diffusive(origin, normal, scene);
-                    } else {
-                        self.diffusive(origin, direction, scene);
-                    }
-                }
-
                 Texture::Reflective => {
-                    let direction = self.reflective_direction(normal, 0.2);
-                    if direction.near_zero() {
-                        self.reflective(origin, normal, scene);
-                    } else {
-                        self.reflective(origin, direction, scene);
-                    }
+                    let direction = self.perfect_reflection(normal);
+                    self.reflect(origin, direction, scene);
                 }
 
                 Texture::Light(color) => {
@@ -84,16 +73,18 @@ impl Ray {
         closest_intersection
     }
 
-    /*
-    fn diffuse_reflection_direction(&self, normal: Normal) -> Direction {
+    /// ### diffuse_direction
+    ///
+    /// Generate a random direction for diffuse reflection on a hemisphere given a surface normal
+    fn diffuse_direction(&self, normal: Normal) -> Direction {
         let mut rng = rand::thread_rng();
 
         // Create a local coordinate system around the normal
         let incident_ray = normal.normalize();
         let tangent_a = if incident_ray.x.abs() > 0.9 {
-            Vector3::new(0.0, 1.0, 0.0)
+            Vector3::new(0.0, -1.0, 0.0)
         } else {
-            Vector3::new(1.0, 0.0, 0.0)
+            Vector3::new(-1.0, 0.0, 0.0)
         };
         let tangent_v = incident_ray.cross(&tangent_a).normalize();
         let tangent_u = incident_ray.cross(&tangent_v);
@@ -111,52 +102,19 @@ impl Ray {
         tangent_u * local_x + tangent_v * local_y + incident_ray * local_z
     }
 
-     */
-
-    fn reflective_direction(&self, normal: Normal, diffusion_range: f64) -> Direction {
-        // Calculate the perfect reflection direction
-        let perfect_reflection = self.direction - 2.0 * self.direction.dot(&normal) * normal;
-
-        // Introduce diffusion by adding a random offset
-        let mut rng = rand::thread_rng();
-        let random_offset = Ray::cosine_weighted_sample(&normal, &mut rng, diffusion_range);
-
-        // Apply the random offset to the perfect reflection direction
-        let diffuse_reflection = perfect_reflection + random_offset;
-
-        diffuse_reflection.normalize() // Normalize the result to ensure it's a valid direction
+    fn perfect_reflection(&self, normal: Normal) -> Direction {
+        self.direction - 2.0 * self.direction.dot(&normal) * normal
     }
+    pub fn reflect(&mut self, origin: Point, direction: Direction, scene: &Scene) {
+        let mut secondary_ray = Ray::new(origin, direction, self.depth + 1);
 
-    // Helper function for cosine-weighted hemisphere sampling
-    fn cosine_weighted_sample(
-        normal: &Normal,
-        rng: &mut impl Rng,
-        diffusion_range: f64,
-    ) -> Direction {
-        // Generate two random numbers in the range [-0.5, 0.5)
-        let r1 = rng.gen::<f64>() - 0.5;
-        let r2 = rng.gen::<f64>() - 0.5;
+        secondary_ray.trace(scene);
 
-        // Scale the random values based on the diffusion range
-        let scaled_r1 = r1 * diffusion_range;
-        let scaled_r2 = r2 * diffusion_range;
+        self.collisions.extend(secondary_ray.collisions);
 
-        // Calculate the spherical coordinates based on the scaled random numbers
-        let theta = (2.0 * std::f64::consts::PI * scaled_r1).acos().sqrt(); // Polar angle
-        let phi = 2.0 * std::f64::consts::PI * scaled_r2; // Azimuthal angle
-
-        // Convert spherical coordinates to Cartesian coordinates
-        let x = theta.sin() * phi.cos();
-        let y = theta.sin() * phi.sin();
-        let z = theta.cos();
-
-        // Transform the sampled direction to the local coordinate system defined by the normal
-        // Calculate the tangent vector manually
-        let tangent = normal.cross(&Vector3::z());
-        let bi_tangent = normal.cross(&tangent);
-
-        // Transform the sampled direction to the local coordinate system defined by the normal
-        tangent * x + bi_tangent * y + Vector3::new(normal.x, normal.y, normal.z) * z
+        if secondary_ray.hit_light_source {
+            self.hit_light_source = true;
+        }
     }
 
     fn reached_max_depth(&self) -> bool {

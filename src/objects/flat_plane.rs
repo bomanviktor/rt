@@ -57,10 +57,4 @@ impl Object for FlatPlane {
     fn texture(&self) -> Texture {
         self.texture
     }
-    fn center(&self) -> Point {
-        self.center
-    }
-    fn is_light(&self) -> bool {
-        matches!(self.texture, Texture::Light(_))
-    }
 }

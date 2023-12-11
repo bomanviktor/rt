@@ -48,8 +48,12 @@ impl Object for Sphere {
 
         if (1e-6..ray.intersection_dist).contains(&dist) {
             let hit_point = ray.origin + dist * ray.direction;
-            let normal = self.normal(hit_point);
-            return Some(Intersection::new(hit_point, normal, dist, self.texture()));
+            return Some(Intersection::new(
+                hit_point,
+                self.normal(hit_point),
+                dist,
+                self.texture(),
+            ));
         }
 
         None
@@ -57,11 +61,5 @@ impl Object for Sphere {
 
     fn texture(&self) -> Texture {
         self.texture
-    }
-    fn center(&self) -> Point {
-        self.center
-    }
-    fn is_light(&self) -> bool {
-        matches!(self.texture, Texture::Light(_))
     }
 }
