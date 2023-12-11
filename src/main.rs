@@ -16,7 +16,7 @@ fn main() {
             .focal_length(1.0)
             .build();
 
-        let scene = Arc::new(Scene::init(0.01));
+        let scene = Arc::new(Scene::init(0.1));
 
         let start = Instant::now();
 
