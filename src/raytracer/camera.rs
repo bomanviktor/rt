@@ -38,9 +38,7 @@ impl Camera {
                     ray.trace(&scene); // Recursive ray tracing with default 50 depth.
 
                     if ray.collisions.is_empty() {
-                        let rgb = 255. * scene.brightness;
-                        let background_color = Vector3::new(rgb, rgb, rgb);
-                        total_color += background_color; // No collision, add void color.
+                        total_color += scene.background(); // No collision, add background color.
                         continue;
                     }
 
