@@ -56,8 +56,8 @@ pub fn add_coordinate_widgets_grid(
 
     let mut entries = Vec::new();
     for (i, placeholder) in placeholders.iter().enumerate() {
-        let top_label = i as i32 + 1;
-        let top_entry = i as i32 + 2;
+        let top_label = i as i32 * 2 + 1;
+        let top_entry = top_label + 1;
         let label_text = match i {
             0 => "X pos",
             1 => "Y pos",
