@@ -281,20 +281,49 @@ pub mod color {
                 return self.collisions[0];
             }
 
-            let light_boost = 10.0;
-            let ambient_light_boost = light_boost / 2.0;
             let mut total = if self.hit_light_source {
-                self.collisions.pop().unwrap() * light_boost
+                self.collisions.pop().unwrap()
             } else {
-                scene.background() * ambient_light_boost
+                scene.background()
             };
 
-            self.collisions
-                .iter()
-                .rev()
-                .for_each(|color| total += color);
+            if total.x <= 10.0 {
+                total.x = 10.0;
+            }
 
-            total / (self.collisions.len() + 1) as f64
+            if total.y <= 10.0 {
+                total.y = 10.0;
+            }
+
+            if total.z <= 10.0 {
+                total.z = 10.0;
+            }
+
+            self.collisions.iter().rev().for_each(|color| {
+                let r = if color.x <= 10.0 {
+                    10.0 / 255.
+                } else {
+                    color.x / 255.
+                };
+
+                let g = if color.y <= 10.0 {
+                    10.0 / 255.
+                } else {
+                    color.y / 255.
+                };
+
+                let b = if color.z <= 10.0 {
+                    10.0 / 255.
+                } else {
+                    color.z / 255.
+                };
+
+                total.x *= r;
+                total.y *= g;
+                total.z *= b;
+            });
+
+            total
         }
     }
 }

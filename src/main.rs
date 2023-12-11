@@ -17,7 +17,7 @@ fn main() {
             .resolution(800, 600)
             .build();
 
-        let scene = Arc::new(Scene::init(0.1));
+        let scene = Arc::new(Scene::init(1.0));
 
         let start = Instant::now();
 
