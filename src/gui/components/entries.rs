@@ -92,14 +92,14 @@ pub fn add_resolution_box(vbox: &Box) -> (Entry, Entry) {
     resolution_hbox.set_halign(gtk::Align::Center);
 
     let width_entry = Entry::new();
-    width_entry.set_placeholder_text(Some("1920"));
+    width_entry.set_placeholder_text(Some("Width"));
     resolution_hbox.pack_start(&width_entry, false, false, 0);
 
     let resolution_separator = Label::new(Some("x"));
     resolution_hbox.pack_start(&resolution_separator, false, false, 0);
 
     let height_entry = Entry::new();
-    height_entry.set_placeholder_text(Some("1080"));
+    height_entry.set_placeholder_text(Some("Height"));
     resolution_hbox.pack_start(&height_entry, false, false, 0);
     vbox.pack_start(&resolution_hbox, false, false, 0);
 
