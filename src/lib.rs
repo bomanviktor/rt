@@ -9,7 +9,6 @@ pub mod config {
         pub use rand::Rng;
 
         pub const MAX_DEPTH: u8 = 50;
-        pub const NUM_SECONDARY_RAYS: usize = 2;
     }
 
     /// Configurations for `camera.rs`
