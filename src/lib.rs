@@ -24,10 +24,9 @@ pub mod config {
 
         pub const DEFAULT_CAMERA_POSITION: Point = Point::new(1.0, 0.5, 0.0);
         pub const DEFAULT_SAMPLE_SIZE: u16 = 1000;
-        pub const DEFAULT_FOCAL_LENGTH: f64 = 0.5;
+        pub const DEFAULT_FOCAL_LENGTH: f64 = 1.0;
         pub const DEFAULT_SENSOR_WIDTH: f64 = 1.0;
-        pub const DEFAULT_UP_DIRECTION: Point = Point::new(0.0, -1.0, 0.0);
-        pub const DEFAULT_RESOLUTION: Resolution = (1600, 900);
+        pub const DEFAULT_RESOLUTION: Resolution = (800, 600);
     }
 }
 
